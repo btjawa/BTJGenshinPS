@@ -18,6 +18,17 @@ let patchState = document.querySelector('.patch_state');
 let operationBoxBtn_0 = document.querySelector('.operation_box_btn_0');
 state_menu_selector_log = "inactive";
 
+const handelOperationBoxBtn_0 = () => {
+    if (state_menu_selector_log == "inactive") {
+        operationBoxBtn_0.style.backgroundColor = '#6e6e6e';
+        operationBoxBtn_0.style.color = '#ebebeb60';
+        ipcRenderer.send('operationBoxBtn_0-run-main-service');
+        page_log_active();
+        state_menu_selector_log = "active";
+    };
+    operationBoxBtn_0.removeEventListener('click', handelOperationBoxBtn_0);
+};
+
 function page_log_active (){
 
     menuSelectorsLog.forEach(selector => {
@@ -48,8 +59,6 @@ function page_log_active (){
         page_settings.style.display = 'none';
         page_settings.classList.remove("active");
         operationBox.classList.remove("active");
-
-        state_menu_selector_log = "active";
 
         menuSelectorLogActive ();
         
@@ -183,10 +192,4 @@ resVersionLink.addEventListener('click', () => {
     ipcRenderer.send('open-url', 'https://gitlab.com/YuukiPS/GC-Resources/-/commit/558556930c5886555328683b3609f7670f94f39c');
 });
 
-if (state_menu_selector_log == "inactive") {
-    operationBoxBtn_0.addEventListener('click', () => {
-        operationBoxBtn_0.style.backgroundColor = '#6e6e6e';
-        ipcRenderer.send('operationBoxBtn_0-run-main-service');
-        page_log_active();
-    });
-};
+operationBoxBtn_0.addEventListener('click', handelOperationBoxBtn_0);
