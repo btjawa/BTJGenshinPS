@@ -281,8 +281,8 @@ ipcMain.on('resGetWayButton_0-set' , () => {
   resURL="https://glab-proxy.btl-cdn.top/YuukiPS/GC-Resources/-/archive/558556930c5886555328683b3609f7670f94f39c/GC-Resources-558556930c5886555328683b3609f7670f94f39c.zip?path=Resources";
   dialog.showMessageBox(win, {
     type: 'info',
-    title: 'Cloudflare',
-    message: '获取资源方式已更改为 Cloudflare!',
+    title: '代理',
+    message: '获取资源方式已更改为 代理!',
     buttons: ['确定']
   });
 });
