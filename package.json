@@ -1,0 +1,35 @@
+{
+  "name": "btjgenshinps",
+  "version": "1.0.0",
+  "description": "A Click-To-Run Application To Help You Access Grasscutter GenshinPS.",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron .",
+    "package": "electron-packager ./ BTJGenshinPS --platform=win32  --overwrite  --icon=./dist/favicon_64.ico --arch=ia32 && asar pack ./BTJGenshinPS-win32-ia32/resources/app ./BTJGenshinPS-win32-ia32/resources/app.asar && rm -rf ./BTJGenshinPS-win32-ia32/resources/app"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/btjawa/BTJGenshinPS.git"
+  },
+  "keywords": [
+    "Click-To-Run",
+    "Grasscutter",
+    "GenshinPS"
+  ],
+  "author": "BTJ",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/btjawa/BTJGenshinPS/issues"
+  },
+  "homepage": "https://github.com/btjawa/BTJGenshinPS#readme",
+  "devDependencies": {
+    "electron": "^26.1.0"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.10",
+    "electron-reload": "^2.0.0-alpha.1",
+    "iconv-lite": "^0.6.3",
+    "izitoast": "^1.4.0"
+  }
+}
