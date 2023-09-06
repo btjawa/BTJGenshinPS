@@ -2,6 +2,8 @@
 
 开发中！现在放到Github是因为让我commit多一点（
 
+处于Dev阶段，暂时不接受PR
+
 ## Building
 
 使用NPM构建
