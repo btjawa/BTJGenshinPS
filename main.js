@@ -146,15 +146,17 @@ function patchGamePathParaTransfer() {
   } else {
     patchExists = false;
     win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
-    exec(`copy ".\\GateServer\\data\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, (error, stdout, stderr) => {
-      if(error) {
-        console.log(error);
-        return;
-      }
-      console.log(stdout);
-      console.log("RSA Patched");
-      console.log(stderr);
-    });
+    if (gamePath != "") {
+      exec(`copy ".\\GateServer\\data\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, (error, stdout, stderr) => {
+        if(error) {
+          console.log(error);
+          return;
+        }
+        console.log(stdout);
+        console.log("RSA Patched");
+        console.log(stderr);
+      });
+    };
     fs.readFile('../app.config.json', 'utf8', (err, data) => {
       if (err) {
         console.error('Err when reading config file:', err);
