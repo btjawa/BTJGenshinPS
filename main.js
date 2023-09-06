@@ -16,8 +16,8 @@ let action;
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 1040,
-    height: 620,
+    width: 1030,
+    height: 635,
     title: "BTJGenshinPS",
     icon: "./dist/favicon.ico",
     frame: false,
@@ -357,4 +357,8 @@ ipcMain.on('restoreOfficialButton_delete-path', (event) => {
     action = "game_patch_undf"
     event.sender.send('chooseGamePathButton_selected-file', gamePath, patchExists, action);
   }
+});
+
+ipcMain.on('operationBoxBtn_0-run-main-service', (event) => {
+
 });

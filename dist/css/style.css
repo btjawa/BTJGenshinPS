@@ -803,30 +803,45 @@ button[name="self-signed-keystore"]{
     height: 150px;
     background-color: #686b80ab;
     position: relative;
-    top: 285px;
+    left: 290px;
+    top: -100px;
     font-size: 13px;
-    right: 340px;
-    text-decoration: underline;
     border-radius: 10px;
     border: 2px solid #353740d3;
 }
 
 .operation_box.active {
     display: block;
-    animation: operation_box_anime 0.66s cubic-bezier(0,1,.6,1);
 }
 
-@keyframes operation_box_anime {
-    0% {
-        top: 268px;
-    }
-    100% {
-        top: 285px;
-    }
+.operation_box_title {
+    display: flex;
+    position: relative;
+    color: #ebebeb;
+    font-size: 16px;
+    top: 7px;
+    justify-content: center;
 }
 
 .operation_box_btn_0 {
     position: relative;
+    -webkit-app-region: no-drag;
+    color: #ebebeb;
+    background-color: #828282;
+    position: absolute;
+    top: 60px;
+    left: 10px;
+    transform: translateY(-50%);
+    font-size: 14px;
+    padding: 7.5px 95px;
+    transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
+    border: 2px solid #565656;
+    border-radius: 10px;
+}
+
+.operation_box_btn_0:hover {
+    cursor: pointer;
+    background-color: #6e6e6e;
 }
 
 .page_1 {
@@ -849,6 +864,19 @@ button[name="self-signed-keystore"]{
     user-select: none;
 }
 .page_settings.active {
+    display: block;
+    animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1);
+}
+
+.page_log {
+    position: relative;
+    width: max-content;
+    top: 10px;
+    left: 100px;
+    user-select: none;
+    display: none;
+}
+.page_log.active {
     display: block;
     animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1);
 }

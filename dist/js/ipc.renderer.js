@@ -15,6 +15,46 @@ let resVersionLink = document.querySelector('.res_version');
 let officialKeystoreButton = document.querySelector('button[name="official-keystore"]');
 let selfSignedKeystoreButton = document.querySelector('button[name="self-signed-keystore"]');
 let patchState = document.querySelector('.patch_state');
+let operationBoxBtn_0 = document.querySelector('.operation_box_btn_0');
+state_menu_selector_log = "inactive";
+
+function page_log_active (){
+
+    menuSelectorsLog.forEach(selector => {
+        menuSelectorLogIcon.style.color = '#c4c4c4';
+        document.querySelector(".menu_selector_log_text").style.color = '#c4c4c4';
+
+        menuSelector_0_Background.classList.remove('active');
+        menuSelector_1_Background.classList.remove('active');
+        menuSelectorSettings_Background.classList.remove('active');
+        menuSelectorLog_Background.classList.add('active');
+
+        menuSelector_0_Icon.className = "fa-light fa-house";
+        menuSelector_1_Icon.className = "fa-light fa-screwdriver-wrench";
+        menuSelectorSettingsIcon.className = "fa-light fa-gear";
+        menuSelectorLogIcon.classList = "fa-solid fa-memo-circle-info"
+
+        menuUnderline_0.classList.remove("active");
+        menuUnderline_1.classList.remove("active");
+        menuUnderlineSettings.classList.remove("active");
+        menuUnderlineLog.classList.add("active");
+
+        page_0.style.display = 'none';
+        page_0.classList.remove("active");
+        page_1.style.display = 'none';
+        page_1.classList.remove("active");
+        page_log.style.display = 'block';
+        page_log.classList.add("active");
+        page_settings.style.display = 'none';
+        page_settings.classList.remove("active");
+        operationBox.classList.remove("active");
+
+        state_menu_selector_log = "active";
+
+        menuSelectorLogActive ();
+        
+    });
+}
 
 patchState.style.display = 'none';
 
@@ -133,7 +173,7 @@ selfSignedKeystoreButton.addEventListener('click', () => {
         title: 'Keystore',
         message: '正在使用 自签名Keystore！'
     });
-})
+});
 
 gcVersionLink.addEventListener('click', () => {
     ipcRenderer.send('open-url', 'https://github.com/Grasscutters/Grasscutter/commit/89efa35f838f95d49415899eec0f62cd9a991ed6');
@@ -141,4 +181,12 @@ gcVersionLink.addEventListener('click', () => {
 
 resVersionLink.addEventListener('click', () => {
     ipcRenderer.send('open-url', 'https://gitlab.com/YuukiPS/GC-Resources/-/commit/558556930c5886555328683b3609f7670f94f39c');
-})
+});
+
+if (state_menu_selector_log == "inactive") {
+    operationBoxBtn_0.addEventListener('click', () => {
+        operationBoxBtn_0.style.backgroundColor = '#6e6e6e';
+        ipcRenderer.send('operationBoxBtn_0-run-main-service');
+        page_log_active();
+    });
+};

@@ -6,7 +6,7 @@ document.body.oncopy = function () {
         layout: '2',
         title: '复制成功'
     });
-}
+};
 
 iziToast.settings({
     timeout: 2500,
@@ -18,4 +18,4 @@ iziToast.settings({
     position: 'topCenter',
     backgroundColor: '#686b80',
     theme: 'dark'
-})
+});
