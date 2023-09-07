@@ -16,18 +16,8 @@ let officialKeystoreButton = document.querySelector('button[name="official-keyst
 let selfSignedKeystoreButton = document.querySelector('button[name="self-signed-keystore"]');
 let patchState = document.querySelector('.patch_state');
 let operationBoxBtn_0 = document.querySelector('.operation_box_btn_0');
+let operationBoxBtn_1 = document.querySelector('.operation_box_btn_1');
 state_menu_selector_log = "inactive";
-
-const handelOperationBoxBtn_0 = () => {
-    if (state_menu_selector_log == "inactive") {
-        operationBoxBtn_0.style.backgroundColor = '#6e6e6e';
-        operationBoxBtn_0.style.color = '#ebebeb60';
-        ipcRenderer.send('operationBoxBtn_0-run-main-service');
-        page_log_active();
-        state_menu_selector_log = "active";
-    };
-    operationBoxBtn_0.removeEventListener('click', handelOperationBoxBtn_0);
-};
 
 function page_log_active (){
 
@@ -105,17 +95,15 @@ ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, 
     if (patchExists) {
         gamePathInput.value = path;
         patchState.style.display = 'block';
-    } else {
-        patchState.style.display = 'none';
-        
-    }
-    if (action == "add_patch_succ") {
         iziToast.info({
             icon: 'fa-solid fa-circle-info',
             title: '添加补丁',
             layout: '2',
             message: '已添加补丁！'
         });
+    } else {
+        patchState.style.display = 'none';
+        
     }
     if (action == "patch_not_exst") {
         iziToast.warn({
@@ -192,4 +180,27 @@ resVersionLink.addEventListener('click', () => {
     ipcRenderer.send('open-url', 'https://gitlab.com/YuukiPS/GC-Resources/-/commit/558556930c5886555328683b3609f7670f94f39c');
 });
 
-operationBoxBtn_0.addEventListener('click', handelOperationBoxBtn_0);
+operationBoxBtn_0.addEventListener('click', () => {
+    ipcRenderer.send('operationBoxBtn_0-run-main-service');
+    page_log_active();
+    state_menu_selector_log = "active";
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '启动服务',
+        message: '正在启动服务...'
+    });
+});
+
+operationBoxBtn_1.addEventListener('click', () => {
+    ipcRenderer.send('operationBoxBtn_1-stop-service');
+});
+
+ipcRenderer.on('operationBoxBtn_1-success', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '停止服务',
+        message: '成功停止服务！'
+    });
+});

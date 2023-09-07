@@ -1,11 +1,11 @@
 const { app, BrowserWindow, ipcMain, shell, dialog, Menu } = require('electron');
 const path = require('path');
-const { exec } = require('child_process');
 const fs = require('fs');
 const AdmZip = require('adm-zip');
 const https = require('https');
 const { spawn } = require('child_process');
-
+const util = require('util');
+const exec = util.promisify(require('child_process').exec);
 
 
 let win;
@@ -75,27 +75,26 @@ function sleep(ms) {
 }
 
 
-function checkJava(){
-  exec('java -version', (error, stdout, stderr) => {
-    if (error) {
-        console.log('Java is not installed. Downloading JDK...');
-        downloadJDK();
+async function checkJava(){
+  try {
+    const { stdout, stderr } = await exec('java -version');
+    if (stderr.includes('Java(TM) SE Runtime Environment') && !stderr.includes('HotSpot')) {
+      console.log('JRE is installed. Downloading JDK...');
+      await downloadJDK();
+    } else if (stderr.includes('Java(TM) SE Runtime Environment') && stderr.includes('HotSpot')) {
+      console.log('JDK is already installed.');
+      javaPath = 'java';
     } else {
-        if (stderr.includes('Java(TM) SE Runtime Environment') && !stderr.includes('HotSpot')) {
-            console.log('JRE is installed. Downloading JDK...');
-            downloadJDK();
-        } else if (stderr.includes('Java(TM) SE Runtime Environment') && stderr.includes('HotSpot')) {
-            console.log('JDK is already installed.');
-            javaPath = 'java';
-        } else {
-            console.log('Unknown Java installation. Downloading JDK to be safe...');
-            downloadJDK();
-        }
+      console.log('Unknown Java installation. Downloading JDK to be safe...');
+      await downloadJDK();
     }
-  });
+  } catch (error) {
+    console.log('Java is not installed. Downloading JDK...');
+    await downloadJDK();
+  }
 };
 
-function downloadJDK() {
+async function downloadJDK() {
   const jdkURL = 'https://repo.huaweicloud.com/openjdk/17.0.2/openjdk-17.0.2_windows-x64_bin.zip';
   const jdkZipPath = path.join(__dirname, '../jdk-17.0.2.zip');
   const file = fs.createWriteStream(jdkZipPath);
@@ -175,8 +174,6 @@ function patchGamePathParaTransfer() {
       const config = JSON.parse(data);
       if (config.game.path == "") {} else {
         patchExists = true;
-        action = "add_patch_succ";
-        win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists, action);
       };
     });
     
@@ -369,15 +366,29 @@ ipcMain.on('restoreOfficialButton_delete-path', (event) => {
   }
 });
 
-ipcMain.on('operationBoxBtn_0-run-main-service', (event) => {
-  checkJava();
+ipcMain.on('operationBoxBtn_0-run-main-service', async (event) => {
+  await checkJava();
   run_main_service();
 });
 
 async function run_main_service(){
-  await sleep(250);
-  const gc_terminal = spawn('cmd.exe', ['/c', 'start', 'cmd.exe', '/K', `${javaPath} -jar grasscutter.jar`], {
-    cwd: path.join(__dirname, '../GateServer/Grasscutter'),
+  exec(`taskkill /f /im java.exe && taskkill /f /im mongod.exe`);
+  const mongo_terminal = spawn('cmd.exe', ['/c', `start .\\data\\run_mongo.bat`], {
     stdio: 'inherit'
   });
-}
+  const gc_terminal = spawn('cmd.exe', ['/c', `start .\\data\\run_gc.bat ${javaPath}`], {
+    stdio: 'inherit'
+  });
+};
+
+ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
+  exec(`taskkill /f /im java.exe && taskkill /f /im mongod.exe`, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Err: ${error}`);
+      return;
+    }
+    console.log(`stdout: ${stdout}`);
+    console.log(`stderr: ${stderr}`);
+    event.sender.send('operationBoxBtn_1-success');
+  });
+});

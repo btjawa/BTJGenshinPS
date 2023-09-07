@@ -844,6 +844,27 @@ button[name="self-signed-keystore"]{
     background-color: #6e6e6e;
 }
 
+.operation_box_btn_1 {
+    position: relative;
+    -webkit-app-region: no-drag;
+    color: #ebebeb;
+    background-color: #828282;
+    position: absolute;
+    top: 110px;
+    left: 28px;
+    transform: translateY(-50%);
+    font-size: 14px;
+    padding: 7.5px 90px;
+    transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
+    border: 2px solid #565656;
+    border-radius: 10px;
+}
+
+.operation_box_btn_1:hover {
+    cursor: pointer;
+    background-color: #6e6e6e;
+}
+
 .page_1 {
     position: relative;
     width: max-content;
@@ -879,4 +900,11 @@ button[name="self-signed-keystore"]{
 .page_log.active {
     display: block;
     animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1);
+}
+.page_log_console {
+    position: relative;
+    top: 10px;
+    width: 800px;
+    height: 450px;
+    background-color: #363940;
 }
