@@ -4,6 +4,8 @@
 
 处于Dev阶段，暂时不接受PR
 
+..\GateServer 请从 Release 获取
+
 ## Building
 
 使用NPM构建
