@@ -18,9 +18,9 @@ resources/
 
 └── app.config.json
 
-## Building
+## Development
 
-使用NPM构建
+Using NPM
 
 **Requirements:**
 
@@ -31,12 +31,12 @@ resources/
 ```shell
 git clone https://github.com/btjawa/BTJGenshinPS.git
 cd BTJGenshinPS
-npm install # 安装依赖
+npm install
 ```
 
 **Scripts**
 
 ```shell
-npm run start # 预览
-npm run package # 打包
+npm run start # Preview
+npm run package # Package
 ```
