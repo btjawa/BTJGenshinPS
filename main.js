@@ -1,11 +1,11 @@
 const { app, BrowserWindow, ipcMain, shell, dialog, Menu } = require('electron');
 const path = require('path');
-const util = require('util');
-const child_process = require('child_process');
 const { exec } = require('child_process');
 const fs = require('fs');
 const AdmZip = require('adm-zip');
 const https = require('https');
+const { spawn } = require('child_process');
+
 
 
 let win;
@@ -13,6 +13,7 @@ let gamePath;
 let gamePathDir;
 let patchExists = false;
 let action;
+let javaPath;
 
 function createWindow() {
   win = new BrowserWindow({
@@ -69,6 +70,10 @@ app.on('activate', () => {
   }
 });
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 
 function checkJava(){
   exec('java -version', (error, stdout, stderr) => {
@@ -81,6 +86,7 @@ function checkJava(){
             downloadJDK();
         } else if (stderr.includes('Java(TM) SE Runtime Environment') && stderr.includes('HotSpot')) {
             console.log('JDK is already installed.');
+            javaPath = 'java';
         } else {
             console.log('Unknown Java installation. Downloading JDK to be safe...');
             downloadJDK();
@@ -91,23 +97,27 @@ function checkJava(){
 
 function downloadJDK() {
   const jdkURL = 'https://repo.huaweicloud.com/openjdk/17.0.2/openjdk-17.0.2_windows-x64_bin.zip';
-  const jdkPath = path.join(__dirname, '../jdk-17.0.2.zip');
-  const file = fs.createWriteStream(jdkPath);
+  const jdkZipPath = path.join(__dirname, '../jdk-17.0.2.zip');
+  const file = fs.createWriteStream(jdkZipPath);
   https.get(jdkURL, (response) => {
       response.pipe(file);
       file.on('finish', () => {
           file.close(() => {
               console.log('JDK downloaded successfully.');
-              const jdkZipPath = path.join(__dirname, '../jdk-17.0.2.zip');
               const jdkExtractPath = path.join(__dirname, '../');
               const jdk_zip = new AdmZip(jdkZipPath);
+              const jdkPath = path.join(__dirname ,'../jdk-17.0.2');
               jdk_zip.extractAllTo(jdkExtractPath, overwrite=true);
               fs.unlink(jdkZipPath, (err) => {
                   if (err) {
                       console.error('Error deleting JDK ZIP file:', err);
                   } else {
                       console.log('JDK ZIP file deleted successfully.');
-                  }
+                      process.env.PATH = `${process.env.PATH};${jdkPath}`;
+                      javaPath = jdkPath;
+                      console.log(jdkPath)
+                      // 添加环境
+                  };
               });
           });
       });
@@ -147,7 +157,7 @@ function patchGamePathParaTransfer() {
     patchExists = false;
     win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
     if (gamePath != "") {
-      exec(`copy ".\\GateServer\\data\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, (error, stdout, stderr) => {
+      exec(`copy ".\\data\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, (error, stdout, stderr) => {
         if(error) {
           console.log(error);
           return;
@@ -175,7 +185,7 @@ function patchGamePathParaTransfer() {
 
 
 function executeSelfSignedKeystore () {
-  exec(`copy ".\\GateServer\\data\\keystore_selfsigned.p12" ".\\GateServer\\Grasscutter\\workdir\\stores\\keystore.p12"`, (error, stdout, stderr) => {
+  exec(`copy ".\\data\\keystore_selfsigned.p12" "..\\GateServer\\Grasscutter\\workdir\\stores\\keystore.p12"`, (error, stdout, stderr) => {
     if(error) {
       console.log(error);
       return;
@@ -188,7 +198,7 @@ function executeSelfSignedKeystore () {
 
 
 function executofficialKeystore () {
-  exec(`copy ".\\GateServer\\data\\keystore_official.p12" ".\\GateServer\\Grasscutter\\workdir\\stores\\keystore.p12"`, (error, stdout, stderr) => {
+  exec(`copy ".\\data\\keystore_official.p12" "..\\GateServer\\Grasscutter\\workdir\\stores\\keystore.p12"`, (error, stdout, stderr) => {
     if(error) {
       console.log(error);
       return;
@@ -360,5 +370,14 @@ ipcMain.on('restoreOfficialButton_delete-path', (event) => {
 });
 
 ipcMain.on('operationBoxBtn_0-run-main-service', (event) => {
-
+  checkJava();
+  run_main_service();
 });
+
+async function run_main_service(){
+  await sleep(250);
+  const gc_terminal = spawn('cmd.exe', ['/c', 'start', 'cmd.exe', '/K', `${javaPath} -jar grasscutter.jar`], {
+    cwd: path.join(__dirname, '../GateServer/Grasscutter'),
+    stdio: 'inherit'
+  });
+}

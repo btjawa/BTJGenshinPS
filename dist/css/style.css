@@ -121,7 +121,7 @@ input[name="proxy_port"]{
 button[name="res_getway"] {
     position: relative;
     top: 20px;
-    right: 140px;
+    right: 117px;
     vertical-align: middle;
 }
 
@@ -687,9 +687,9 @@ button[name="self-signed-keystore"]{
 }
 
 .patch_state {
-    position: relative;
-    left: 340px;
-    bottom: 23px;
+    position: fixed;
+    left: 440px;
+    top: 150px;
     color: #c4c4c4;
 }
 
