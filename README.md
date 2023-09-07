@@ -14,7 +14,9 @@ resources/
 
 ├── app.asar
 
-└── GateServer/
+├── GateServer/
+
+└── app.config.json
 
 ## Building
 
