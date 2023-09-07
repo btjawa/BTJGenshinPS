@@ -4,7 +4,17 @@
 
 处于Dev阶段，暂时不接受PR
 
-..\GateServer 请从 Release 获取
+由于打包app时会使用asar加密，所以GateServer与app.config.json将会放置在上一级
+
+GateServer 请从以后的Release中获取
+
+打包后结构
+
+resources/
+
+├── app.asar
+
+└── GateServer/
 
 ## Building
 
