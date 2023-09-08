@@ -19,6 +19,50 @@ zlog.transports.file.level = true;
 zlog.transports.console.level = false;
 global.zlog = zlog;
 
+global.packagedPaths = {
+  dataPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, 'data'),
+  gateServerPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, 'GateServer')
+};
+
+function packageNec () {
+  const gc_batch = `@echo off
+chcp 65001>nul
+echo Using This Command to Call Java: %1
+echo.
+
+cd ${global.packagedPaths.gateServerPath}\\Grasscutter
+echo Modded from github/btjawa
+echo Starting Up Grasscutter Server...
+%1 -jar grasscutter.jar
+exit`;
+  const mongo_batch = `@echo off
+chcp 65001>nul
+echo.
+
+echo Modded from github/btjawa
+echo Starting Up MongoDB DataServer...
+cd ${global.packagedPaths.gateServerPath}\\MongoDB
+.\\mongod --dbpath data --port 27017
+exit`;
+
+  fs.writeFile(path.join(global.packagedPaths.dataPath, 'run_gc.bat'), gc_batch, (err) => {
+    if (err) {
+      console.error('Err:', err);
+    } else {
+      console.log('Created run_gc.bat');
+    }
+  });
+
+  fs.writeFile(path.join(global.packagedPaths.dataPath, 'run_mongo.bat'), mongo_batch, (err) => {
+    if (err) {
+      console.error('Err:', err);
+    } else {
+      console.log('Created run_mongo.bat');
+    }
+  });
+};
+
+
 let win;
 let gamePath;
 let gamePathDir;
@@ -77,7 +121,9 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
-  exec(`kill /f /im curl.exe`);
+  exec(`taskkill /f /im curl.exe`);
+  exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
+  exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`)
 });
 
 app.on('activate', () => {
@@ -85,6 +131,8 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
+packageNec();
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -206,8 +254,8 @@ async function downloadFile(url, outputPath, action) {
 async function update(gc_org_url) {
   const orgUrl = new URL(gc_org_url);
   try {
-    await downloadFile(`${resURL[0]}${orgUrl.pathname}`, "..\\GateServer\\Grasscutter\\grasscutter.jar", "Grasscutter服务端");
-    await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, "..\\GateServer\\Grasscutter\\workdir\\resources.zip", "Resources");
+    await downloadFile(`${resURL[0]}${orgUrl.pathname}`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar`, "Grasscutter服务端");
+    await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip`, "Resources");
     win.webContents.send('update_complete');
     console.log("Update Completed");
   } catch (error) {
@@ -245,7 +293,7 @@ function patchGamePathParaTransfer() {
     patchExists = false;
     win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
     if (gamePath != "") {
-      exec(`copy ".\\data\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, (error, stdout, stderr) => {
+      exec(`copy "${global.packagedPaths.dataPath}\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, (error, stdout, stderr) => {
         if(error) {
           console.log(error);
           return;
@@ -271,7 +319,7 @@ function patchGamePathParaTransfer() {
 
 
 function executeSelfSignedKeystore () {
-  exec(`copy ".\\data\\keystore_selfsigned.p12" "..\\GateServer\\Grasscutter\\workdir\\stores\\keystore.p12"`, (error, stdout, stderr) => {
+  exec(`copy "${global.packagedPaths.dataPath}\\keystore_selfsigned.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\stores\\keystore.p12"`, (error, stdout, stderr) => {
     if(error) {
       console.log(error);
       return;
@@ -284,7 +332,7 @@ function executeSelfSignedKeystore () {
 
 
 function executofficialKeystore () {
-  exec(`copy ".\\data\\keystore_official.p12" "..\\GateServer\\Grasscutter\\workdir\\stores\\keystore.p12"`, (error, stdout, stderr) => {
+  exec(`copy "${global.packagedPaths.dataPath}\\keystore_official.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\stores\\keystore.p12"`, (error, stdout, stderr) => {
     if(error) {
       console.log(error);
       return;
@@ -455,14 +503,16 @@ async function run_main_service(){
     }
     console.log(`stdout: ${stdout}\nsuccess`);
     console.log(`stderr: ${stderr}\nerror`);
-    event.sender.send('operationBoxBtn_1-success');
   });
-  const mongo_terminal = spawn('cmd.exe', ['/c', `start .\\data\\run_mongo.bat`], {
+  console.log(`start ${global.packagedPaths.dataPath}\\run_mongo.bat`)
+  const mongo_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mongo.bat`], {
     stdio: 'ignore'
   });
-  const gc_terminal = spawn('cmd.exe', ['/c', `start .\\data\\run_gc.bat ${javaPath}`], {
+  console.log (javaPath)
+  const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat ${javaPath}`], {
     stdio: 'ignore'
   });
+  
 };
 
 ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {

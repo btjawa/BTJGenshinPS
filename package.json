@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "package": "electron-packager ./ BTJGenshinPS --platform=win32  --overwrite  --icon=./dist/favicon_64.ico --arch=ia32 && asar pack ./BTJGenshinPS-win32-ia32/resources/app ./BTJGenshinPS-win32-ia32/resources/app.asar && rm -rf ./BTJGenshinPS-win32-ia32/resources/app"
+    "package": "electron-packager ./ BTJGenshinPS --platform=win32 --overwrite --icon=./dist/favicon.ico --arch=ia32 --asar --ignore=GateServer --ignore=data --download.mirrorOptions.mirror=https://npm.taobao.org/mirrors/electron/ && xcopy .\\data .\\BTJGenshinPS-win32-ia32\\resources\\data /E /I && xcopy .\\GateServer .\\BTJGenshinPS-win32-ia32\\resources\\GateServer /E /I"
   },
   "repository": {
     "type": "git",
@@ -23,12 +23,14 @@
   },
   "homepage": "https://github.com/btjawa/BTJGenshinPS#readme",
   "devDependencies": {
-    "electron": "^26.0.0"
+    "electron": "^26.0.0",
+    "electron-packager": "^17.1.2"
   },
   "dependencies": {
     "adm-zip": "^0.5.10",
+    "asar": "^3.2.0",
     "electron-log": "^4.4.8",
-    "electron-packager": "^17.1.2",
+    "iconv-lite": "^0.6.3",
     "izitoast": "^1.4.0",
     "winreg": "^1.2.4"
   }
