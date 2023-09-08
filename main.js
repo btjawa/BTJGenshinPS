@@ -7,6 +7,16 @@ const { spawn } = require('child_process');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 
+const zlog = require('electron-log');
+let filepath = path.join(__dirname, "..\\logs");
+let nowdate = new Date();
+let nowdate_str = nowdate.getFullYear() + "_" + (nowdate.getMonth() + 1) + "_" + nowdate.getDate() + "_" + nowdate.getHours();
+let filename = "app.console_" + nowdate_str + ".log";
+zlog.transports.file.resolvePath = () => path.join(filepath, filename);
+zlog.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
+zlog.transports.file.level = true;
+zlog.transports.console.level = false;
+global.zlog = zlog;
 
 let win;
 let gamePath;
