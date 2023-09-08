@@ -136,38 +136,32 @@ ipcMain.on('update_latest',(event,gc_org_url) => {
   update(gc_org_url);
 });
 
+async function downloadFile(url, outputPath, action) {
+  return new Promise((resolve, reject) => {
+    const curl = spawn('curl', ['-Lo', outputPath, url]);
+    curl.stderr.on('data', (data) => {
+      console.log(data.toString());
+      win.webContents.send('update_progress', data.toString(), action);
+    });
+    curl.on('close', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`curl process exited with code ${code}`));
+      }
+    });
+  });
+}
+
 async function update(gc_org_url) {
   const orgUrl = new URL(gc_org_url);
-  console.log(`gc_url: ${resURL[0]}${orgUrl.pathname}`);
-  console.log(`res_url: ${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`);
-
-  function handleStdout(data) {
-    console.log(data.toString());
-  }
-
   try {
-    const curlProcess = spawn('curl', ['-Lo', '..\\GateServer\\Grasscutter\\grasscutter.jar', `${resURL[0]}${orgUrl.pathname}`]);
-    curlProcess.stdout.on('data', handleStdout);
-    curlProcess.stderr.on('data', (data) => {
-      console.error(data.toString());
-    });
-
+    await downloadFile(`${resURL[0]}${orgUrl.pathname}`, "..\\GateServer\\Grasscutter\\grasscutter.jar", "Grasscutter服务端");
+    await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, "..\\GateServer\\Grasscutter\\workdir\\resources.zip", "Resources");
+    win.webContents.send('update_complete');
   } catch (error) {
-    console.error(error);
+    console.log(error);
   }
-
-  try {
-    const resourcesProcess = spawn('curl', ['-Lo', '..\\GateServer\\Grasscutter\\workdir\\resources.zip', `${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`]);
-    resourcesProcess.stdout.on('data', handleStdout);
-    resourcesProcess.stderr.on('data', (data) => {
-      console.error(data.toString());
-    });
-
-  } catch (error) {
-    console.error(error);
-  }
-
-  win.webContents.send('update_complete');
 }
 
 
@@ -276,20 +270,9 @@ if (fs.existsSync(`../app.config.json`)) {
 } else {
   // create config
   const app_config = {
-    game: {
-      path: ""
-    },
-    grasscutter: {
-      port: 22102,
-      host: "127.0.0.1",
-      dispatch: {
-        port: 443,
-        ssl: "selfsigned"
-      }
-    },
-    mongodb: {
-      port: 27017
-    }
+    game: { path: "" }, 
+    grasscutter: { port: 22102, host: "127.0.0.1", dispatch: { port: 443, ssl: "selfsigned" } }, 
+    mongodb: { port: 27017 }
   };
   fs.writeFile(path.join(__dirname, '../app.config.json'), JSON.stringify(app_config, null, 2), 'utf8', (err) => {
     if (err) {

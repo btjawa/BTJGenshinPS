@@ -18,6 +18,7 @@ let patchState = document.querySelector('.patch_state');
 let operationBoxBtn_0 = document.querySelector('.operation_box_btn_0');
 let operationBoxBtn_1 = document.querySelector('.operation_box_btn_1');
 let updateBtn = document.querySelector('.update')
+let updateProgress = document.querySelector('.update_progress');
 state_menu_selector_log = "inactive";
 
 function page_log_active (){
@@ -229,7 +230,29 @@ updateBtn.addEventListener('click' , () => {
     });
 });
 
+ipcRenderer.on('update_progress', (event, progressText, action) => {
+    const allMatches = progressText.match(/([0-9.]+[kMG]|[0-9:]+:[0-9:]+)/g);
+    if (progressText.trim() === "0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0" || progressText.includes("% Total    % Received % Xferd  Average Speed   Time    Time     Time  Current")) {
+        updateProgress.innerHTML = `下载进度<br>正在向服务器请求...`;
+    };
+
+    if (allMatches && allMatches.length >= 4) {
+        const received = allMatches[1];
+        const speed = allMatches[allMatches.length - 1];
+        const timeLeft = allMatches[allMatches.length - 2];
+        
+        updateProgress.innerHTML = `下载进度<br>
+        当前下载：${action}<br>
+        已下载: ${received}<br>
+        速度: ${speed}/s<br>
+        剩余时间: ${timeLeft}`;
+
+    }
+});
+
+
 ipcRenderer.on('update_complete', (event) => {
+    updateProgress.innerHTML = "下载进度将会显示在这里";
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',

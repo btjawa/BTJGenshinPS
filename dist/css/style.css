@@ -127,7 +127,7 @@ button[name="res_getway"] {
 
 button[name="update"] {
     position: relative;
-    top: 50px;
+    top: 45px;
     right: 185px;
     vertical-align: middle;
 }
@@ -679,6 +679,14 @@ button[name="self-signed-keystore"]{
     color: #c4c4c4;
     position: fixed;
     top: 80px;
+    right: 12px;
+    font-size: 15px;
+}
+
+.update_progress {
+    color: #c4c4c4;
+    position: absolute;
+    top: 110px;
     right: 12px;
     font-size: 15px;
 }
