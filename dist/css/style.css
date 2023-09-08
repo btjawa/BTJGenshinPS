@@ -685,9 +685,9 @@ button[name="self-signed-keystore"]{
 
 .update_progress {
     color: #c4c4c4;
-    position: absolute;
+    position: relative;
     top: 110px;
-    right: 12px;
+    left: 20px;
     font-size: 15px;
 }
 

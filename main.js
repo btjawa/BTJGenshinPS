@@ -24,25 +24,53 @@ global.packagedPaths = {
   gateServerPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, 'GateServer')
 };
 
-function packageNec () {
-  const gc_batch = `@echo off
-chcp 65001>nul
-echo Using This Command to Call Java: %1
-echo.
-
-cd ${global.packagedPaths.gateServerPath}\\Grasscutter
-echo Modded from github/btjawa
-echo Starting Up Grasscutter Server...
-%1 -jar grasscutter.jar
+function packageNec() {
+  const gc_batch = `@echo off\r
+title Grasscutter\r
+chcp 65001>nul\r
+echo.\r
+echo 不要关闭这个窗口！！！\r
+echo.\r
+echo 将使用此命令来调用Java： %1\r
+echo.\r
+\r
+cd ${global.packagedPaths.gateServerPath}\\Grasscutter\r
+echo 由 github/btjawa 改包\r
+echo 正在启动Grasscutter服务端...\r
+%1 -jar grasscutter.jar\r
 exit`;
-  const mongo_batch = `@echo off
-chcp 65001>nul
-echo.
-
-echo Modded from github/btjawa
-echo Starting Up MongoDB DataServer...
-cd ${global.packagedPaths.gateServerPath}\\MongoDB
-.\\mongod --dbpath data --port 27017
+  const mongo_batch = `@echo off\r
+title MongoDB\r
+chcp 65001>nul\r
+echo.\r
+echo 不要关闭这个窗口！！！\r
+echo.\r
+\r
+echo 由 github/btjawa 改包\r
+echo 正在启动MongoDB数据库...\r
+cd ${global.packagedPaths.gateServerPath}\\MongoDB\r
+.\\mongod --dbpath data --port 27017\r
+exit`;
+  const mitm_proxy_batch = `@echo off\r
+title Mitmdump\r
+chcp 65001>nul\r
+echo.\r
+echo 不要关闭这个窗口！！！\r
+echo.\r
+\r
+echo 由 github/btjawa 改包\r
+echo.\r
+echo 清除系统代理...\r
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f\r
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f\r
+echo.\r
+echo 设置系统代理...\r
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 1 /f\r
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "127.0.0.1:54321" /f\r
+echo.\r
+echo 正在启动Mitm代理...\r
+cd ${global.packagedPaths.gateServerPath}\\Proxy\r
+.\\mitmdump -s proxy.py --ssl-insecure --set block_global=false --listen-port 54321\r
 exit`;
 
   fs.writeFile(path.join(global.packagedPaths.dataPath, 'run_gc.bat'), gc_batch, (err) => {
@@ -60,6 +88,14 @@ exit`;
       console.log('Created run_mongo.bat');
     }
   });
+
+  fs.writeFile(path.join(global.packagedPaths.dataPath, 'run_mitm_proxy.bat'), mitm_proxy_batch, (err) => {
+    if (err) {
+      console.error('Err:', err);
+    } else {
+      console.log('Created run_mitm_proxy.bat');
+    }
+  });
 };
 
 
@@ -69,7 +105,7 @@ let gamePathDir;
 let patchExists = false;
 let action;
 let javaPath;
-let resURL=["https://gh-proxy.btl-cdn.top","https://glab-proxy.btl-cdn.top"];
+let resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top"];
 
 function createWindow() {
   win = new BrowserWindow({
@@ -86,7 +122,7 @@ function createWindow() {
     },
   });
 
-  win.loadFile('./dist/index.html'); 
+  win.loadFile('./dist/index.html');
   const contextMenu = Menu.buildFromTemplate([
     {
       label: '复制',
@@ -109,7 +145,7 @@ function createWindow() {
     win.webContents.send('main-window-unmax');
   })
 
-  if (!app.isPackaged) {win.webContents.openDevTools();}
+  if (!app.isPackaged) { win.webContents.openDevTools(); }
 }
 
 app.whenReady().then(createWindow);
@@ -123,7 +159,8 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   exec(`taskkill /f /im curl.exe`);
   exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
-  exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`)
+  exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
+  exec(`del ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`)
 });
 
 app.on('activate', () => {
@@ -139,7 +176,7 @@ function sleep(ms) {
 }
 
 
-async function checkJava(){
+async function checkJava() {
   try {
     const { stdout, stderr } = await exec('java -version');
     if (stderr.includes('Java(TM) SE Runtime Environment') && !stderr.includes('HotSpot')) {
@@ -163,34 +200,34 @@ async function downloadJDK() {
   const jdkZipPath = path.join(__dirname, '../jdk-17.0.2.zip');
   const file = fs.createWriteStream(jdkZipPath);
   https.get(jdkURL, (response) => {
-      response.pipe(file);
-      file.on('finish', () => {
-          file.close(() => {
-              console.log('JDK downloaded successfully.');
-              const jdkExtractPath = path.join(__dirname, '../');
-              const jdk_zip = new AdmZip(jdkZipPath);
-              const jdkPath = path.join(__dirname ,'../jdk-17.0.2');
-              jdk_zip.extractAllTo(jdkExtractPath, overwrite=true);
-              fs.unlink(jdkZipPath, (err) => {
-                  if (err) {
-                      console.error('Error deleting JDK ZIP file:', err);
-                  } else {
-                      console.log('JDK ZIP file deleted successfully.');
-                      process.env.PATH = `${process.env.PATH};${jdkPath}`;
-                      javaPath = jdkPath;
-                      console.log(jdkPath)
-                      // 添加环境
-                  };
-              });
-          });
+    response.pipe(file);
+    file.on('finish', () => {
+      file.close(() => {
+        console.log('JDK downloaded successfully.');
+        const jdkExtractPath = path.join(__dirname, '../');
+        const jdk_zip = new AdmZip(jdkZipPath);
+        const jdkPath = path.join(__dirname, '../jdk-17.0.2');
+        jdk_zip.extractAllTo(jdkExtractPath, overwrite = true);
+        fs.unlink(jdkZipPath, (err) => {
+          if (err) {
+            console.error('Error deleting JDK ZIP file:', err);
+          } else {
+            console.log('JDK ZIP file deleted successfully.');
+            process.env.PATH = `${process.env.PATH};${jdkPath}`;
+            javaPath = jdkPath;
+            console.log(jdkPath)
+            // 添加环境
+          };
+        });
       });
+    });
   }).on('error', (error) => {
-      fs.unlinkSync(jdkPath);
-      console.error('Error downloading JDK:', error);
+    fs.unlinkSync(jdkPath);
+    console.error('Error downloading JDK:', error);
   });
 }
 
-ipcMain.on('update_latest',(event,gc_org_url) => {
+ipcMain.on('update_latest', (event, gc_org_url) => {
   console.log(`fetched from github api: ${gc_org_url}`);
   update(gc_org_url);
 });
@@ -212,7 +249,7 @@ async function getSystemProxy() {
 
       for (const item of items) {
         if (item.name === 'ProxyEnable') {
-          if(item.value == "0x1"){
+          if (item.value == "0x1") {
             proxyEnable = true;
           }
         }
@@ -294,7 +331,7 @@ function patchGamePathParaTransfer() {
     win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
     if (gamePath != "") {
       exec(`copy "${global.packagedPaths.dataPath}\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, (error, stdout, stderr) => {
-        if(error) {
+        if (error) {
           console.log(error);
           return;
         }
@@ -309,18 +346,18 @@ function patchGamePathParaTransfer() {
         return;
       }
       const config = JSON.parse(data);
-      if (config.game.path == "") {} else {
+      if (config.game.path == "") { } else {
         patchExists = true;
       };
     });
-    
+
   }
 }
 
 
-function executeSelfSignedKeystore () {
+function executeSelfSignedKeystore() {
   exec(`copy "${global.packagedPaths.dataPath}\\keystore_selfsigned.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\stores\\keystore.p12"`, (error, stdout, stderr) => {
-    if(error) {
+    if (error) {
       console.log(error);
       return;
     }
@@ -331,9 +368,9 @@ function executeSelfSignedKeystore () {
 };
 
 
-function executofficialKeystore () {
+function executofficialKeystore() {
   exec(`copy "${global.packagedPaths.dataPath}\\keystore_official.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\stores\\keystore.p12"`, (error, stdout, stderr) => {
-    if(error) {
+    if (error) {
       console.log(error);
       return;
     }
@@ -369,8 +406,8 @@ if (fs.existsSync(`../app.config.json`)) {
 } else {
   // create config
   const app_config = {
-    game: { path: "" }, 
-    grasscutter: { port: 22102, host: "127.0.0.1", dispatch: { port: 443, ssl: "selfsigned" } }, 
+    game: { path: "" },
+    grasscutter: { port: 22102, host: "127.0.0.1", dispatch: { port: 443, ssl: "selfsigned" } },
     mongodb: { port: 27017 }
   };
   fs.writeFile(path.join(__dirname, '../app.config.json'), JSON.stringify(app_config, null, 2), 'utf8', (err) => {
@@ -409,9 +446,9 @@ ipcMain.on('open-url', (event, url) => {
   shell.openExternal(url);
 });
 
-ipcMain.on('resGetWayButton_0-set' , () => {
-  resURL=["https://gh-proxy.btl-cdn.top","https://glab-proxy.btl-cdn.top"];
-    dialog.showMessageBox(win, {
+ipcMain.on('resGetWayButton_0-set', () => {
+  resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top"];
+  dialog.showMessageBox(win, {
     type: 'info',
     title: '代理',
     message: '获取资源方式已更改为 代理!',
@@ -419,8 +456,8 @@ ipcMain.on('resGetWayButton_0-set' , () => {
   });
 });
 
-ipcMain.on('resGetWayButton_1-set' , () => {
-  resURL=["https://github.com","https://gitlab.com"];
+ipcMain.on('resGetWayButton_1-set', () => {
+  resURL = ["https://github.com", "https://gitlab.com"];
   dialog.showMessageBox(win, {
     type: 'info',
     title: '直连',
@@ -432,11 +469,11 @@ ipcMain.on('resGetWayButton_1-set' , () => {
   });
 });
 
-ipcMain.on('officialKeystoreButton-set' , () => {
+ipcMain.on('officialKeystoreButton-set', () => {
   executofficialKeystore();
 });
 
-ipcMain.on('selfSignedKeystoreButton-set' , () => {
+ipcMain.on('selfSignedKeystoreButton-set', () => {
   executeSelfSignedKeystore();
 });
 
@@ -445,7 +482,7 @@ ipcMain.on('chooseGamePathButton_open-file-dialog', (event) => {
     filters: [
       { name: '应用程序', extensions: ['exe'] }
     ],
-    properties: ['openFile', ]
+    properties: ['openFile',]
   }).then(result => {
     if (!result.canceled && result.filePaths.length > 0) {
       gamePath = result.filePaths[0];
@@ -495,7 +532,7 @@ ipcMain.on('operationBoxBtn_0-run-main-service', async (event) => {
   run_main_service();
 });
 
-async function run_main_service(){
+async function run_main_service() {
   exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe`, (error, stdout, stderr) => {
     if (error) {
       console.error(`${error}`);
@@ -504,19 +541,22 @@ async function run_main_service(){
     console.log(`stdout: ${stdout}\nsuccess`);
     console.log(`stderr: ${stderr}\nerror`);
   });
-  console.log(`start ${global.packagedPaths.dataPath}\\run_mongo.bat`)
+  const addstore_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\stores\\addstore.exe`], {
+    stdio: 'ignore'
+  });
   const mongo_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mongo.bat`], {
     stdio: 'ignore'
   });
-  console.log (javaPath)
   const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat ${javaPath}`], {
     stdio: 'ignore'
   });
-  
+  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`], {
+    stdio: 'ignore'
+  });
 };
 
 ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
-  exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe`, (error, stdout, stderr) => {
+  exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe & taskkill /f /im mitmdump.exe`, (error, stdout, stderr) => {
     if (error) {
       console.error(`${error}`);
       return;
@@ -528,15 +568,15 @@ ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
 });
 
 ipcMain.on('operationBoxBtn_2-run-game', (event) => {
-  if (gamePath != ""){
-    exec(`start "${gamePath}"`, (error, stdout, stderr) => {
+  if (gamePath != "") {
+    exec(`start "" "${gamePath}"`, (error, stdout, stderr) => {
       if (error) {
         console.error(`${error}`);
         return;
       }
       console.log(`stdout: ${stdout}\nsuccess`);
-      console.log(`stderr: ${stderr}\nerror`);
       event.sender.send('operationBoxBtn_2-success');
+      console.log(`stderr: ${stderr}\nerror`);
     });
   } else {
     dialog.showMessageBox(win, {
