@@ -231,7 +231,7 @@ updateBtn.addEventListener('click' , () => {
 });
 
 ipcRenderer.on('update_progress', (event, progressText, action) => {
-    const allMatches = progressText.match(/([0-9.]+[kMG]|[0-9:]+:[0-9:]+)/g);
+    const allMatches = progressText.match(/([0-9.]+[kMG]|[0-9:]+:[0-9:]+|--:--:--)/g);
     if (progressText.trim() === "0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0" || progressText.includes("% Total    % Received % Xferd  Average Speed   Time    Time     Time  Current")) {
         updateProgress.innerHTML = `下载进度<br>正在向服务器请求...`;
     };
@@ -239,7 +239,7 @@ ipcRenderer.on('update_progress', (event, progressText, action) => {
     if (allMatches && allMatches.length >= 4) {
         const received = allMatches[1];
         const speed = allMatches[allMatches.length - 1];
-        const timeLeft = allMatches[allMatches.length - 2];
+        const timeLeft = allMatches[allMatches.length - 2] === '--:--:--' ? '未知' : allMatches[allMatches.length - 2];
         
         updateProgress.innerHTML = `下载进度<br>
         当前下载：${action}<br>
@@ -248,6 +248,15 @@ ipcRenderer.on('update_progress', (event, progressText, action) => {
         剩余时间: ${timeLeft}`;
 
     }
+});
+
+ipcRenderer.on('using_proxy', (event, proxyServer) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '代理',
+        message: `将使用代理：${proxyServer}`
+    });
 });
 
 

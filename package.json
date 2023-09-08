@@ -29,6 +29,7 @@
     "adm-zip": "^0.5.10",
     "electron-log": "^4.4.8",
     "electron-packager": "^17.1.2",
-    "izitoast": "^1.4.0"
+    "izitoast": "^1.4.0",
+    "winreg": "^1.2.4"
   }
 }

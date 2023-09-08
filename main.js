@@ -6,6 +6,7 @@ const https = require('https');
 const { spawn } = require('child_process');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const Winreg = require('winreg');
 
 const zlog = require('electron-log');
 let filepath = path.join(__dirname, "..\\logs");
@@ -146,9 +147,48 @@ ipcMain.on('update_latest',(event,gc_org_url) => {
   update(gc_org_url);
 });
 
-async function downloadFile(url, outputPath, action) {
+async function getSystemProxy() {
   return new Promise((resolve, reject) => {
-    const curl = spawn('curl', ['-Lo', outputPath, url]);
+    const regKey = new Winreg({
+      hive: Winreg.HKCU,
+      key: '\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'
+    });
+    regKey.values((err, items) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      let proxyEnable = false;
+      let proxyServer = '';
+
+      for (const item of items) {
+        if (item.name === 'ProxyEnable') {
+          if(item.value == "0x1"){
+            proxyEnable = true;
+          }
+        }
+        if (item.name === 'ProxyServer') {
+          proxyServer = item.value;
+        }
+      }
+
+      console.log(proxyEnable);
+      console.log(proxyServer);
+      resolve(proxyEnable ? proxyServer : null);
+    });
+  });
+};
+
+async function downloadFile(url, outputPath, action) {
+  const proxyServer = await getSystemProxy();
+  const curlArgs = ['-Lo', outputPath, url];
+  if (proxyServer) {
+    curlArgs.unshift('--proxy', `http://${proxyServer}`);
+    win.webContents.send('using_proxy', proxyServer);
+  };
+  return new Promise((resolve, reject) => {
+    const curl = spawn('curl.exe', curlArgs);
     curl.stderr.on('data', (data) => {
       console.log(data.toString());
       win.webContents.send('update_progress', data.toString(), action);
@@ -169,6 +209,7 @@ async function update(gc_org_url) {
     await downloadFile(`${resURL[0]}${orgUrl.pathname}`, "..\\GateServer\\Grasscutter\\grasscutter.jar", "Grasscutter服务端");
     await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, "..\\GateServer\\Grasscutter\\workdir\\resources.zip", "Resources");
     win.webContents.send('update_complete');
+    console.log("Update Completed");
   } catch (error) {
     console.log(error);
   }

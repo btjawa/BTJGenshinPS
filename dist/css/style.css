@@ -120,15 +120,15 @@ input[name="proxy_port"]{
 
 button[name="res_getway"] {
     position: relative;
-    top: 20px;
+    top: 10px;
     right: 117px;
     vertical-align: middle;
 }
 
 button[name="update"] {
     position: relative;
-    top: 45px;
-    right: 185px;
+    top: 37px;
+    right: 200px;
     vertical-align: middle;
 }
 
