@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, Menu, webContents } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const AdmZip = require('adm-zip');
@@ -14,6 +14,7 @@ let gamePathDir;
 let patchExists = false;
 let action;
 let javaPath;
+let resURL=["https://gh-proxy.btl-cdn.top","https://glab-proxy.btl-cdn.top"];
 
 function createWindow() {
   win = new BrowserWindow({
@@ -62,6 +63,10 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('before-quit', () => {
+  exec(`kill /f /im curl.exe`);
 });
 
 app.on('activate', () => {
@@ -124,6 +129,45 @@ async function downloadJDK() {
       fs.unlinkSync(jdkPath);
       console.error('Error downloading JDK:', error);
   });
+}
+
+ipcMain.on('update_latest',(event,gc_org_url) => {
+  console.log(`fetched from github api: ${gc_org_url}`);
+  update(gc_org_url);
+});
+
+async function update(gc_org_url) {
+  const orgUrl = new URL(gc_org_url);
+  console.log(`gc_url: ${resURL[0]}${orgUrl.pathname}`);
+  console.log(`res_url: ${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`);
+
+  function handleStdout(data) {
+    console.log(data.toString());
+  }
+
+  try {
+    const curlProcess = spawn('curl', ['-Lo', '..\\GateServer\\Grasscutter\\grasscutter.jar', `${resURL[0]}${orgUrl.pathname}`]);
+    curlProcess.stdout.on('data', handleStdout);
+    curlProcess.stderr.on('data', (data) => {
+      console.error(data.toString());
+    });
+
+  } catch (error) {
+    console.error(error);
+  }
+
+  try {
+    const resourcesProcess = spawn('curl', ['-Lo', '..\\GateServer\\Grasscutter\\workdir\\resources.zip', `${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`]);
+    resourcesProcess.stdout.on('data', handleStdout);
+    resourcesProcess.stderr.on('data', (data) => {
+      console.error(data.toString());
+    });
+
+  } catch (error) {
+    console.error(error);
+  }
+
+  win.webContents.send('update_complete');
 }
 
 
@@ -284,9 +328,8 @@ ipcMain.on('open-url', (event, url) => {
 });
 
 ipcMain.on('resGetWayButton_0-set' , () => {
-  patchURL="https://gh-proxy.btl-cdn.top/kuma-dayo/RSAPatch/releases/download/v1.6.0/RSAPatch.dll";
-  resURL="https://glab-proxy.btl-cdn.top/YuukiPS/GC-Resources/-/archive/558556930c5886555328683b3609f7670f94f39c/GC-Resources-558556930c5886555328683b3609f7670f94f39c.zip?path=Resources";
-  dialog.showMessageBox(win, {
+  resURL=["https://gh-proxy.btl-cdn.top","https://glab-proxy.btl-cdn.top"];
+    dialog.showMessageBox(win, {
     type: 'info',
     title: '代理',
     message: '获取资源方式已更改为 代理!',
@@ -295,8 +338,7 @@ ipcMain.on('resGetWayButton_0-set' , () => {
 });
 
 ipcMain.on('resGetWayButton_1-set' , () => {
-  patchURL="https://github.com/kuma-dayo/RSAPatch/releases/download/v1.6.0/RSAPatch.dll";
-  resURL="https://gitlab.com/YuukiPS/GC-Resources/-/archive/558556930c5886555328683b3609f7670f94f39c/GC-Resources-558556930c5886555328683b3609f7670f94f39c.zip?path=Resources";
+  resURL=["https://github.com","https://gitlab.com"];
   dialog.showMessageBox(win, {
     type: 'info',
     title: '直连',
@@ -372,23 +414,31 @@ ipcMain.on('operationBoxBtn_0-run-main-service', async (event) => {
 });
 
 async function run_main_service(){
-  exec(`taskkill /f /im java.exe && taskkill /f /im mongod.exe`);
+  exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe`, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`${error}`);
+      return;
+    }
+    console.log(`stdout: ${stdout}\nsuccess`);
+    console.log(`stderr: ${stderr}\nerror`);
+    event.sender.send('operationBoxBtn_1-success');
+  });
   const mongo_terminal = spawn('cmd.exe', ['/c', `start .\\data\\run_mongo.bat`], {
-    stdio: 'inherit'
+    stdio: 'ignore'
   });
   const gc_terminal = spawn('cmd.exe', ['/c', `start .\\data\\run_gc.bat ${javaPath}`], {
-    stdio: 'inherit'
+    stdio: 'ignore'
   });
 };
 
 ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
-  exec(`taskkill /f /im java.exe && taskkill /f /im mongod.exe`, (error, stdout, stderr) => {
+  exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe`, (error, stdout, stderr) => {
     if (error) {
-      console.error(`Err: ${error}`);
+      console.error(`${error}`);
       return;
     }
-    console.log(`stdout: ${stdout}`);
-    console.log(`stderr: ${stderr}`);
+    console.log(`stdout: ${stdout}\nsuccess`);
+    console.log(`stderr: ${stderr}\nerror`);
     event.sender.send('operationBoxBtn_1-success');
   });
 });

@@ -125,6 +125,13 @@ button[name="res_getway"] {
     vertical-align: middle;
 }
 
+button[name="update"] {
+    position: relative;
+    top: 50px;
+    right: 185px;
+    vertical-align: middle;
+}
+
 .res_getway_0.active {
     animation: res_getway_anime 0.66s cubic-bezier(0,1,.6,1);
 }

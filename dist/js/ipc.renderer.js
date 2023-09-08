@@ -1,4 +1,4 @@
-const { ipcRenderer } = require('electron');
+const { ipcRenderer, ipcMain } = require('electron');
 
 let dragbar_close = document.getElementById('dragbar_close');
 let dragbar_minimize = document.getElementById('dragbar_min');
@@ -17,6 +17,7 @@ let selfSignedKeystoreButton = document.querySelector('button[name="self-signed-
 let patchState = document.querySelector('.patch_state');
 let operationBoxBtn_0 = document.querySelector('.operation_box_btn_0');
 let operationBoxBtn_1 = document.querySelector('.operation_box_btn_1');
+let updateBtn = document.querySelector('.update')
 state_menu_selector_log = "inactive";
 
 function page_log_active (){
@@ -202,5 +203,37 @@ ipcRenderer.on('operationBoxBtn_1-success', (event) => {
         layout: '2',
         title: '停止服务',
         message: '成功停止服务！'
+    });
+});
+
+updateBtn.addEventListener('click' , () => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '4',
+        title: '更新',
+        message: '正在尝试更新...<br>注意插件等需要手动更新！<br>请不要启动服务，直至提示“更新成功”！'
+    });
+    fetch('https://api.github.com/repos/Grasscutters/Grasscutter/releases/latest')
+        .then(response => response.json())
+        .then(data => {
+            const latestReleaseUrl = data.assets[0].browser_download_url;
+            ipcRenderer.send('update_latest', latestReleaseUrl);
+            
+        })
+        .catch(error => {
+        iziToast.warning({
+            icon: 'fa-solid fa-circle-exclamation',
+            layout: '2',
+            title: 'Github API 已超限！请等待一分钟！'
+        });
+    });
+});
+
+ipcRenderer.on('update_complete', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '更新',
+        message: '更新成功！'
     });
 });
