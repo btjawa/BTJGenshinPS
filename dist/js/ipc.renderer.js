@@ -17,9 +17,48 @@ let selfSignedKeystoreButton = document.querySelector('button[name="self-signed-
 let patchState = document.querySelector('.patch_state');
 let operationBoxBtn_0 = document.querySelector('.operation_box_btn_0');
 let operationBoxBtn_1 = document.querySelector('.operation_box_btn_1');
+let operationBoxBtn_2 = document.querySelector('.operation_box_btn_2');
 let updateBtn = document.querySelector('.update')
 let updateProgress = document.querySelector('.update_progress');
+let resVersion = document.querySelector('.res_version');
+let gcVersion = document.querySelector('.gc_version');
+let gc_latestCommitSha;
+let gc_latestReleaseTagName;
+let res_latestCommitSha;
 state_menu_selector_log = "inactive";
+
+function getLatestCommitID (){
+    fetch('https://api.github.com/repos/Grasscutters/Grasscutter/commits')
+    .then(response => response.json())
+    .then(commits => {
+        gc_latestCommitSha = commits[0].sha.slice(0, 9);
+        gcVersionLink.addEventListener('click', () => {
+            ipcRenderer.send('open-url', `https://github.com/Grasscutters/Grasscutter/commit/${gc_latestCommitSha}`);
+        });
+        return fetch('https://api.github.com/repos/Grasscutters/Grasscutter/releases/latest');
+    })
+    .then(response => response.json())
+    .then(data => {
+        gc_latestReleaseTagName = data.tag_name;
+        gcVersion.innerHTML = `Latest Commit<br>Grasscutter Release ${gc_latestReleaseTagName}-${gc_latestCommitSha}`;
+    })
+    .catch(error => {
+        console.error("Err:", error);
+    });
+
+    fetch('https://gitlab.com/api/v4/projects/YuukiPS%2FGC-Resources/repository/commits')
+    .then(response => response.json())
+    .then(commits => {
+        res_latestCommitSha = commits[0].id;
+        resVersionLink.addEventListener('click', () => {
+            ipcRenderer.send('open-url', `https://gitlab.com/YuukiPS/GC-Resources/-/commit/${res_latestCommitSha}`);
+        });
+        resVersion.innerHTML = `Yuuki GC-Resources ${res_latestCommitSha}`;
+    })
+    .catch(error => {
+        console.error("Err:", error);
+    });
+}
 
 function page_log_active (){
 
@@ -174,14 +213,6 @@ selfSignedKeystoreButton.addEventListener('click', () => {
     });
 });
 
-gcVersionLink.addEventListener('click', () => {
-    ipcRenderer.send('open-url', 'https://github.com/Grasscutters/Grasscutter/commit/89efa35f838f95d49415899eec0f62cd9a991ed6');
-});
-
-resVersionLink.addEventListener('click', () => {
-    ipcRenderer.send('open-url', 'https://gitlab.com/YuukiPS/GC-Resources/-/commit/558556930c5886555328683b3609f7670f94f39c');
-});
-
 operationBoxBtn_0.addEventListener('click', () => {
     ipcRenderer.send('operationBoxBtn_0-run-main-service');
     page_log_active();
@@ -204,6 +235,19 @@ ipcRenderer.on('operationBoxBtn_1-success', (event) => {
         layout: '2',
         title: '停止服务',
         message: '成功停止服务！'
+    });
+});
+
+operationBoxBtn_2.addEventListener('click', () => {
+    ipcRenderer.send('operationBoxBtn_2-run-game');
+});
+
+ipcRenderer.on('operationBoxBtn_2-success', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '启动游戏',
+        message: '成功启动游戏！'
     });
 });
 

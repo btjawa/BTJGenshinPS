@@ -866,16 +866,37 @@ button[name="self-signed-keystore"]{
     background-color: #828282;
     position: absolute;
     top: 110px;
-    left: 28px;
+    right: 12px;
     transform: translateY(-50%);
     font-size: 14px;
-    padding: 7.5px 90px;
+    padding: 7.5px 38px;
     transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
     border: 2px solid #565656;
     border-radius: 10px;
 }
 
 .operation_box_btn_1:hover {
+    cursor: pointer;
+    background-color: #6e6e6e;
+}
+
+.operation_box_btn_2 {
+    position: relative;
+    -webkit-app-region: no-drag;
+    color: #ebebeb;
+    background-color: #828282;
+    position: absolute;
+    top: 110px;
+    left: 12px;
+    transform: translateY(-50%);
+    font-size: 14px;
+    padding: 7.5px 38px;
+    transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
+    border: 2px solid #565656;
+    border-radius: 10px;
+}
+
+.operation_box_btn_2:hover {
     cursor: pointer;
     background-color: #6e6e6e;
 }

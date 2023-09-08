@@ -476,3 +476,24 @@ ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
     event.sender.send('operationBoxBtn_1-success');
   });
 });
+
+ipcMain.on('operationBoxBtn_2-run-game', (event) => {
+  if (gamePath != ""){
+    exec(`start "${gamePath}"`, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`${error}`);
+        return;
+      }
+      console.log(`stdout: ${stdout}\nsuccess`);
+      console.log(`stderr: ${stderr}\nerror`);
+      event.sender.send('operationBoxBtn_2-success');
+    });
+  } else {
+    dialog.showMessageBox(win, {
+      type: 'info',
+      title: '启动游戏',
+      message: '游戏路径不存在！请点击“选择路径”选择游戏路径！',
+      buttons: ['确定']
+    });
+  }
+});
