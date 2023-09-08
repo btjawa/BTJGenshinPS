@@ -71,6 +71,10 @@ echo.\r
 echo 正在启动Mitm代理...\r
 cd ${global.packagedPaths.gateServerPath}\\Proxy\r
 .\\mitmdump -s proxy.py --ssl-insecure --set block_global=false --listen-port 54321\r
+echo.\r
+echo 清除系统代理...\r
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f\r
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f\r
 exit`;
 
   fs.writeFile(path.join(global.packagedPaths.dataPath, 'run_gc.bat'), gc_batch, (err) => {
@@ -556,7 +560,7 @@ async function run_main_service() {
 };
 
 ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
-  exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe & taskkill /f /im mitmdump.exe`, (error, stdout, stderr) => {
+  exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe & taskkill /f /im mitmdump.exe & reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f & reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f`, (error, stdout, stderr) => {
     if (error) {
       console.error(`${error}`);
       return;
