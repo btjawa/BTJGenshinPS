@@ -476,6 +476,85 @@ button[name="choose_java_path"]{
     -webkit-user-drag: none;
 }
 
+.menu_selector_2 {
+    -webkit-user-drag: none;
+    position: absolute;
+    top: 239px;
+    left: 10px;
+    display: block;
+    
+}
+
+.menu_selector_2_background {
+    width: 72.5px;
+    height: 72.5px;
+    border-radius: 5px;
+    position: absolute;
+    left: -3px;
+    top: -22.5px;
+    transform-origin: center;
+    transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
+}
+
+.menu_selector_2_background.active {
+    background-color: #525252;
+}
+
+.menu_selector_2:hover .menu_selector_2_background{
+    background-color: #424242;
+}
+
+.menu_selector_2:hover{
+    cursor: pointer;
+}
+
+.menu_underline_2 {
+    width: 4px;
+    height: 25px;
+    border-radius: 5px;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    background-color: #41a5d9;
+    transform-origin: center;
+    display: none;
+}
+
+.menu_underline_2.active {
+    animation: menu_underline_anime_1 0.3s cubic-bezier(.17,.67,.6,1);
+    display: block;
+}
+
+@keyframes menu_underline_anime_2 {
+    0% {
+        transform: scaleY(0.4);
+    }
+    100% {
+        transform: scaleY(1);
+    }
+}
+
+#menu_selector_2_icon {
+    position: absolute;
+    color: #c4c4c4;
+    font-size: 22px;
+    left: 20px;
+    top: -5px;
+}
+
+.menu_selector_2_text {
+    position: relative;
+    color: #c4c4c4;
+    font-size: 12px;
+    left: 19px;
+    top: 23px;
+    vertical-align: center;
+    letter-spacing: 1px;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+
 .menu_selector_settings {
     position: absolute;
     bottom: 40px;
@@ -555,7 +634,7 @@ button[name="choose_java_path"]{
 
 .menu_selector_log {
     position: absolute;
-    bottom: 115px;
+    bottom: 117px;
     left: 10px;
     display: block;
 }
@@ -612,7 +691,7 @@ button[name="choose_java_path"]{
 #menu_selector_log_icon {
     
     position: absolute;
-    color: #c4c4c460;
+    color: #c4c4c4;
     font-size: 22px;
     left: 20px;
     top: -5px;
@@ -620,7 +699,7 @@ button[name="choose_java_path"]{
 
 .menu_selector_log_text {
     position: relative;
-    color: #c4c4c460;
+    color: #c4c4c4;
     font-size: 12px;
     left: 19px;
     top: 23px;
@@ -931,6 +1010,18 @@ button[name="choose_java_path"]{
     user-select: none;
 }
 .page_1.active {
+    display: block;
+    animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1);
+}
+
+.page_2 {
+    position: relative;
+    width: max-content;
+    top: 10px;
+    left: 100px;
+    user-select: none;
+}
+.page_2.active {
     display: block;
     animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1);
 }

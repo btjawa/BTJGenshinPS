@@ -28,7 +28,6 @@ let pageLogText0 = document.querySelector('.page_log_text_0');
 let gc_latestCommitSha;
 let gc_latestReleaseTagName;
 let res_latestCommitSha;
-state_menu_selector_log = "inactive";
 
 function getLatestCommitID (){
     fetch('https://api.github.com/repos/Grasscutters/Grasscutter/commits')
@@ -262,14 +261,14 @@ selfSignedKeystoreButton.addEventListener('click', () => {
 
 operationBoxBtn_0.addEventListener('click', () => {
     ipcRenderer.send('operationBoxBtn_0-run-main-service');
-    page_log_active();
-    state_menu_selector_log = "active";
+    toggleMenuState('menu_selector_log', 'make-active');
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: '启动服务',
         message: '正在启动服务...'
     });
+    pageLogText0.innerHTML = `请不要关闭稍后弹出来的任何一个窗口！<br>`; 
     pageLogText0.innerHTML += `正在启动服务...<br>`; 
 });
 

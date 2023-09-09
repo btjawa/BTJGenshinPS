@@ -355,9 +355,10 @@ if (fs.existsSync(`${global.packagedPaths.entryPath}\\app.config.json`)) {
 async function checkJava() {
   try {
     const { stdout, stderr } = await exec('java --version');
+    console.log(stdout);
     console.log(stderr);
 
-    if (stderr.includes('Java(TM) SE Runtime Environment')) {
+    if (stdout.includes('Java(TM) SE Runtime Environment') || stderr.includes('Java(TM) SE Runtime Environment')) {
       win.webContents.send('jdk-already-installed');
       console.log('JDK is already installed.');
       javaPath = 'java';
@@ -716,8 +717,8 @@ ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
       console.error(`${error}`);
       return;
     }
-    console.log(`stdout: ${stdout}\nsuccess`);
-    console.log(`stderr: ${stderr}\nerror`);
+    console.log(`${stdout}\nsuccess`);
+    console.log(`${stderr}\nerror`);
     event.sender.send('operationBoxBtn_1-success');
   });
 });
@@ -729,9 +730,9 @@ ipcMain.on('operationBoxBtn_2-run-game', (event) => {
         console.error(`${error}`);
         return;
       }
-      console.log(`stdout: ${stdout}\nsuccess`);
+      console.log(`${stdout}\nsuccess`);
       event.sender.send('operationBoxBtn_2-success');
-      console.log(`stderr: ${stderr}\nerror`);
+      console.log(`${stderr}\nerror`);
     });
   } else {
     dialog.showMessageBox(win, {
