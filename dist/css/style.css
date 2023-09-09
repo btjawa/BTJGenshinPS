@@ -118,6 +118,13 @@ input[name="proxy_port"]{
     vertical-align: center;  
 }
 
+input[name="java_path"]{
+    position: relative;
+    font-size: 17px;
+    top: 8px;
+    width: 325px;
+}
+
 button[name="res_getway"] {
     position: relative;
     top: 10px;
@@ -138,6 +145,9 @@ button[name="update"] {
 
 .res_getway_1.active {
     animation: res_getway_anime 0.66s cubic-bezier(0,1,.6,1);
+}
+.update.active {
+    animation: update_anime 0.66s cubic-bezier(0,1,.6,1);
 }
 
 button {
@@ -168,6 +178,9 @@ button[name="self-signed-keystore"]{
     left: 5px;
 }
 
+button[name="choose_java_path"]{
+    left: 5px;
+}
 
 .iconfont {
     font-family: "iconfont" !important;
@@ -658,6 +671,15 @@ button[name="self-signed-keystore"]{
     }
 }
 
+@keyframes update_anime {
+    0% {
+        top: 20px;
+    }
+    100% {
+        top: 37px;
+    }
+}
+
 .page_0_title {
     color: #e5e5e5;
     font-size: 22px;
@@ -815,11 +837,11 @@ button[name="self-signed-keystore"]{
 
 .operation_box {
     width: 300px;
-    height: 150px;
+    height: 144px;
     background-color: #686b80ab;
     position: relative;
     left: 290px;
-    top: -100px;
+    top: -96px;
     font-size: 13px;
     border-radius: 10px;
     border: 2px solid #353740d3;
@@ -943,4 +965,11 @@ button[name="self-signed-keystore"]{
     width: 800px;
     height: 450px;
     background-color: #363940;
+}
+.page_log_text_0 {
+    display:block;
+    color: #c4c4c4;
+    position: relative;
+    top: 10px;
+    left: 6px;
 }

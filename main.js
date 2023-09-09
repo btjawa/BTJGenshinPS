@@ -9,6 +9,8 @@ const exec = util.promisify(require('child_process').exec);
 const Winreg = require('winreg');
 
 const zlog = require('electron-log');
+const { resolve } = require('dns');
+const { eventNames, stderr } = require('process');
 let filepath = path.join(__dirname, "..\\logs");
 let nowdate = new Date();
 let nowdate_str = nowdate.getFullYear() + "_" + (nowdate.getMonth() + 1) + "_" + nowdate.getDate() + "_" + nowdate.getHours();
@@ -21,7 +23,8 @@ global.zlog = zlog;
 
 global.packagedPaths = {
   dataPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, 'data'),
-  gateServerPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, 'GateServer')
+  gateServerPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, 'GateServer'),
+  entryPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, '.')
 };
 
 function packageNec() {
@@ -109,6 +112,7 @@ let gamePathDir;
 let patchExists = false;
 let action;
 let javaPath;
+let finalJavaPath;
 let resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top"];
 
 function createWindow() {
@@ -184,50 +188,121 @@ async function checkJava() {
   try {
     const { stdout, stderr } = await exec('java -version');
     if (stderr.includes('Java(TM) SE Runtime Environment') && !stderr.includes('HotSpot')) {
-      console.log('JRE is installed. Downloading JDK...');
-      await downloadJDK();
+      if (fs.existsSync(`${javaPath}`)) {
+        win.webContents.send('jdk-already-installed');
+      } else {
+        win.webContents.send('download-jdk', 'jre-true-jdk-false');
+        console.log('JRE is installed. Downloading JDK...');
+        await downloadJDK();
+      };
     } else if (stderr.includes('Java(TM) SE Runtime Environment') && stderr.includes('HotSpot')) {
+      win.webContents.send('jdk-already-installed');
       console.log('JDK is already installed.');
       javaPath = 'java';
+      fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+        if (err) {
+          console.error('Err when reading config file:', err);
+          return;
+        }
+        const config = JSON.parse(data);
+        if (javaPath != "") {
+          if (config.java) {
+            config.java.path = `${javaPath}`;
+          } else {
+            config.java = { path: `${javaPath}` };
+          }
+        };
+        fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, JSON.stringify(config, null, 2), 2), 'utf8', err => {
+          if (err) {
+            console.error('Err when writing config file:', err);
+            return;
+          }
+          console.log('../app.config.json Updated Successfully');
+        });
+      });
     } else {
-      console.log('Unknown Java installation. Downloading JDK to be safe...');
-      await downloadJDK();
+      if (fs.existsSync(`${javaPath}`)) {
+        win.webContents.send('jdk-already-installed');
+      } else {
+        win.webContents.send('download-jdk', 'jre-false-jdk-false');
+        console.log('Unknown Java installation. Downloading JDK to be safe...');
+        await downloadJDK();
+      }
     }
   } catch (error) {
-    console.log('Java is not installed. Downloading JDK...');
-    await downloadJDK();
+    if (fs.existsSync(`${javaPath}`)) {
+      win.webContents.send('jdk-already-installed');
+    } else {
+      win.webContents.send('download-jdk', 'jre-false-jdk-false');
+      console.log('Java is not installed. Downloading JDK...');
+      await downloadJDK();
+    }
   }
 };
 
 async function downloadJDK() {
   const jdkURL = 'https://repo.huaweicloud.com/openjdk/17.0.2/openjdk-17.0.2_windows-x64_bin.zip';
   const jdkZipPath = path.join(__dirname, '../jdk-17.0.2.zip');
-  const file = fs.createWriteStream(jdkZipPath);
-  https.get(jdkURL, (response) => {
-    response.pipe(file);
-    file.on('finish', () => {
-      file.close(() => {
-        console.log('JDK downloaded successfully.');
-        const jdkExtractPath = path.join(__dirname, '../');
-        const jdk_zip = new AdmZip(jdkZipPath);
-        const jdkPath = path.join(__dirname, '../jdk-17.0.2');
-        jdk_zip.extractAllTo(jdkExtractPath, overwrite = true);
-        fs.unlink(jdkZipPath, (err) => {
-          if (err) {
-            console.error('Error deleting JDK ZIP file:', err);
-          } else {
+
+  await new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(jdkZipPath);
+    https.get(jdkURL, (response) => {
+      response.pipe(file);
+      file.on('finish', () => {
+        file.close(() => {
+          win.webContents.send('download-jdk', 'jdk-true');
+          console.log('JDK downloaded successfully.');
+
+          const jdkExtractPath = path.join(__dirname, '../');
+          const jdk_zip = new AdmZip(jdkZipPath);
+          const jdkPath = path.join(__dirname, '../jdk-17.0.2');
+          jdk_zip.extractAllTo(jdkExtractPath, overwrite = true);
+
+          fs.unlink(jdkZipPath, (err) => {
+            if (err) {
+              console.error('Error deleting JDK ZIP file:', err);
+              reject(err);
+              return;
+            }
             console.log('JDK ZIP file deleted successfully.');
             process.env.PATH = `${process.env.PATH};${jdkPath}`;
             javaPath = jdkPath;
-            console.log(jdkPath)
-            // 添加环境
-          };
+            console.log(jdkPath);
+            fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+              if (err) {
+                console.error('Err when reading config file:', err);
+                reject(err);
+                return;
+              }
+
+              const config = JSON.parse(data);
+              if (javaPath != "") {
+                if (config.java) {
+                  config.java.path = `${javaPath}`;
+                } else {
+                  config.java = { path: `${javaPath}` };
+                }
+              }
+
+              fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, null, 2), 'utf8', err => {
+                if (err) {
+                  console.error('Err when writing config file:', err);
+                  reject(err);
+                  return;
+                }
+
+                console.log('../app.config.json Updated Successfully');
+                resolve();
+              });
+            });
+          });
         });
       });
+    }).on('error', (error) => {
+      fs.unlinkSync(jdkZipPath);
+      console.error('Error downloading JDK:', error);
+      reject(error);
     });
-  }).on('error', (error) => {
-    fs.unlinkSync(jdkPath);
-    console.error('Error downloading JDK:', error);
   });
 }
 
@@ -307,7 +382,7 @@ async function update(gc_org_url) {
 
 function patchGamePathParaTransfer() {
   if (fs.existsSync(`${gamePathDir}\\version.dll`)) {
-    fs.readFile('../app.config.json', 'utf8', (err, data) => {
+    fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
       if (err) {
         console.error('Err when reading config file:', err);
         return;
@@ -322,7 +397,7 @@ function patchGamePathParaTransfer() {
           config.game = { path: `${gamePath}` };
         }
       };
-      fs.writeFile('../app.config.json', JSON.stringify(config, JSON.stringify(config, null, 2), 2), 'utf8', err => {
+      fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, JSON.stringify(config, null, 2), 2), 'utf8', err => {
         if (err) {
           console.error('Err when writing config file:', err);
           return;
@@ -344,7 +419,7 @@ function patchGamePathParaTransfer() {
         console.log(stderr);
       });
     };
-    fs.readFile('../app.config.json', 'utf8', (err, data) => {
+    fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
       if (err) {
         console.error('Err when reading config file:', err);
         return;
@@ -386,8 +461,8 @@ function executofficialKeystore() {
 
 
 // ../app.config.json
-if (fs.existsSync(`../app.config.json`)) {
-  fs.readFile('../app.config.json', 'utf8', (err, data) => {
+if (fs.existsSync(`${global.packagedPaths.entryPath}\\app.config.json`)) {
+  fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
     if (err) {
       console.error('Err when reading config file:', err);
       return;
@@ -398,6 +473,10 @@ if (fs.existsSync(`../app.config.json`)) {
       gamePathDir = path.dirname(gamePath);
       patchGamePathParaTransfer();
     };
+    if (config.java) {
+      javaPath = config.java.path;
+      console.log(javaPath)
+    }
     if (config.grasscutter.dispatch) {
       if (config.grasscutter.dispatch.ssl == "selfsigned") {
         executeSelfSignedKeystore();
@@ -412,9 +491,10 @@ if (fs.existsSync(`../app.config.json`)) {
   const app_config = {
     game: { path: "" },
     grasscutter: { port: 22102, host: "127.0.0.1", dispatch: { port: 443, ssl: "selfsigned" } },
-    mongodb: { port: 27017 }
+    mongodb: { port: 27017 },
+    java: { path: "" }
   };
-  fs.writeFile(path.join(__dirname, '../app.config.json'), JSON.stringify(app_config, null, 2), 'utf8', (err) => {
+  fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(app_config, null, 2), 'utf8', (err) => {
     if (err) {
       console.error('Err when writing config to file:', err);
       return;
@@ -433,18 +513,12 @@ ipcMain.on('handelMinimize', () => {
 })
 
 ipcMain.on('handelMaximize', () => {
-  // win.maximize();
-  dialog.showMessageBox(win, {
-    type: 'info',
-    title: '全屏化',
-    message: '因为排版问题暂时ban掉全屏化 我写出来只是为了告诉你我会做这个功能（（被打死',
-    buttons: ['确定']
-  });
+  win.maximize();
 });
 
-// ipcMain.on('handelWindow', () => {
-//   win.restore();
-// });
+ipcMain.on('handelWindow', () => {
+  win.restore();
+});
 
 ipcMain.on('open-url', (event, url) => {
   shell.openExternal(url);
@@ -452,25 +526,10 @@ ipcMain.on('open-url', (event, url) => {
 
 ipcMain.on('resGetWayButton_0-set', () => {
   resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top"];
-  dialog.showMessageBox(win, {
-    type: 'info',
-    title: '代理',
-    message: '获取资源方式已更改为 代理!',
-    buttons: ['确定']
-  });
 });
 
 ipcMain.on('resGetWayButton_1-set', () => {
   resURL = ["https://github.com", "https://gitlab.com"];
-  dialog.showMessageBox(win, {
-    type: 'info',
-    title: '直连',
-    message: '获取资源方式已更改为 直连!',
-    buttons: ['确定']
-  }).then(result => {
-    if (result.response === 0) {
-    }
-  });
 });
 
 ipcMain.on('officialKeystoreButton-set', () => {
@@ -481,8 +540,60 @@ ipcMain.on('selfSignedKeystoreButton-set', () => {
   executeSelfSignedKeystore();
 });
 
+
+ipcMain.on('chooseJavaPathButton_open-file-dialog', (event) => {
+  dialog.showOpenDialog({
+    title: '请定位到jdk文件夹，即bin的上一级',
+    properties: ['openDirectory']
+  }).then(result => {
+    if (!result.canceled && result.filePaths.length > 0) {
+      exec(`"${result.filePaths[0]}\\bin\\java" -version`, (error,stderr,stdout) => {
+        if (error) {
+          console.log(`Err ${error}`);
+          return;
+        }
+        if (stdout){
+          if (stdout.includes('Java(TM) SE Runtime Environment') && !stdout.includes('HotSpot')){
+            win.webContents.send('chooseJavaPathButton_was-jre');
+          } else if (stdout.includes('Java(TM) SE Runtime Environment') && stdout.includes('HotSpot')) {
+            win.webContents.send('chooseJavaPathButton_was-jdk',javaPath);
+            javaPath = result.filePaths[0];
+            console.log(javaPath);
+            fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+              if (err) {
+                console.error('Err when reading config file:', err);
+                return;
+              }
+              const config = JSON.parse(data);
+              if (javaPath != "") {
+                if (config.java) {
+                  config.java.path = `${javaPath}`;
+                } else {
+                  config.java = { path: `${javaPath}` };
+                }
+              };
+              fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, JSON.stringify(config, null, 2), 2), 'utf8', err => {
+                if (err) {
+                  console.error('Err when writing config file:', err);
+                  return;
+                }
+                console.log('../app.config.json Updated Successfully');
+              });
+            });
+          } else {
+            win.webContents.send('chooseJavaPathButton_not-valid');
+          }
+        }
+      });
+    }
+  }).catch(err => {
+    console.log(err);
+  });
+});
+
 ipcMain.on('chooseGamePathButton_open-file-dialog', (event) => {
   dialog.showOpenDialog({
+    title: '请定位到游戏文件夹并选择exe文件',
     filters: [
       { name: '应用程序', extensions: ['exe'] }
     ],
@@ -545,16 +656,15 @@ async function run_main_service() {
     console.log(`stdout: ${stdout}\nsuccess`);
     console.log(`stderr: ${stderr}\nerror`);
   });
-  const addstore_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\stores\\addstore.exe`], {
-    stdio: 'ignore'
-  });
+  exec(`${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\stores\\添加根证书.exe`);
   const mongo_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mongo.bat`], {
     stdio: 'ignore'
   });
-  const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat ${javaPath}`], {
+  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`], {
     stdio: 'ignore'
   });
-  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`], {
+  javaPath == "java" ? finalJavaPath = "java" : finalJavaPath = `${javaPath}\\bin\\java`;
+  const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat  ${finalJavaPath}`], {
     stdio: 'ignore'
   });
 };
@@ -572,7 +682,7 @@ ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
 });
 
 ipcMain.on('operationBoxBtn_2-run-game', (event) => {
-  if (gamePath != "") {
+  if (fs.existsSync(`${gamePath}`)) {
     exec(`start "" "${gamePath}"`, (error, stdout, stderr) => {
       if (error) {
         console.error(`${error}`);

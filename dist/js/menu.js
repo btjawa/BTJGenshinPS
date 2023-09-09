@@ -50,6 +50,7 @@ function menuSelector_0_Active(){
             page_log.style.display = 'none';
             page_log.classList.remove("active");
             operationBox.classList.add("active");
+            updateBtn.classList.add("active");
         });
     });
 }
@@ -81,6 +82,7 @@ function menuSelector_1_Active(){
             menuUnderlineLog.classList.remove("active");
             menuSelectorLogIcon.className = "fa-light fa-memo-circle-info";
             menuSelectorLog_Background.classList.remove('active');
+            updateBtn.classList.remove("active");
         });
     }); 
 }
@@ -112,6 +114,7 @@ function menuSelectorSettingsActive (){
             menuUnderlineLog.classList.remove("active");
             menuSelectorLogIcon.className = "fa-light fa-memo-circle-info";
             menuSelectorLog_Background.classList.remove('active');
+            updateBtn.classList.remove('active');
         });
     });  
 }
@@ -164,6 +167,7 @@ function menuSelectorLogActive (){
             page_settings.style.display = 'none';
             page_settings.classList.remove("active");
             operationBox.classList.remove("active");
+            updateBtn.classList.remove('active');
         });
     });  
 };

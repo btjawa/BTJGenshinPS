@@ -6,7 +6,9 @@ let dragbar_window = document.getElementById('dragbar_window');
 let dragbar_maximize = document.getElementById('dragbar_maximize');
 let dragbar_question = document.getElementById('dragbar_question');
 let chooseGamePathButton = document.querySelector('button[name="choose_game_path"]');
+let chooseJavaPathButton = document.querySelector('button[name=choose_java_path]');
 let gamePathInput = document.querySelector('input[name="game_path"]');
+let javaPathInput = document.querySelector('input[name="java_path"]')
 let restoreOfficialButton = document.querySelector('button[name="restore_official"]');
 let resGetWayButton_0 = document.querySelector('.res_getway_0');
 let resGetWayButton_1 = document.querySelector('.res_getway_1');
@@ -22,6 +24,7 @@ let updateBtn = document.querySelector('.update')
 let updateProgress = document.querySelector('.update_progress');
 let resVersion = document.querySelector('.res_version');
 let gcVersion = document.querySelector('.gc_version');
+let pageLogText0 = document.querySelector('.page_log_text_0');
 let gc_latestCommitSha;
 let gc_latestReleaseTagName;
 let res_latestCommitSha;
@@ -132,6 +135,10 @@ chooseGamePathButton.addEventListener('click', () => {
     ipcRenderer.send('chooseGamePathButton_open-file-dialog');
 });
 
+chooseJavaPathButton.addEventListener('click', () => {
+    ipcRenderer.send('chooseJavaPathButton_open-file-dialog')
+});
+
 ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, action) => {
     if (patchExists) {
         gamePathInput.value = path;
@@ -181,16 +188,56 @@ ipcRenderer.on('chooseGamePathButton_file-not-valid', (event) => {
     });
 })
 
+ipcRenderer.on('chooseJavaPathButton_was-jre', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-exclamation',
+        layout: '3',
+        title: 'javaPath',
+        message: '请选择JDK文件夹而不是JRE文件夹！<br>或者你可以不自定义路径，让程序自动下载'
+    });
+});
+
+ipcRenderer.on('chooseJavaPathButton_was-jdk', (event, path) => {
+    javaPathInput.value = path;
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: 'javaPath',
+        message: 'JDK校验已通过！已保存至配置文件！'
+    });
+});
+
+ipcRenderer.on('chooseJavaPathButton_not-valid', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-exclamation',
+        layout: '2',
+        title: 'javaPath',
+        message: '请选择有效的Java文件夹！'
+    });
+});
+
 restoreOfficialButton.addEventListener('click', () => {
     ipcRenderer.send('restoreOfficialButton_delete-path');
 });
 
 resGetWayButton_0.addEventListener('click', () => {
     ipcRenderer.send('resGetWayButton_0-set');
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '代理',
+        message: '获取资源方式已更改为 代理!'
+    });
 });
 
 resGetWayButton_1.addEventListener('click', () => {
     ipcRenderer.send('resGetWayButton_1-set');
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '直连',
+        message: '获取资源方式已更改为 直连!'
+    });
 });
 
 officialKeystoreButton.addEventListener('click', () => {
@@ -223,10 +270,25 @@ operationBoxBtn_0.addEventListener('click', () => {
         title: '启动服务',
         message: '正在启动服务...'
     });
+    pageLogText0.innerHTML += `正在启动服务...<br>`; 
 });
 
 operationBoxBtn_1.addEventListener('click', () => {
     ipcRenderer.send('operationBoxBtn_1-stop-service');
+});
+
+ipcRenderer.on('download-jdk', (event, message) => {
+    if (message == "jre-true-jdk-false") {
+        pageLogText0.innerHTML += `已检测到JRE！正在下载JDK...<br>`;
+    } else if (message == "jre-false-jdk-false") {
+        pageLogText0.innerHTML += `未检测到Java！正在下载JDK...<br>`;
+    } else if (message == "jdk-true") {
+        pageLogText0.innerHTML += `JDK下载完毕！准备启动服务...<br>`;
+    }
+});
+
+ipcRenderer.on('jdk-already-installed', (event) => {
+    pageLogText0.innerHTML += `已检测到JDK！<br>`;   
 });
 
 ipcRenderer.on('operationBoxBtn_1-success', (event) => {
@@ -236,6 +298,7 @@ ipcRenderer.on('operationBoxBtn_1-success', (event) => {
         title: '停止服务',
         message: '成功停止服务！'
     });
+    pageLogText0.innerHTML += `成功停止服务！<br>`; 
 });
 
 operationBoxBtn_2.addEventListener('click', () => {
