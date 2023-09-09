@@ -278,10 +278,8 @@ operationBoxBtn_1.addEventListener('click', () => {
 });
 
 ipcRenderer.on('download-jdk', (event, message) => {
-    if (message == "jre-true-jdk-false") {
-        pageLogText0.innerHTML += `已检测到JRE！正在下载JDK...<br>`;
-    } else if (message == "jre-false-jdk-false") {
-        pageLogText0.innerHTML += `未检测到Java！正在下载JDK...<br>`;
+    if (message == "jdk-false") {
+        pageLogText0.innerHTML += `未检测到JDK！正在下载JDK...<br>`;
     } else if (message == "jdk-true") {
         pageLogText0.innerHTML += `JDK下载完毕！准备启动服务...<br>`;
     }

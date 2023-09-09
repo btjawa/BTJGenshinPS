@@ -9,8 +9,6 @@ const exec = util.promisify(require('child_process').exec);
 const Winreg = require('winreg');
 
 const zlog = require('electron-log');
-const { resolve } = require('dns');
-const { eventNames, stderr } = require('process');
 let filepath = path.join(__dirname, "..\\logs");
 let nowdate = new Date();
 let nowdate_str = nowdate.getFullYear() + "_" + (nowdate.getMonth() + 1) + "_" + nowdate.getDate() + "_" + nowdate.getHours();
@@ -51,7 +49,7 @@ echo.\r
 \r
 echo 由 github/btjawa 改包\r
 echo 正在启动MongoDB数据库...\r
-cd ${global.packagedPaths.gateServerPath}\\MongoDB\r
+cd "${global.packagedPaths.gateServerPath}\\MongoDB"\r
 .\\mongod --dbpath data --port 27017\r
 exit`;
   const mitm_proxy_batch = `@echo off\r
@@ -72,13 +70,19 @@ reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" 
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "127.0.0.1:54321" /f\r
 echo.\r
 echo 正在启动Mitm代理...\r
-cd ${global.packagedPaths.gateServerPath}\\Proxy\r
-.\\mitmdump -s proxy.py --ssl-insecure --set block_global=false --listen-port 54321\r
-echo.\r
+cd "${global.packagedPaths.gateServerPath}\\Proxy"\r
+mitmdump -s proxy.py --ssl-insecure --set block_global=false --listen-port 54321\r
 echo 清除系统代理...\r
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f\r
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f\r
-exit`;
+exit.\r`;
+  const add_root_crt_batch =`@echo off\r
+chcp 65001>nul\r
+%1 start "" mshta vbscript:createobject("shell.application").shellexecute("""%~0""","::",,"runas",1)(window.close)&exit\r
+echo 导入根证书...\r
+certutil -addstore -f "Root" "${global.packagedPaths.dataPath}\\root.crt"\r
+certutil -addstore -f "Root" "%USERPROFILE%\\.mitmproxy\\mitmproxy-ca-cert.cer"\r
+exit\r`;
 
   fs.writeFile(path.join(global.packagedPaths.dataPath, 'run_gc.bat'), gc_batch, (err) => {
     if (err) {
@@ -101,6 +105,14 @@ exit`;
       console.error('Err:', err);
     } else {
       console.log('Created run_mitm_proxy.bat');
+    }
+  });
+
+  fs.writeFile(path.join(global.packagedPaths.dataPath, 'add_root_crt.bat'), add_root_crt_batch, (err) => {
+    if (err) {
+      console.error('Err:', err);
+    } else {
+      console.log('Created add_root_crt.bat');
     }
   });
 };
@@ -169,6 +181,7 @@ app.on('before-quit', () => {
   exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
   exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
   exec(`del ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`)
+  exec(`del ${global.packagedPaths.dataPath}\\add_root_crt.bat`)
 });
 
 app.on('activate', () => {
@@ -184,18 +197,163 @@ function sleep(ms) {
 }
 
 
+//create mitm ca crt
+exec(`start /B ${global.packagedPaths.gateServerPath}\\Proxy\\mitmdump.exe`,(stdout, error,stderr) => {
+  if (error) {
+    console.log(error);
+    return;
+  }
+  console.log(stdout);
+  console.log(stderr);
+});
+const checkMitm = setInterval(() => {
+  if (fs.existsSync(path.join(process.env.USERPROFILE, '.mitmproxy'))) {
+    clearInterval(checkMitm);
+    exec('taskkill /f /im mitmdump.exe', (error, stdout, stderr) => {
+      if (error) {
+        console.log('Error killing mitmdump:', error);
+      } else {
+        console.log('Successfully killed mitmdump:', stdout);
+      }
+    });
+  }
+}, 100);
+
+
+function patchGamePathParaTransfer() {
+  if (fs.existsSync(`${gamePathDir}\\version.dll`)) {
+    fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+      if (err) {
+        console.error('Err when reading config file:', err);
+        return;
+      }
+      const config = JSON.parse(data);
+      if (gamePath != "") {
+        patchExists = true;
+        win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
+        if (config.game) {
+          config.game.path = `${gamePath}`;
+        } else {
+          config.game = { path: `${gamePath}` };
+        }
+      };
+      fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, JSON.stringify(config, null, 2), 2), 'utf8', err => {
+        if (err) {
+          console.error('Err when writing config file:', err);
+          return;
+        }
+        console.log('../app.config.json Updated Successfully');
+      });
+    });
+  } else {
+    patchExists = false;
+    win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
+    if (gamePath != "") {
+      exec(`copy "${global.packagedPaths.dataPath}\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, (error, stdout, stderr) => {
+        if (error) {
+          console.log(error);
+          return;
+        }
+        console.log(stdout);
+        console.log("RSA Patched");
+        console.log(stderr);
+      });
+    };
+    fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+      if (err) {
+        console.error('Err when reading config file:', err);
+        return;
+      }
+      const config = JSON.parse(data);
+      if (config.game.path == "") { } else {
+        patchExists = true;
+      };
+    });
+
+  }
+}
+
+
+function executeSelfSignedKeystore() {
+  exec(`copy "${global.packagedPaths.dataPath}\\keystore_selfsigned.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, (error, stdout, stderr) => {
+    if (error) {
+      console.log(error);
+      return;
+    }
+    console.log(stdout);
+    console.log("selfSignedKeystore");
+    console.log(stderr);
+  });
+};
+
+
+function executofficialKeystore() {
+  exec(`copy "${global.packagedPaths.dataPath}\\keystore_official.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, (error, stdout, stderr) => {
+    if (error) {
+      console.log(error);
+      return;
+    }
+    console.log(stdout);
+    console.log("officialKeystore");
+    console.log(stderr);
+  });
+};
+
+
+// ../app.config.json
+if (fs.existsSync(`${global.packagedPaths.entryPath}\\app.config.json`)) {
+  fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+    if (err) {
+      console.error('Err when reading config file:', err);
+      return;
+    }
+    const config = JSON.parse(data);
+    if (config.game) {
+      gamePath = config.game.path;
+      gamePathDir = path.dirname(gamePath);
+      patchGamePathParaTransfer();
+    };
+    if (config.java) {
+      javaPath = config.java.path;
+      console.log(javaPath)
+    }
+    if (config.grasscutter.dispatch) {
+      if (config.grasscutter.dispatch.ssl == "selfsigned") {
+        executeSelfSignedKeystore();
+      }
+      else if (config.grasscutter.dispatch.ssl == "official") {
+        executofficialKeystore();
+      }
+    }
+  });
+} else {
+  // create config
+  const app_config = {
+    game: { path: "" },
+    grasscutter: { port: 22102, host: "127.0.0.1", dispatch: { port: 443, ssl: "selfsigned" } },
+    mongodb: { port: 27017 },
+    java: { path: "" }
+  };
+  gamePath = "";
+  gamePathDir = path.dirname(gamePath);
+  javaPath = "";
+  console.log(javaPath);
+  fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(app_config, null, 2), 'utf8', (err) => {
+    if (err) {
+      console.error('Err when writing config to file:', err);
+      return;
+    }
+    console.log('../app.config.json Created successfully');
+  });
+};
+
+
 async function checkJava() {
   try {
-    const { stdout, stderr } = await exec('java -version');
-    if (stderr.includes('Java(TM) SE Runtime Environment') && !stderr.includes('HotSpot')) {
-      if (fs.existsSync(`${javaPath}`)) {
-        win.webContents.send('jdk-already-installed');
-      } else {
-        win.webContents.send('download-jdk', 'jre-true-jdk-false');
-        console.log('JRE is installed. Downloading JDK...');
-        await downloadJDK();
-      };
-    } else if (stderr.includes('Java(TM) SE Runtime Environment') && stderr.includes('HotSpot')) {
+    const { stdout, stderr } = await exec('java --version');
+    console.log(stderr);
+
+    if (stderr.includes('Java(TM) SE Runtime Environment')) {
       win.webContents.send('jdk-already-installed');
       console.log('JDK is already installed.');
       javaPath = 'java';
@@ -205,14 +363,14 @@ async function checkJava() {
           return;
         }
         const config = JSON.parse(data);
-        if (javaPath != "") {
+        if (javaPath !== "") {
           if (config.java) {
-            config.java.path = `${javaPath}`;
+            config.java.path = javaPath;
           } else {
-            config.java = { path: `${javaPath}` };
+            config.java = { path: javaPath };
           }
-        };
-        fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, JSON.stringify(config, null, 2), 2), 'utf8', err => {
+        }
+        fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, null, 2), 'utf8', err => {
           if (err) {
             console.error('Err when writing config file:', err);
             return;
@@ -224,21 +382,23 @@ async function checkJava() {
       if (fs.existsSync(`${javaPath}`)) {
         win.webContents.send('jdk-already-installed');
       } else {
-        win.webContents.send('download-jdk', 'jre-false-jdk-false');
-        console.log('Unknown Java installation. Downloading JDK to be safe...');
+        win.webContents.send('download-jdk', 'jdk-false');
+        console.log('Java is not installed. Downloading JDK...');
         await downloadJDK();
       }
     }
   } catch (error) {
+    console.log(error);
     if (fs.existsSync(`${javaPath}`)) {
       win.webContents.send('jdk-already-installed');
     } else {
-      win.webContents.send('download-jdk', 'jre-false-jdk-false');
+      win.webContents.send('download-jdk', 'jdk-false');
       console.log('Java is not installed. Downloading JDK...');
       await downloadJDK();
     }
   }
-};
+}
+
 
 async function downloadJDK() {
   const jdkURL = 'https://repo.huaweicloud.com/openjdk/17.0.2/openjdk-17.0.2_windows-x64_bin.zip';
@@ -378,131 +538,6 @@ async function update(gc_org_url) {
     console.log(error);
   }
 }
-
-
-function patchGamePathParaTransfer() {
-  if (fs.existsSync(`${gamePathDir}\\version.dll`)) {
-    fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
-      if (err) {
-        console.error('Err when reading config file:', err);
-        return;
-      }
-      const config = JSON.parse(data);
-      if (gamePath != "") {
-        patchExists = true;
-        win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
-        if (config.game) {
-          config.game.path = `${gamePath}`;
-        } else {
-          config.game = { path: `${gamePath}` };
-        }
-      };
-      fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, JSON.stringify(config, null, 2), 2), 'utf8', err => {
-        if (err) {
-          console.error('Err when writing config file:', err);
-          return;
-        }
-        console.log('../app.config.json Updated Successfully');
-      });
-    });
-  } else {
-    patchExists = false;
-    win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
-    if (gamePath != "") {
-      exec(`copy "${global.packagedPaths.dataPath}\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, (error, stdout, stderr) => {
-        if (error) {
-          console.log(error);
-          return;
-        }
-        console.log(stdout);
-        console.log("RSA Patched");
-        console.log(stderr);
-      });
-    };
-    fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
-      if (err) {
-        console.error('Err when reading config file:', err);
-        return;
-      }
-      const config = JSON.parse(data);
-      if (config.game.path == "") { } else {
-        patchExists = true;
-      };
-    });
-
-  }
-}
-
-
-function executeSelfSignedKeystore() {
-  exec(`copy "${global.packagedPaths.dataPath}\\keystore_selfsigned.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\stores\\keystore.p12"`, (error, stdout, stderr) => {
-    if (error) {
-      console.log(error);
-      return;
-    }
-    console.log(stdout);
-    console.log("selfSignedKeystore");
-    console.log(stderr);
-  });
-};
-
-
-function executofficialKeystore() {
-  exec(`copy "${global.packagedPaths.dataPath}\\keystore_official.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\stores\\keystore.p12"`, (error, stdout, stderr) => {
-    if (error) {
-      console.log(error);
-      return;
-    }
-    console.log(stdout);
-    console.log("officialKeystore");
-    console.log(stderr);
-  });
-};
-
-
-// ../app.config.json
-if (fs.existsSync(`${global.packagedPaths.entryPath}\\app.config.json`)) {
-  fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Err when reading config file:', err);
-      return;
-    }
-    const config = JSON.parse(data);
-    if (config.game) {
-      gamePath = config.game.path;
-      gamePathDir = path.dirname(gamePath);
-      patchGamePathParaTransfer();
-    };
-    if (config.java) {
-      javaPath = config.java.path;
-      console.log(javaPath)
-    }
-    if (config.grasscutter.dispatch) {
-      if (config.grasscutter.dispatch.ssl == "selfsigned") {
-        executeSelfSignedKeystore();
-      }
-      else if (config.grasscutter.dispatch.ssl == "official") {
-        executofficialKeystore();
-      }
-    }
-  });
-} else {
-  // create config
-  const app_config = {
-    game: { path: "" },
-    grasscutter: { port: 22102, host: "127.0.0.1", dispatch: { port: 443, ssl: "selfsigned" } },
-    mongodb: { port: 27017 },
-    java: { path: "" }
-  };
-  fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(app_config, null, 2), 'utf8', (err) => {
-    if (err) {
-      console.error('Err when writing config to file:', err);
-      return;
-    }
-    console.log('../app.config.json Created successfully');
-  });
-};
-
 
 ipcMain.on('handelClose', () => {
   app.quit();
@@ -656,7 +691,9 @@ async function run_main_service() {
     console.log(`stdout: ${stdout}\nsuccess`);
     console.log(`stderr: ${stderr}\nerror`);
   });
-  exec(`${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\stores\\添加根证书.exe`);
+  const add_root_crt_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\add_root_crt.bat`], {
+    stdio: 'ignore'
+  });
   const mongo_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mongo.bat`], {
     stdio: 'ignore'
   });

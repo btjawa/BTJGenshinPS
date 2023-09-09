@@ -63,4 +63,4 @@ npm run package # Package
 
 <img src="https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white">
 
-<a title="Copyright" target="_blank" href="https://imsyy.top/"><img src="https://img.shields.io/badge/Copyright%20%C2%A9%202022--2023-%E7%99%BD%E5%BC%B9%E6%B1%B2-red"></a>
+<a title="Copyright" target="_blank" href="https://btjawa.top/"><img src="https://img.shields.io/badge/Copyright%20%C2%A9%202022--2023-%E7%99%BD%E5%BC%B9%E6%B1%B2-red"></a>
