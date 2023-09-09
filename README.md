@@ -1,22 +1,34 @@
 # BTJGenshinPS
 
-开发中！现在放到Github是因为让我commit多一点（
+为Grasscutter制作的GUI一键端，基于Node.js，Electron。
 
-处于Dev阶段，暂时不接受PR
+如果你不是开发者，就不要再看下面了，请直接前往Release
 
-由于打包app时会使用asar加密，所以GateServer与app.config.json将会放置在上一级
+GateServer 请从Release中获取
 
-GateServer 请从以后的Release中获取
+![preview.png](https://raw.githubusercontent.com/btjawa/btjawa.top/master/preview.png)
 
-打包后结构
+## To Do
 
-resources/
+- [ ] 修复console输出中文锟斤拷
 
-├── app.asar
+- [ ] 十分详细的文档
 
-├── GateServer/
+- [x] 实现一键更新资源
 
-└── app.config.json
+- [ ] 实现一键更新本体
+
+- [ ] 联机模式
+
+- [ ] 免代理模式
+
+- [ ] 静默启动 
+
+- [ ] 可视化编辑shop.json等
+
+- [ ] 自由选择服务端版本
+
+- [ ] API
 
 ## Development
 
@@ -40,3 +52,15 @@ npm install
 npm run start # Preview
 npm run package # Package
 ```
+
+## Update
+
+用一键更新就好（目前在todo里）
+
+手动更新时只用下载Release中带有app的zip，替换掉除resources文件夹以外的所有文件
+
+然后替换掉resources文件夹中的app.asar就更新完毕了
+
+<img src="https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white">
+
+<a title="Copyright" target="_blank" href="https://imsyy.top/"><img src="https://img.shields.io/badge/Copyright%20%C2%A9%202022--2023-%E7%99%BD%E5%BC%B9%E6%B1%B2-red"></a>
