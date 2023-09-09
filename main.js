@@ -9,6 +9,7 @@ const exec = util.promisify(require('child_process').exec);
 const Winreg = require('winreg');
 
 const zlog = require('electron-log');
+const { error } = require('console');
 let filepath = path.join(__dirname, "..\\logs");
 let nowdate = new Date();
 let nowdate_str = nowdate.getFullYear() + "_" + (nowdate.getMonth() + 1) + "_" + nowdate.getDate() + "_" + nowdate.getHours();
@@ -198,27 +199,30 @@ function sleep(ms) {
 
 
 //create mitm ca crt
-exec(`start /B ${global.packagedPaths.gateServerPath}\\Proxy\\mitmdump.exe`,(stdout, error,stderr) => {
-  if (error) {
-    console.log(error);
-    return;
-  }
-  console.log(stdout);
-  console.log(stderr);
-});
-const checkMitm = setInterval(() => {
-  if (fs.existsSync(path.join(process.env.USERPROFILE, '.mitmproxy'))) {
-    clearInterval(checkMitm);
-    exec('taskkill /f /im mitmdump.exe', (error, stdout, stderr) => {
-      if (error) {
-        console.log('Error killing mitmdump:', error);
-      } else {
-        console.log('Successfully killed mitmdump:', stdout);
-      }
-    });
-  }
-}, 100);
-
+if (fs.existsSync(path.join(process.env.USERPROFILE, '.mitmproxy'))) {
+  console.log(path.join(process.env.USERPROFILE, '.mitmproxy') + " exist.")
+} else {
+  exec(`start /B ${global.packagedPaths.gateServerPath}\\Proxy\\mitmdump.exe`,(stdout, error,stderr) => {
+    if (error) {
+      console.log(error);
+      return;
+    }
+    console.log(stdout);
+    console.log(stderr);
+  });
+  const checkMitm = setInterval(() => {
+    if (fs.existsSync(path.join(process.env.USERPROFILE, '.mitmproxy'))) {
+      clearInterval(checkMitm);
+      exec('taskkill /f /im mitmdump.exe', (error, stdout, stderr) => {
+        if (error) {
+          console.log('Error killing mitmdump:', error);
+        } else {
+          console.log('Successfully killed mitmdump:', stdout);
+        }
+      });
+    }
+  }, 100);
+}
 
 function patchGamePathParaTransfer() {
   if (fs.existsSync(`${gamePathDir}\\version.dll`)) {
@@ -300,7 +304,7 @@ function executofficialKeystore() {
 };
 
 
-// ../app.config.json
+// app.config.json
 if (fs.existsSync(`${global.packagedPaths.entryPath}\\app.config.json`)) {
   fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
     if (err) {
