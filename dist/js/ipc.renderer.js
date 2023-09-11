@@ -25,6 +25,7 @@ let updateProgress = document.querySelector('.update_progress');
 let resVersion = document.querySelector('.res_version');
 let gcVersion = document.querySelector('.gc_version');
 let pageLogText0 = document.querySelector('.page_log_text_0');
+let clearData = document.querySelector('.clear_data');
 let gc_latestCommitSha;
 let gc_latestReleaseTagName;
 let res_latestCommitSha;
@@ -268,8 +269,7 @@ operationBoxBtn_0.addEventListener('click', () => {
         title: '启动服务',
         message: '正在启动服务...'
     });
-    pageLogText0.innerHTML = `请不要关闭稍后弹出来的任何一个窗口！<br>`; 
-    pageLogText0.innerHTML += `正在启动服务...<br>`; 
+    pageLogText0.innerHTML += `请不要关闭稍后弹出来的任何一个窗口！<br>正在启动服务...<br>`; 
 });
 
 operationBoxBtn_1.addEventListener('click', () => {
@@ -314,9 +314,9 @@ ipcRenderer.on('operationBoxBtn_2-success', (event) => {
 updateBtn.addEventListener('click' , () => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
-        layout: '4',
+        layout: '3',
         title: '更新',
-        message: '正在尝试更新...<br>注意插件等需要手动更新！<br>请不要启动服务，直至提示“更新成功”！'
+        message: '正在尝试更新...<br>注意插件等需要手动更新！'
     });
     fetch('https://api.github.com/repos/Grasscutters/Grasscutter/releases/latest')
         .then(response => response.json())
@@ -371,5 +371,18 @@ ipcRenderer.on('update_complete', (event) => {
         layout: '2',
         title: '更新',
         message: '更新成功！'
+    });
+});
+
+clearData.addEventListener('click', () => {
+    ipcRenderer.send('clear_data');
+});
+
+ipcRenderer.on('clearing_data', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '恢复出厂',
+        message: '正在清除数据...'
     });
 });

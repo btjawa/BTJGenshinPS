@@ -85,7 +85,7 @@
             <div class="page_0_text_2 sub_0">IP / 域名<div class="page_0_text_2 sub_1">游戏服务器端口</div><div class="page_0_text_2 sub_2">DISPATCH端口</div></div>
             <input type="text" name="gc_ip" value="127.0.0.1" disabled="disabled">
             <input type="text" name="gc_game_port" value="22102" disabled="disabled">
-            <input type="text" name="gc_dispatch_port" value="443" disabled="disabled">
+            <input type="text" name="gc_dispatch_port" value="443">
             <div class="page_0_text_3">SSL&nbsp;<a class="page_0_text_3 sub_0">keystore.p12</a>&nbsp;<button name="self-signed-keystore">使用自签名证书</button><button name="official-keystore">使用官方证书</button></div>
             <div class="page_0_text_4">MongoDB设置</div>
             <div class="page_0_text_4 sub_0">数据库端口<div class="page_0_text_4 sub_1">数据文件夹</div></div>
@@ -93,14 +93,15 @@
             <input type="text" name="mongo_data_folder" value=".\data" disabled="disabled">
             <div class="page_0_text_5">客户端代理</div>
             <div class="page_0_text_4 sub_0">IP / 域名<div class="page_0_text_4 sub_1">DISPATCH端口</div></div>
-            <input type="text" name="proxy_ip" value="127.0.0.1" disabled="disabled">
-            <input type="text" name="proxy_port" value="443" disabled="disabled">
+            <input type="text" name="proxy_ip" value="127.0.0.1">
+            <input type="text" name="proxy_port" value="443">
             <div class="operation_box">
                 <a class="operation_box_title">起爆器</a>
                 <div class="operation_box_btn_0">启动全部服务</div>
                 <div class="operation_box_btn_1">停止服务</div>
                 <div class="operation_box_btn_2">启动游戏</div>
             </div>
+            <button name="clear_data" class="clear_data">恢复出厂</button>
             <i class="gc_version" target="_blank">Latest Commit<br>Grasscutter Release N/A-N/A</i>
             <i class="res_version" target="_blank">Yuuki GC-Resources N/A</i>
         </div>

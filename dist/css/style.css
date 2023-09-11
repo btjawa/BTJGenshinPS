@@ -70,7 +70,7 @@ input[name="gc_dispatch_port"]{
     left: 10px;
     top: 15px;
     width: 120px;
-    color: #a8a5a5;
+    color: #e5e5e5;
     vertical-align: center;  
 }
 
@@ -103,7 +103,7 @@ input[name="proxy_ip"]{
     left: 0px;
     top: 50px;
     width: 120px;
-    color: #a8a5a5;
+    color: #e5e5e5;
     vertical-align: center;  
 }
 
@@ -114,14 +114,14 @@ input[name="proxy_port"]{
     left: 6px;
     top: 50px;
     width: 120px;
-    color: #a8a5a5;
+    color: #e5e5e5;
     vertical-align: center;  
 }
 
 input[name="java_path"]{
     position: relative;
     font-size: 17px;
-    top: 8px;
+    top: 14px;
     width: 325px;
 }
 
@@ -129,6 +129,16 @@ button[name="res_getway"] {
     position: relative;
     top: 10px;
     right: 117px;
+    vertical-align: middle;
+}
+
+button[name="clear_data"] {
+    position: fixed;
+    bottom: 10px;
+    color: #c4c4c4;
+    font-size: 13px;
+    right: 310px;
+    cursor: pointer;
     vertical-align: middle;
 }
 

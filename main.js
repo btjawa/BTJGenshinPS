@@ -10,6 +10,7 @@ const Winreg = require('winreg');
 
 const zlog = require('electron-log');
 const { error } = require('console');
+const { eventNames, stderr, stdout } = require('process');
 let filepath = path.join(__dirname, "..\\logs");
 let nowdate = new Date();
 let nowdate_str = nowdate.getFullYear() + "_" + (nowdate.getMonth() + 1) + "_" + nowdate.getDate() + "_" + nowdate.getHours();
@@ -28,9 +29,8 @@ global.packagedPaths = {
 
 function packageNec() {
   const gc_batch = `@echo off\r
-title Grasscutter\r
 chcp 65001>nul\r
-echo.\r
+title Grasscutter - 不要关闭这个窗口\r
 echo 不要关闭这个窗口！！！\r
 echo.\r
 echo 将使用此命令来调用Java： %1\r
@@ -38,28 +38,36 @@ echo.\r
 \r
 cd ${global.packagedPaths.gateServerPath}\\Grasscutter\r
 echo 由 github/btjawa 改包\r
+echo.\r
+echo 在 GM Handbook 目录内查看物品ID及命令。\r
+ping>nul\r
+echo 初次使用请输入 "account create Name" 来创建账户，其中 Name 可换成你想要的名称。\r
+ping>nul\r
+echo 游戏内登录时请在 用户名 一栏输入你上一步的账户名称，密码 一栏可以随便输。\r
+ping>nul\r
+echo 遇到卡草问题时，等半到一分钟/重启游戏大概率可以解决。由于Res仍在Dev，角色死亡无法复活时请重新进入游戏。\r
+echo.\r
 echo 正在启动Grasscutter服务端...\r
 %1 -jar grasscutter.jar\r
 exit`;
+
   const mongo_batch = `@echo off\r
-title MongoDB\r
 chcp 65001>nul\r
-echo.\r
+title MongoDB - 不要关闭这个窗口\r
 echo 不要关闭这个窗口！！！\r
 echo.\r
-\r
 echo 由 github/btjawa 改包\r
+echo.\r
 echo 正在启动MongoDB数据库...\r
 cd "${global.packagedPaths.gateServerPath}\\MongoDB"\r
 .\\mongod --dbpath data --port 27017\r
 exit`;
+
   const mitm_proxy_batch = `@echo off\r
-title Mitmdump\r
 chcp 65001>nul\r
-echo.\r
+title Mitmdump - 不要关闭这个窗口\r
 echo 不要关闭这个窗口！！！\r
 echo.\r
-\r
 echo 由 github/btjawa 改包\r
 echo.\r
 echo 清除系统代理...\r
@@ -77,6 +85,7 @@ echo 清除系统代理...\r
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f\r
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f\r
 exit.\r`;
+
   const add_root_crt_batch =`@echo off\r
 chcp 65001>nul\r
 %1 start "" mshta vbscript:createobject("shell.application").shellexecute("""%~0""","::",,"runas",1)(window.close)&exit\r
@@ -120,6 +129,7 @@ exit\r`;
 
 
 let win;
+let config_version = 1;
 let gamePath;
 let gamePathDir;
 let patchExists = false;
@@ -316,9 +326,9 @@ if (fs.existsSync(`${global.packagedPaths.entryPath}\\app.config.json`)) {
       gamePath = config.game.path;
       gamePathDir = path.dirname(gamePath);
       patchGamePathParaTransfer();
-    };
+    }
     if (config.java) {
-      javaPath = config.java.path;
+      javaPath = config.java.exec;
       console.log(javaPath)
     }
     if (config.grasscutter.dispatch) {
@@ -333,10 +343,11 @@ if (fs.existsSync(`${global.packagedPaths.entryPath}\\app.config.json`)) {
 } else {
   // create config
   const app_config = {
+    version: config_version,
     game: { path: "" },
     grasscutter: { port: 22102, host: "127.0.0.1", dispatch: { port: 443, ssl: "selfsigned" } },
     mongodb: { port: 27017 },
-    java: { path: "" }
+    java: { exec: "" }
   };
   gamePath = "";
   gamePathDir = path.dirname(gamePath);
@@ -370,9 +381,9 @@ async function checkJava() {
         const config = JSON.parse(data);
         if (javaPath !== "") {
           if (config.java) {
-            config.java.path = javaPath;
+            config.java.exec = javaPath;
           } else {
-            config.java = { path: javaPath };
+            config.java = { exec: javaPath };
           }
         }
         fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, null, 2), 'utf8', err => {
@@ -408,65 +419,65 @@ async function checkJava() {
 async function downloadJDK() {
   const jdkURL = 'https://repo.huaweicloud.com/openjdk/17.0.2/openjdk-17.0.2_windows-x64_bin.zip';
   const jdkZipPath = path.join(__dirname, '../jdk-17.0.2.zip');
-
   await new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(jdkZipPath);
-    https.get(jdkURL, (response) => {
-      response.pipe(file);
-      file.on('finish', () => {
-        file.close(() => {
-          win.webContents.send('download-jdk', 'jdk-true');
-          console.log('JDK downloaded successfully.');
+    const curl = spawn('curl', ['-o', jdkZipPath, '-L', jdkURL]);
+    curl.stderr.on('data', (data) => {
+      const strData = data.toString();
+      console.log(strData);
+      win.webContents.send('update_progress', strData, 'Java Developement Kit');
+    });
+    curl.stderr.on('data', (data) => {
+      console.error(`stderr: ${data}`);
+    });
+    curl.on('close', (code) => {
+      if (code === 0) {
+        win.webContents.send('download-jdk', 'jdk-true');
+        console.log('JDK downloaded successfully.');
 
-          const jdkExtractPath = path.join(__dirname, '../');
-          const jdk_zip = new AdmZip(jdkZipPath);
-          const jdkPath = path.join(__dirname, '../jdk-17.0.2');
-          jdk_zip.extractAllTo(jdkExtractPath, overwrite = true);
-
-          fs.unlink(jdkZipPath, (err) => {
+        const jdkExtractPath = path.join(__dirname, '../');
+        const jdk_zip = new AdmZip(jdkZipPath);
+        const jdkPath = path.join(__dirname, '../jdk-17.0.2');
+        jdk_zip.extractAllTo(jdkExtractPath, true);
+        fs.unlink(jdkZipPath, (err) => {
+          if (err) {
+            console.error('Error deleting JDK ZIP file:', err);
+            reject(err);
+            return;
+          }
+          console.log('JDK ZIP file deleted successfully.');
+          process.env.PATH = `${process.env.PATH};${jdkPath}`;
+          javaPath = jdkPath;
+          console.log(jdkPath);
+          fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
             if (err) {
-              console.error('Error deleting JDK ZIP file:', err);
+              console.error('Err when reading config file:', err);
               reject(err);
               return;
             }
-            console.log('JDK ZIP file deleted successfully.');
-            process.env.PATH = `${process.env.PATH};${jdkPath}`;
-            javaPath = jdkPath;
-            console.log(jdkPath);
-            fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+            const config = JSON.parse(data);
+            if (javaPath != "") {
+              if (config.java) {
+                config.java.path = `${javaPath}`;
+              } else {
+                config.java = { path: `${javaPath}` };
+              }
+            }
+            fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, null, 2), 'utf8', err => {
               if (err) {
-                console.error('Err when reading config file:', err);
+                console.error('Err when writing config file:', err);
                 reject(err);
                 return;
               }
-
-              const config = JSON.parse(data);
-              if (javaPath != "") {
-                if (config.java) {
-                  config.java.path = `${javaPath}`;
-                } else {
-                  config.java = { path: `${javaPath}` };
-                }
-              }
-
-              fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, null, 2), 'utf8', err => {
-                if (err) {
-                  console.error('Err when writing config file:', err);
-                  reject(err);
-                  return;
-                }
-
-                console.log('../app.config.json Updated Successfully');
-                resolve();
-              });
+              console.log('../app.config.json Updated Successfully');
+              resolve();
             });
           });
         });
-      });
-    }).on('error', (error) => {
-      fs.unlinkSync(jdkZipPath);
-      console.error('Error downloading JDK:', error);
-      reject(error);
+      } else {
+        fs.unlinkSync(jdkZipPath);
+        console.error('Error downloading JDK:', new Error(`curl process exited with code ${code}`));
+        reject(new Error(`curl process exited with code ${code}`));
+      }
     });
   });
 }
@@ -535,8 +546,14 @@ async function downloadFile(url, outputPath, action) {
 async function update(gc_org_url) {
   const orgUrl = new URL(gc_org_url);
   try {
-    await downloadFile(`${resURL[0]}${orgUrl.pathname}`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar`, "Grasscutter服务端");
-    await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip`, "Resources");
+    await downloadFile(`${resURL[0]}${orgUrl.pathname}`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download`, "Grasscutter服务端");
+    await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download`, "Resources");
+    exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar`,(stdout,stderr,error) => {
+      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    })
+    exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip`,(stdout,stderr,error) => {
+      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    })
     win.webContents.send('update_complete');
     console.log("Update Completed");
   } catch (error) {
@@ -607,9 +624,9 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', (event) => {
               const config = JSON.parse(data);
               if (javaPath != "") {
                 if (config.java) {
-                  config.java.path = `${javaPath}`;
+                  config.java.exec = `${javaPath}`;
                 } else {
-                  config.java = { path: `${javaPath}` };
+                  config.java = { exec: `${javaPath}` };
                 }
               };
               fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, JSON.stringify(config, null, 2), 2), 'utf8', err => {
@@ -741,5 +758,46 @@ ipcMain.on('operationBoxBtn_2-run-game', (event) => {
       message: '游戏路径不存在！请点击“选择路径”选择游戏路径！',
       buttons: ['确定']
     });
+  }
+});
+
+ipcMain.on('clear_data', async (event) => {
+  const resp0 = await dialog.showMessageBox(win, {
+    type: 'warning',
+    title: '恢复出厂',
+    message: '确定要恢复出厂吗？这将会删除所有的使用痕迹，包括你的游戏数据！！！被删除的数据将无法找回！！！',
+    buttons: ['确定', '取消'],
+    defaultId: 1,
+    cancelId: 1
+  });
+
+  if (resp0.response === 0) {
+    win.webContents.send('clearing_data');
+    exec(`rm ${global.packagedPaths.entryPath}\\app.config.json`,(stderr,stdout,error) => {        
+      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    });
+    exec(`for /r ${global.packagedPaths.gateServerPath}\\MongoDB\\data %G in (*.*) do del /s /q %G & for /d %G in (${global.packagedPaths.gateServerPath}\\MongoDB\\data\\*) do rmdir /s /q %G`, (error, stdout, stderr) => {
+      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    });
+    exec(`rmdir /s /q "${global.packagedPaths.gateServerPath}\\Grasscutter\\GM Handbook"`,(stderr,stdout,error) => {
+      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    });
+    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\logs`,(stderr,stdout,error) => {
+      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    });
+    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\cache`,(stderr,stdout,error) => {
+      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    });
+    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\data\\gacha`,(stderr,stdout,error) => {
+      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    });
+    const resp2 = await dialog.showMessageBox(win, {
+      type: 'info',
+      title: '恢复出厂',
+      message: '将重启应用以应用更改',
+      buttons: ['确定']
+    });
+    app.relaunch();
+    app.exit(0);
   }
 });
