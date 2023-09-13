@@ -27,6 +27,18 @@ global.packagedPaths = {
   entryPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, '.')
 };
 
+let win;
+let config_version = 1;
+let gamePath;
+let gamePathDir;
+let patchExists = false;
+let action;
+let javaPath;
+let finalJavaPath;
+let resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top"];
+let gcInput = new Array(3);
+let proxyInput = new Array(2);
+
 function packageNec() {
   const gc_batch = `@echo off\r
 chcp 65001>nul\r
@@ -126,17 +138,6 @@ exit\r`;
     }
   });
 };
-
-
-let win;
-let config_version = 1;
-let gamePath;
-let gamePathDir;
-let patchExists = false;
-let action;
-let javaPath;
-let finalJavaPath;
-let resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top"];
 
 function createWindow() {
   win = new BrowserWindow({
@@ -315,53 +316,155 @@ function executofficialKeystore() {
 
 
 // app.config.json
-if (fs.existsSync(`${global.packagedPaths.entryPath}\\app.config.json`)) {
-  fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Err when reading config file:', err);
-      return;
-    }
-    const config = JSON.parse(data);
-    if (config.game) {
-      gamePath = config.game.path;
-      gamePathDir = path.dirname(gamePath);
-      patchGamePathParaTransfer();
-    }
-    if (config.java) {
-      javaPath = config.java.exec;
-      console.log(javaPath)
-    }
-    if (config.grasscutter.dispatch) {
-      if (config.grasscutter.dispatch.ssl == "selfsigned") {
-        executeSelfSignedKeystore();
-      }
-      else if (config.grasscutter.dispatch.ssl == "official") {
-        executofficialKeystore();
-      }
-    }
-  });
-} else {
-  // create config
-  const app_config = {
-    version: config_version,
-    game: { path: "" },
-    grasscutter: { port: 22102, host: "127.0.0.1", dispatch: { port: 443, ssl: "selfsigned" } },
-    mongodb: { port: 27017 },
-    java: { exec: "" }
-  };
-  gamePath = "";
-  gamePathDir = path.dirname(gamePath);
-  javaPath = "";
-  console.log(javaPath);
-  fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(app_config, null, 2), 'utf8', (err) => {
-    if (err) {
-      console.error('Err when writing config to file:', err);
-      return;
-    }
-    console.log('../app.config.json Created successfully');
-  });
-};
+async function rwAppConfig(action, gcInputRender, proxyInputRender) {
+  try {
+    await fs.promises.access(`${global.packagedPaths.entryPath}\\app.config.json`);
+    const appConfigData = await fs.promises.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf-8');
+    const appConfig = JSON.parse(appConfigData);
 
+    if (action === "main-service-save") {
+      if (appConfig.grasscutter) {
+        appConfig.grasscutter.host = gcInputRender[0];
+        appConfig.grasscutter.port = gcInputRender[1];
+      }
+      if (appConfig.grasscutter.dispatch) {
+        appConfig.grasscutter.dispatch.port = gcInputRender[2];
+      }
+      if (appConfig.proxy) {
+        appConfig.proxy.host = proxyInputRender[0];
+        appConfig.proxy.port = proxyInputRender[1];
+      }
+      fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(appConfig, null, 2), 'utf8', (err) => {
+        if (err) {
+          console.error('Err when writing config to file:', err);
+          return;
+        }
+        console.log('../app.config.json Created successfully');
+      }); 
+      await writeAcConfig("main-service-save", gcInputRender, proxyInputRender);
+
+    } else {
+      if (appConfig.game) {
+        gamePath = appConfig.game.path;
+        gamePathDir = path.dirname(gamePath);
+        patchGamePathParaTransfer();
+      }
+      if (appConfig.java) {
+        javaPath = appConfig.java.exec;
+        console.log(javaPath)
+      }
+      if (appConfig.grasscutter.dispatch) {
+        if (appConfig.grasscutter.dispatch.ssl == "selfsigned") {
+          executeSelfSignedKeystore();
+        }
+        else if (appConfig.grasscutter.dispatch.ssl == "official") {
+          executofficialKeystore();
+        }
+      }
+      if (appConfig.grasscutter) {
+        gcInput[0] = appConfig.grasscutter.host;
+        gcInput[1] = appConfig.grasscutter.port;
+        gcInput[2] = appConfig.grasscutter.dispatch.port;
+        win.webContents.send('gc_text', gcInput[0], gcInput[1], gcInput[2]);
+      }
+      if (appConfig.proxy) {
+        proxyInput[0] = appConfig.proxy.host;
+        proxyInput[1] = appConfig.proxy.port;
+        win.webContents.send('proxy_text', proxyInput[0], proxyInput[1]);
+      }
+      writeAcConfig();
+    }
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      gcInput[0] = "127.0.0.1";
+      gcInput[1] = "22102";
+      gcInput[2] = "443";
+      proxyInput[0] = "127.0.0.1";
+      proxyInput[1] = "443";
+      const app_config = {
+        version: config_version,
+        game: { path: "" },
+        grasscutter: { port: 22102, host: "127.0.0.1", dispatch: { port: 443, ssl: "selfsigned" } },
+        proxy: { port: 443, host: "127.0.0.1" },
+        mongodb: { port: 27017 },
+        java: { exec: "" }
+      };
+      gamePath = "";
+      gamePathDir = path.dirname(gamePath);
+      javaPath = "";
+      console.log(javaPath);
+      await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(app_config, null, 2), 'utf8');
+      console.log('../app.config.json Created successfully');
+    } else {
+      console.error(err)
+    }
+  }
+}
+
+async function writeAcConfig (action, gcInputRender, proxyInputRender) {
+  try {
+    await fs.promises.access(`${global.packagedPaths.gateServerPath}\\Grasscutter\\config.json`);
+    const gcConfigData = await fs.promises.readFile(`${global.packagedPaths.gateServerPath}\\Grasscutter\\config.json`, 'utf-8');
+    const gcConfig = JSON.parse(gcConfigData);
+
+    await fs.promises.access(`${global.packagedPaths.gateServerPath}\\Proxy\\proxy_config.py`);
+    const mitmConfigData = await fs.promises.readFile(`${global.packagedPaths.gateServerPath}\\Proxy\\proxy_config.py`);
+    let mitmConfig = mitmConfigData.toString('utf-8');
+
+    if (action == "main-service-save") {
+      if (gcConfig.server.http) {
+        gcConfig.server.http.accessAddress = gcInputRender[0];
+        console.log("http.accessAddress " + gcConfig.server.http.accessAddress);
+        gcConfig.server.http.bindPort = gcInputRender[2];
+        console.log("http.bindPort " + gcConfig.server.http.bindPort);
+      }
+      if (gcConfig.server.game) {
+        gcConfig.server.game.accessAddress = gcInputRender[0];
+        console.log("game.accessAddress " + gcConfig.server.game.accessAddress);
+        gcConfig.server.game.bindPort = gcInputRender[1];
+        console.log("game.bindPort " + gcConfig.server.game.bindPort);
+      }
+      mitmConfig = mitmConfig.replace(/(REMOTE_HOST\s*=\s*)"([^"]+)"/g, (_, p2) => {
+        console.log(`${p2}"${proxyInputRender[0]}"`);
+        return `${p2}"${proxyInputRender[0]}"`;
+      });
+      mitmConfig = mitmConfig.replace(/(REMOTE_PORT\s*=\s*)([^"]+)/g, (_, p2) => {
+        console.log(`${p2}${proxyInputRender[1]}`);
+        return `${p2}${proxyInputRender[1]}`;
+      });
+    } else {
+      if (gcConfig.server.http) {
+        gcConfig.server.http.accessAddress = gcInput[0];
+        console.log("http.accessAddress " + gcConfig.server.http.accessAddress);
+        gcConfig.server.http.bindPort = gcInput[2];
+        console.log("http.bindPort " + gcConfig.server.http.bindPort);
+      }
+      if (gcConfig.server.game) {
+        gcConfig.server.game.accessAddress = gcInput[0];
+        console.log("game.accessAddress " + gcConfig.server.game.accessAddress);
+        gcConfig.server.game.bindPort = gcInput[1];
+        console.log("game.bindPort " + gcConfig.server.game.bindPort);
+      }
+      mitmConfig = mitmConfig.replace(/(REMOTE_HOST\s*=\s*)"([^"]+)"/g, (_, p2) => {
+        console.log(`${p2}"${proxyInput[0]}"`);
+        return `${p2}"${proxyInput[0]}"`;
+      });
+      mitmConfig = mitmConfig.replace(/(REMOTE_PORT\s*=\s*)([^"]+)/g, (_, p2) => {
+        console.log(`${p2}${proxyInput[1]}`);
+        return `${p2}${proxyInput[1]}`;
+      });
+    }
+    await fs.promises.writeFile(`${global.packagedPaths.gateServerPath}\\Grasscutter\\config.json`, JSON.stringify(gcConfig, null, 2), 'utf8');
+    console.log('moded gc config');
+    await fs.promises.writeFile(`${global.packagedPaths.gateServerPath}\\Proxy\\proxy_config.py`, mitmConfig, 'utf8');
+    console.log('moded mitm config');
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+
+rwAppConfig();
 
 async function checkJava() {
   try {
@@ -699,19 +802,20 @@ ipcMain.on('restoreOfficialButton_delete-path', (event) => {
   }
 });
 
-ipcMain.on('operationBoxBtn_0-run-main-service', async (event) => {
+ipcMain.on('operationBoxBtn_0-run-main-service', async (event, gcInputRender, proxyInputRender) => {
   await checkJava();
-  run_main_service();
+  run_main_service(gcInputRender, proxyInputRender);
 });
 
-async function run_main_service() {
+async function run_main_service (gcInputRender, proxyInputRender) {
+  await rwAppConfig("main-service-save", gcInputRender, proxyInputRender)
   exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe`, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`${error}`);
-      return;
-    }
-    console.log(`stdout: ${stdout}\nsuccess`);
-    console.log(`stderr: ${stderr}\nerror`);
+  if (error) {
+    console.error(`${error}`);
+    return;
+  }
+  console.log(`stdout: ${stdout}\nsuccess`);
+  console.log(`stderr: ${stderr}\nerror`);
   });
   const add_root_crt_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\add_root_crt.bat`], {
     stdio: 'ignore'
@@ -726,7 +830,7 @@ async function run_main_service() {
   const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat  ${finalJavaPath}`], {
     stdio: 'ignore'
   });
-};
+}
 
 ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
   exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe & taskkill /f /im mitmdump.exe & reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f & reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f`, (error, stdout, stderr) => {

@@ -48,7 +48,7 @@ input[name="gc_ip"]{
     font-size: 17px;
     top: 15px;
     width: 120px;
-    color: #a8a5a5;
+    color: #e5e5e5;
     vertical-align: center;  
 }
 
@@ -59,7 +59,7 @@ input[name="gc_game_port"]{
     left: 5px;
     top: 15px;
     width: 120px;
-    color: #a8a5a5;
+    color: #e5e5e5;
     vertical-align: center;  
 }
 

@@ -16,7 +16,10 @@ document.body.oncopy = function () {
     iziToast.info({
         icon: 'fa-regular fa-copy',
         layout: '2',
-        title: '复制成功'
+        title: '复制成功',
+        onOpening: function() {
+            izi_notify.play();
+        }
     });
 };
 

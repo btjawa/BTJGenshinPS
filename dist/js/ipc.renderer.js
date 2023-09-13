@@ -1,4 +1,5 @@
 const { ipcRenderer, ipcMain } = require('electron');
+const path = require('path');
 
 let dragbar_close = document.getElementById('dragbar_close');
 let dragbar_minimize = document.getElementById('dragbar_min');
@@ -26,9 +27,38 @@ let resVersion = document.querySelector('.res_version');
 let gcVersion = document.querySelector('.gc_version');
 let pageLogText0 = document.querySelector('.page_log_text_0');
 let clearData = document.querySelector('.clear_data');
+
+let gcIp = document.querySelector('input[name=gc_ip]');
+let gcGamePort = document.querySelector('input[name=gc_game_port]');
+let gcDispatchPort = document.querySelector('input[name=gc_dispatch_port]');
+let proxyIP = document.querySelector('input[name=proxy_ip]');
+let proxyPort = document.querySelector('input[name=proxy_port]');
+
+const izi_notify_wav = new Audio("sounds/izi_notify.wav");
+
+function izi_notify () {
+    izi_notify_wav.pause();
+    izi_notify_wav.currentTime = 0;
+    izi_notify_wav.play();
+}
+
 let gc_latestCommitSha;
 let gc_latestReleaseTagName;
 let res_latestCommitSha;
+
+ipcRenderer.on('gc_text', (event, input0, input1, input2) => {
+    gcIp.value = input0;
+    gcGamePort.value = input1;
+    gcDispatchPort.value = input2;
+})
+
+ipcRenderer.on('proxy_text', (event, input0, input1) => {
+    proxyIP.value = input0;
+    proxyPort.value = input1;
+})
+
+let gcInputRender = new Array(3);
+let proxyInputRender = new Array(2);
 
 function getLatestCommitID (){
     fetch('https://api.github.com/repos/Grasscutters/Grasscutter/commits')
@@ -147,7 +177,10 @@ ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, 
             icon: 'fa-solid fa-circle-info',
             title: '添加补丁',
             layout: '2',
-            message: '已添加补丁！'
+            message: '已添加补丁！',
+            onOpening: function() {
+                izi_notify()
+            }
         });
     } else {
         patchState.style.display = 'none';
@@ -158,7 +191,10 @@ ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, 
             icon: 'fa-solid fa-circle-exclamation',
             title: '警告',
             layout: '2',
-            message: '补丁不存在！请重新添加游戏目录路径或等待几秒！'
+            message: '补丁不存在！请重新添加游戏目录路径或等待几秒！',
+            onOpening: function() {
+                izi_notify()
+            }
         });
     }
     if (action == "delete_patch_succ") {
@@ -166,7 +202,10 @@ ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, 
             icon: 'fa-solid fa-circle-info',
             title: '删除补丁',
             layout: '2',
-            message: '已删除补丁，恢复官服！若想重新添加补丁请点击 "选择路径"'
+            message: '已删除补丁，恢复官服！若想重新添加补丁请点击 "选择路径"',
+            onOpening: function() {
+                izi_notify()
+            }
         });
     }
     if (action == "game_patch_undf") {
@@ -174,7 +213,10 @@ ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, 
             icon: 'fa-solid fa-circle-exclamation',
             title: '警告',
             layout: '2',
-            message: '请先设置游戏路径！'
+            message: '请先设置游戏路径！',
+            onOpening: function() {
+                izi_notify()
+            }
         });
     }
 });
@@ -184,7 +226,10 @@ ipcRenderer.on('chooseGamePathButton_file-not-valid', (event) => {
         icon: 'fa-solid fa-circle-exclamation',
         layout: '4',
         title: '警告',
-        message: '请选择有效的游戏文件！<br>国服："YuanShen.exe"<br>国际服："GenshinImpact.exe"'
+        message: '请选择有效的游戏文件！<br>国服："YuanShen.exe"<br>国际服："GenshinImpact.exe"',
+        onOpening: function() {
+            izi_notify()
+        }
     });
 })
 
@@ -193,7 +238,10 @@ ipcRenderer.on('chooseJavaPathButton_was-jre', (event) => {
         icon: 'fa-solid fa-circle-exclamation',
         layout: '3',
         title: 'javaPath',
-        message: '请选择JDK文件夹而不是JRE文件夹！<br>或者你可以不自定义路径，让程序自动下载'
+        message: '请选择JDK文件夹而不是JRE文件夹！<br>或者你可以不自定义路径，让程序自动下载',
+        onOpening: function() {
+            izi_notify()
+        }
     });
 });
 
@@ -203,7 +251,10 @@ ipcRenderer.on('chooseJavaPathButton_was-jdk', (event, path) => {
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: 'javaPath',
-        message: 'JDK校验已通过！已保存至配置文件！'
+        message: 'JDK校验已通过！已保存至配置文件！',
+        onOpening: function() {
+            izi_notify()
+        }
     });
 });
 
@@ -212,7 +263,10 @@ ipcRenderer.on('chooseJavaPathButton_not-valid', (event) => {
         icon: 'fa-solid fa-circle-exclamation',
         layout: '2',
         title: 'javaPath',
-        message: '请选择有效的Java文件夹！'
+        message: '请选择有效的Java文件夹！',
+        onOpening: function() {
+            izi_notify()
+        }
     });
 });
 
@@ -226,7 +280,10 @@ resGetWayButton_0.addEventListener('click', () => {
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: '代理',
-        message: '获取资源方式已更改为 代理!'
+        message: '获取资源方式已更改为 代理!',
+        onOpening: function() {
+            izi_notify()
+        }
     });
 });
 
@@ -236,7 +293,10 @@ resGetWayButton_1.addEventListener('click', () => {
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: '直连',
-        message: '获取资源方式已更改为 直连!'
+        message: '获取资源方式已更改为 直连!',
+        onOpening: function() {
+            izi_notify()
+        }
     });
 });
 
@@ -246,7 +306,10 @@ officialKeystoreButton.addEventListener('click', () => {
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: 'Keystore',
-        message: '正在使用 官方Keystore！'
+        message: '正在使用 官方Keystore！',
+        onOpening: function() {
+            izi_notify()
+        }
     });
 });
 
@@ -256,18 +319,28 @@ selfSignedKeystoreButton.addEventListener('click', () => {
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: 'Keystore',
-        message: '正在使用 自签名Keystore！'
+        message: '正在使用 自签名Keystore！',
+        onOpening: function() {
+            izi_notify()
+        }
     });
 });
 
 operationBoxBtn_0.addEventListener('click', () => {
-    ipcRenderer.send('operationBoxBtn_0-run-main-service');
+    gcInputRender = [gcIp.value, gcGamePort.value, gcDispatchPort.value];
+    console.log(gcInputRender)
+    proxyInputRender = [proxyIP.value, proxyPort.value];
+    console.log(proxyInputRender)
+    ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender);
     toggleMenuState('menu_selector_log', 'make-active');
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: '启动服务',
-        message: '正在启动服务...'
+        message: '正在启动服务...',
+        onOpening: function() {
+            izi_notify()
+        }
     });
     pageLogText0.innerHTML += `请不要关闭稍后弹出来的任何一个窗口！<br>正在启动服务...<br>`; 
 });
@@ -293,7 +366,10 @@ ipcRenderer.on('operationBoxBtn_1-success', (event) => {
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: '停止服务',
-        message: '成功停止服务！'
+        message: '成功停止服务！',
+        onOpening: function() {
+            izi_notify()
+        }
     });
     pageLogText0.innerHTML += `成功停止服务！<br>`; 
 });
@@ -307,7 +383,10 @@ ipcRenderer.on('operationBoxBtn_2-success', (event) => {
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: '启动游戏',
-        message: '成功启动游戏！'
+        message: '成功启动游戏！',
+        onOpening: function() {
+            izi_notify()
+        }
     });
 });
 
@@ -316,7 +395,10 @@ updateBtn.addEventListener('click' , () => {
         icon: 'fa-solid fa-circle-info',
         layout: '3',
         title: '更新',
-        message: '正在尝试更新...<br>注意插件等需要手动更新！'
+        message: '正在尝试更新...<br>注意插件等需要手动更新！',
+        onOpening: function() {
+            izi_notify()
+        }
     });
     fetch('https://api.github.com/repos/Grasscutters/Grasscutter/releases/latest')
         .then(response => response.json())
@@ -329,7 +411,10 @@ updateBtn.addEventListener('click' , () => {
         iziToast.warning({
             icon: 'fa-solid fa-circle-exclamation',
             layout: '2',
-            title: 'Github API 已超限！请等待一分钟！'
+            title: 'Github API 已超限！请等待一分钟！',
+            onOpening: function() {
+                izi_notify()
+            }
         });
     });
 });
@@ -359,7 +444,10 @@ ipcRenderer.on('using_proxy', (event, proxyServer) => {
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: '代理',
-        message: `将使用代理：${proxyServer}`
+        message: `将使用代理：${proxyServer}`,
+        onOpening: function() {
+            izi_notify()
+        }
     });
 });
 
@@ -370,7 +458,10 @@ ipcRenderer.on('update_complete', (event) => {
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: '更新',
-        message: '更新成功！'
+        message: '更新成功！',
+        onOpening: function() {
+            izi_notify()
+        }
     });
 });
 
@@ -383,6 +474,9 @@ ipcRenderer.on('clearing_data', (event) => {
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: '恢复出厂',
-        message: '正在清除数据...'
+        message: '正在清除数据...',
+        onOpening: function() {
+            izi_notify()
+        }
     });
 });
