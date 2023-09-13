@@ -28,3 +28,7 @@ jobs:
         cache: 'npm'
     - run: npm install
     - run: npm run actions_package
+    - uses: actions/upload-artifact@v3
+      with:
+        name: BTJGenshinPS
+        path: BTJGenshinPS
