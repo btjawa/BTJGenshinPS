@@ -9,7 +9,6 @@ let error, stderr, stdout;
 
 async function package() {
   try {
-    await exec(`rmdir BTJGenshinPS-${version}-win32-ia32-alpha /s /q`);
     ({error, stderr, stdout} = await exec(`node_modules\\.bin\\electron-packager . BTJGenshinPS --platform=win32 --overwrite --icon=./dist/favicon.ico --arch=ia32 --asar --ignore=GateServer --ignore=data --download.mirrorOptions.mirror=https://npm.taobao.org/mirrors/electron/`));
     if (error) { console.log(error); return; }
     console.log(stdout);
