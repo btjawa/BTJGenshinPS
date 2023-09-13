@@ -31,4 +31,4 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: BTJGenshinPS
-        path: BTJGenshinPS
+        path: BTJGenshinPS.zip
