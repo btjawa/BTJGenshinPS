@@ -2,15 +2,13 @@ const { app, BrowserWindow, ipcMain, shell, dialog, Menu, webContents } = requir
 const path = require('path');
 const fs = require('fs');
 const AdmZip = require('adm-zip');
-const https = require('https');
 const { spawn } = require('child_process');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const Winreg = require('winreg');
+const iconv = require('iconv-lite');
 
 const zlog = require('electron-log');
-const { error } = require('console');
-const { eventNames, stderr, stdout } = require('process');
 let filepath = path.join(__dirname, "..\\logs");
 let nowdate = new Date();
 let nowdate_str = nowdate.getFullYear() + "_" + (nowdate.getMonth() + 1) + "_" + nowdate.getDate() + "_" + nowdate.getHours();
@@ -26,6 +24,7 @@ global.packagedPaths = {
   gateServerPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, 'GateServer'),
   entryPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, '.')
 };
+
 
 let win;
 let config_version = 1;
@@ -204,24 +203,22 @@ app.on('activate', () => {
 
 packageNec();
 
-
-
 //create mitm ca crt
 if (fs.existsSync(path.join(process.env.USERPROFILE, '.mitmproxy'))) {
   console.log(path.join(process.env.USERPROFILE, '.mitmproxy') + " exist.")
 } else {
-  exec(`start /B ${global.packagedPaths.gateServerPath}\\Proxy\\mitmdump.exe`,(stdout, error,stderr) => {
+  exec(`start /B ${global.packagedPaths.gateServerPath}\\Proxy\\mitmdump.exe`, { encoding: 'binary' }, (stdout, error,stderr) => {
     if (error) {
       console.log(error);
       return;
     }
-    console.log(stdout);
+    console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
     console.log(stderr);
   });
   const checkMitm = setInterval(() => {
     if (fs.existsSync(path.join(process.env.USERPROFILE, '.mitmproxy'))) {
       clearInterval(checkMitm);
-      exec('taskkill /f /im mitmdump.exe', (error, stdout, stderr) => {
+      exec('taskkill /f /im mitmdump.exe', { encoding: 'binary' }, (error, stdout, stderr) => {
         if (error) {
           console.log('Error killing mitmdump:', error);
         } else {
@@ -253,10 +250,9 @@ async function fixAppConfig() {
   } catch(err) {}
 }
 
-function patchGamePathParaTransfer() {
+function sendPatchGamePath() {
   if (fs.existsSync(`${gamePathDir}\\version.dll`)) {
-    fixAppConfig();
-    fs.readFileSync(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+    fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
       if (err) {
         console.error('Err when reading config file:', err);
         return;
@@ -265,6 +261,7 @@ function patchGamePathParaTransfer() {
       if (gamePath != "") {
         patchExists = true;
         win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
+        
         if (config.game) {
           config.game.path = `${gamePath}`;
         } else {
@@ -283,18 +280,17 @@ function patchGamePathParaTransfer() {
     patchExists = false;
     win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
     if (gamePath != "") {
-      exec(`copy "${global.packagedPaths.dataPath}\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, (error, stdout, stderr) => {
+      exec(`copy "${global.packagedPaths.dataPath}\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, { encoding: 'binary' }, (error, stdout, stderr) => {
         if (error) {
           console.log(error);
           return;
         }
-        console.log(stdout);
+        console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
         console.log("RSA Patched");
         console.log(stderr);
       });
     };
-    fixAppConfig();
-    fs.readFileSync(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+    fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
       if (err) {
         console.error('Err when reading config file:', err);
         return;
@@ -310,12 +306,12 @@ function patchGamePathParaTransfer() {
 
 
 function executeSelfSignedKeystore() {
-  exec(`copy "${global.packagedPaths.dataPath}\\keystore_selfsigned.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, (error, stdout, stderr) => {
+  exec(`copy "${global.packagedPaths.dataPath}\\keystore_selfsigned.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, { encoding: 'binary' }, (error, stdout, stderr) => {
     if (error) {
       console.log(error);
       return;
     }
-    console.log(stdout);
+    console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
     console.log("selfSignedKeystore");
     console.log(stderr);
   });
@@ -323,12 +319,12 @@ function executeSelfSignedKeystore() {
 
 
 function executofficialKeystore() {
-  exec(`copy "${global.packagedPaths.dataPath}\\keystore_official.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, (error, stdout, stderr) => {
+  exec(`copy "${global.packagedPaths.dataPath}\\keystore_official.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, { encoding: 'binary' }, (error, stdout, stderr) => {
     if (error) {
       console.log(error);
       return;
     }
-    console.log(stdout);
+    console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
     console.log("officialKeystore");
     console.log(stderr);
   });
@@ -338,7 +334,6 @@ function executofficialKeystore() {
 // app.config.json
 async function rwAppConfig(action, gcInputRender, proxyInputRender) {
   try {
-    fixAppConfig();
     await fs.promises.access(`${global.packagedPaths.entryPath}\\app.config.json`);
     const appConfigData = await fs.promises.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf-8');
     const appConfig = JSON.parse(appConfigData);
@@ -363,6 +358,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
           console.error('Err when writing config to file:', err);
           return;
         }
+        fixAppConfig();
         console.log('../app.config.json Created successfully');
       }); 
       await writeAcConfig("main-service-save", gcInputRender, proxyInputRender);
@@ -371,7 +367,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
       if (appConfig.game) {
         gamePath = appConfig.game.path;
         gamePathDir = path.dirname(gamePath);
-        patchGamePathParaTransfer();
+        sendPatchGamePath();
       }
       if (appConfig.java) {
         javaPath = appConfig.java.exec;
@@ -420,6 +416,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
       javaPath = "";
       console.log(javaPath);
       await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(app_config, null, 2), 'utf8');
+      fixAppConfig();
       console.log('../app.config.json Created successfully');
     } else {
       console.error(err)
@@ -494,15 +491,14 @@ rwAppConfig();
 
 async function checkJava() {
   try {
-    const { stdout, stderr } = await exec('java --version');
-    console.log(stdout);
+    const { stdout, stderr } = await exec('java --version', { encoding: 'binary' });
+    console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
     console.log(stderr);
 
     if (stdout.includes('Java(TM) SE Runtime Environment') || stderr.includes('Java(TM) SE Runtime Environment')) {
       win.webContents.send('jdk-already-installed');
       console.log('JDK is already installed.');
       javaPath = 'java';
-      fixAppConfig();
       await fs.promises.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', async (err, data) => {
         if (err) {
           console.error('Err when reading config file:', err);
@@ -521,6 +517,7 @@ async function checkJava() {
             console.error('Err when writing config file:', err);
             return;
           }
+          fixAppConfig();
           console.log('../app.config.json Updated Successfully');
         });
       });
@@ -578,7 +575,6 @@ async function downloadJDK() {
           process.env.PATH = `${process.env.PATH};${jdkPath}`;
           javaPath = jdkPath;
           console.log(jdkPath);
-          fixAppConfig();
           fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
             if (err) {
               console.error('Err when reading config file:', err);
@@ -599,6 +595,7 @@ async function downloadJDK() {
                 reject(err);
                 return;
               }
+              fixAppConfig();
               console.log('../app.config.json Updated Successfully');
               resolve();
             });
@@ -679,10 +676,10 @@ async function update(gc_org_url) {
   try {
     await downloadFile(`${resURL[0]}${orgUrl.pathname}`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download`, "Grasscutter服务端");
     await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download`, "Resources");
-    exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar`,(stdout,stderr,error) => {
+    exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar`,{ encoding: 'binary' },(stdout,stderr,error) => {
       error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
     })
-    exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip`,(stdout,stderr,error) => {
+    exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip`,{ encoding: 'binary' },(stdout,stderr,error) => {
       error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
     })
     win.webContents.send('update_complete');
@@ -735,7 +732,7 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', (event) => {
     properties: ['openDirectory']
   }).then(result => {
     if (!result.canceled && result.filePaths.length > 0) {
-      exec(`"${result.filePaths[0]}\\bin\\java" -version`, (error,stderr,stdout) => {
+      exec(`"${result.filePaths[0]}\\bin\\java" -version`, { encoding: 'binary' },(error,stderr,stdout) => {
         if (error) {
           console.log(`Err ${error}`);
           return;
@@ -747,7 +744,6 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', (event) => {
             win.webContents.send('chooseJavaPathButton_was-jdk',javaPath);
             javaPath = result.filePaths[0];
             console.log(javaPath);
-            fixAppConfig();
             fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
               if (err) {
                 console.error('Err when reading config file:', err);
@@ -766,6 +762,7 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', (event) => {
                   console.error('Err when writing config file:', err);
                   return;
                 }
+                fixAppConfig();
                 console.log('../app.config.json Updated Successfully');
               });
             });
@@ -794,7 +791,7 @@ ipcMain.on('chooseGamePathButton_open-file-dialog', (event) => {
       console.log(gamePath);
       const gamePathFileName = path.basename(gamePath);
       if (gamePathFileName === 'GenshinImpact.exe' || gamePathFileName === 'YuanShen.exe') {
-        patchGamePathParaTransfer();
+        sendPatchGamePath();
       } else {
         event.sender.send('chooseGamePathButton_file-not-valid', gamePath, patchExists, action);
       }
@@ -808,7 +805,7 @@ ipcMain.on('restoreOfficialButton_delete-path', (event) => {
   if (gamePath) {
     console.log(`${gamePathDir}\\version.dll`)
     if (fs.existsSync(`${gamePathDir}\\version.dll`)) {
-      exec(`rm "${gamePathDir}\\version.dll"`, (error, stdout, stderr) => {
+      exec(`rm "${gamePathDir}\\version.dll"`, { encoding: 'binary' }, (error, stdout, stderr) => {
         if (error) {
           console.error(`执行出错: ${error}`);
           return;
@@ -838,44 +835,44 @@ ipcMain.on('operationBoxBtn_0-run-main-service', async (event, gcInputRender, pr
 
 async function run_main_service (gcInputRender, proxyInputRender) {
   await rwAppConfig("main-service-save", gcInputRender, proxyInputRender)
-  exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe`, (error, stdout, stderr) => {
-  if (error) {
-    console.error(`${error}`);
-    return;
-  }
-  console.log(`stdout: ${stdout}\nsuccess`);
-  console.log(`stderr: ${stderr}\nerror`);
-  });
-  const add_root_crt_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\add_root_crt.bat`], {
-    stdio: 'ignore'
-  });
-  const mongo_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mongo.bat`], {
-    stdio: 'ignore'
-  });
-  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`], {
-    stdio: 'ignore'
-  });
-  javaPath == "java" ? finalJavaPath = "java" : finalJavaPath = `${javaPath}\\bin\\java`;
-  const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat  ${finalJavaPath}`], {
-    stdio: 'ignore'
-  });
+  exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe`, { encoding: 'binary' }, (error, stdout, stderr) => {
+    if (error) {
+      console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
+      return;
+    }
+    console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+    console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+    });
+    const add_root_crt_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\add_root_crt.bat`], {
+      stdio: 'ignore'
+    });
+    const mongo_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mongo.bat`], {
+      stdio: 'ignore'
+    });
+    const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`], {
+      stdio: 'ignore'
+    });
+    javaPath == "java" ? finalJavaPath = "java" : finalJavaPath = `${javaPath}\\bin\\java`;
+    const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat  ${finalJavaPath}`], {
+      stdio: 'ignore'
+    });
 }
 
 ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
-  exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe & taskkill /f /im mitmdump.exe & reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f & reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f`, (error, stdout, stderr) => {
+  exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe & taskkill /f /im mitmdump.exe & reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f & reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f`, { encoding: 'binary' }, (error, stdout, stderr) => {
     if (error) {
-      console.error(`${error}`);
+      console.error(error);
       return;
     }
-    console.log(`${stdout}\nsuccess`);
-    console.log(`${stderr}\nerror`);
+    console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+    console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
     event.sender.send('operationBoxBtn_1-success');
   });
 });
 
 ipcMain.on('operationBoxBtn_2-run-game', (event) => {
   if (fs.existsSync(`${gamePath}`)) {
-    exec(`start "" "${gamePath}"`, (error, stdout, stderr) => {
+    exec(`start "" "${gamePath}"`, { encoding: 'binary' }, (error, stdout, stderr) => {
       if (error) {
         console.error(`${error}`);
         return;
@@ -906,22 +903,22 @@ ipcMain.on('clear_data', async (event) => {
 
   if (resp0.response === 0) {
     win.webContents.send('clearing_data');
-    exec(`rm ${global.packagedPaths.entryPath}\\app.config.json`,(stderr,stdout,error) => {        
+    exec(`rm ${global.packagedPaths.entryPath}\\app.config.json`,{ encoding: 'binary' },(stderr,stdout,error) => {        
       error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
     });
-    exec(`for /r ${global.packagedPaths.gateServerPath}\\MongoDB\\data %G in (*.*) do del /s /q %G & for /d %G in (${global.packagedPaths.gateServerPath}\\MongoDB\\data\\*) do rmdir /s /q %G`, (error, stdout, stderr) => {
+    exec(`for /r ${global.packagedPaths.gateServerPath}\\MongoDB\\data %G in (*.*) do del /s /q %G & for /d %G in (${global.packagedPaths.gateServerPath}\\MongoDB\\data\\*) do rmdir /s /q %G`, { encoding: 'binary' }, (error, stdout, stderr) => {
       error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
     });
-    exec(`rmdir /s /q "${global.packagedPaths.gateServerPath}\\Grasscutter\\GM Handbook"`,(stderr,stdout,error) => {
+    exec(`rmdir /s /q "${global.packagedPaths.gateServerPath}\\Grasscutter\\GM Handbook"`,{ encoding: 'binary' },(stderr,stdout,error) => {
       error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
     });
-    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\logs`,(stderr,stdout,error) => {
+    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\logs`,{ encoding: 'binary' },(stderr,stdout,error) => {
       error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
     });
-    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\cache`,(stderr,stdout,error) => {
+    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\cache`,{ encoding: 'binary' },(stderr,stdout,error) => {
       error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
     });
-    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\data\\gacha`,(stderr,stdout,error) => {
+    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\data\\gacha`,{ encoding: 'binary' },(stderr,stdout,error) => {
       error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
     });
     const resp2 = await dialog.showMessageBox(win, {
