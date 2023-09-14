@@ -57,7 +57,7 @@ ipcRenderer.on('proxy_text', (event, input0, input1) => {
     proxyPort.value = input1;
 })
 
-let gcInputRender = new Array(3);
+let gcInputRender = new Array(4);
 let proxyInputRender = new Array(2);
 
 function getLatestCommitID (){
@@ -327,10 +327,8 @@ selfSignedKeystoreButton.addEventListener('click', () => {
 });
 
 operationBoxBtn_0.addEventListener('click', () => {
-    gcInputRender = [gcIp.value, gcGamePort.value, gcDispatchPort.value];
-    console.log(gcInputRender)
+    gcInputRender = [gcIp.value, gcGamePort.value, gcDispatchPort.value, "dispatchcnglobal.yuanshen.com"];
     proxyInputRender = [proxyIP.value, proxyPort.value];
-    console.log(proxyInputRender)
     ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender);
     toggleMenuState('menu_selector_log', 'make-active');
     iziToast.info({

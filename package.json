@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "package": "node run_package.js",
-    "actions_package": "electron-packager . BTJGenshinPS --platform=win32 --overwrite --icon=./dist/favicon.ico --arch=ia32 --asar --ignore=GateServer --ignore=data"
+    "actions_package": "node actions_run_package.js"
   },
   "repository": {
     "type": "git",

@@ -36,7 +36,7 @@ let action;
 let javaPath;
 let finalJavaPath;
 let resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top"];
-let gcInput = new Array(3);
+let gcInput = new Array(4);
 let proxyInput = new Array(2);
 
 function packageNec() {
@@ -204,9 +204,6 @@ app.on('activate', () => {
 
 packageNec();
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 
 //create mitm ca crt
@@ -235,9 +232,31 @@ if (fs.existsSync(path.join(process.env.USERPROFILE, '.mitmproxy'))) {
   }, 100);
 }
 
+async function fixAppConfig() {
+  try {
+    await fs.promises.access(`${global.packagedPaths.entryPath}\\app.config.json`);
+    let data = await fs.promises.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf-8');
+    while (data.length) {
+      try {
+        JSON.parse(data);
+        console.log("fixed app.config.json")
+        break;
+      } catch (err) {
+        data = data.slice(0, -1);
+      }
+    }
+    if (data.length) {
+      await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, data, 'utf-8');
+    } else {
+      console.error("connot fix app.config.json")
+    }
+  } catch(err) {}
+}
+
 function patchGamePathParaTransfer() {
   if (fs.existsSync(`${gamePathDir}\\version.dll`)) {
-    fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+    fixAppConfig();
+    fs.readFileSync(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
       if (err) {
         console.error('Err when reading config file:', err);
         return;
@@ -274,7 +293,8 @@ function patchGamePathParaTransfer() {
         console.log(stderr);
       });
     };
-    fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+    fixAppConfig();
+    fs.readFileSync(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
       if (err) {
         console.error('Err when reading config file:', err);
         return;
@@ -318,14 +338,18 @@ function executofficialKeystore() {
 // app.config.json
 async function rwAppConfig(action, gcInputRender, proxyInputRender) {
   try {
+    fixAppConfig();
     await fs.promises.access(`${global.packagedPaths.entryPath}\\app.config.json`);
     const appConfigData = await fs.promises.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf-8');
     const appConfig = JSON.parse(appConfigData);
-
+    
     if (action === "main-service-save") {
       if (appConfig.grasscutter) {
         appConfig.grasscutter.host = gcInputRender[0];
         appConfig.grasscutter.port = gcInputRender[1];
+        if (appConfig.grasscutter.dispatch) {
+          appConfig.grasscutter.dispatch.host = gcInputRender[3];
+        }
       }
       if (appConfig.grasscutter.dispatch) {
         appConfig.grasscutter.dispatch.port = gcInputRender[2];
@@ -334,7 +358,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
         appConfig.proxy.host = proxyInputRender[0];
         appConfig.proxy.port = proxyInputRender[1];
       }
-      fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(appConfig, null, 2), 'utf8', (err) => {
+      await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(appConfig, null, 2), 'utf8', (err) => {
         if (err) {
           console.error('Err when writing config to file:', err);
           return;
@@ -353,15 +377,16 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
         javaPath = appConfig.java.exec;
         console.log(javaPath)
       }
-      if (appConfig.grasscutter.dispatch) {
-        if (appConfig.grasscutter.dispatch.ssl == "selfsigned") {
-          executeSelfSignedKeystore();
-        }
-        else if (appConfig.grasscutter.dispatch.ssl == "official") {
-          executofficialKeystore();
-        }
-      }
       if (appConfig.grasscutter) {
+        if (appConfig.grasscutter.dispatch) {
+          if (appConfig.grasscutter.dispatch.ssl == "selfsigned") {
+            executeSelfSignedKeystore();
+          }
+          else if (appConfig.grasscutter.dispatch.ssl == "official") {
+            executofficialKeystore();
+          }
+          gcInput[3] = appConfig.grasscutter.dispatch.host;
+        }
         gcInput[0] = appConfig.grasscutter.host;
         gcInput[1] = appConfig.grasscutter.port;
         gcInput[2] = appConfig.grasscutter.dispatch.port;
@@ -379,14 +404,15 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
       gcInput[0] = "127.0.0.1";
       gcInput[1] = "22102";
       gcInput[2] = "443";
+      gcInput[3] = "dispatchcnglobal.yuanshen.com";
       proxyInput[0] = "127.0.0.1";
       proxyInput[1] = "443";
       const app_config = {
         version: config_version,
         game: { path: "" },
-        grasscutter: { port: 22102, host: "127.0.0.1", dispatch: { port: 443, ssl: "selfsigned" } },
-        proxy: { port: 443, host: "127.0.0.1" },
-        mongodb: { port: 27017 },
+        grasscutter: { port: "22102", host: "127.0.0.1", dispatch: { port: "443", host: "dispatchcnglobal.yuanshen.com", ssl: "selfsigned" } },
+        proxy: { port: "443", host: "127.0.0.1" },
+        mongodb: { port: "27017" },
         java: { exec: "" }
       };
       gamePath = "";
@@ -413,7 +439,7 @@ async function writeAcConfig (action, gcInputRender, proxyInputRender) {
 
     if (action == "main-service-save") {
       if (gcConfig.server.http) {
-        gcConfig.server.http.accessAddress = gcInputRender[0];
+        gcConfig.server.http.accessAddress = gcInputRender[3];
         console.log("http.accessAddress " + gcConfig.server.http.accessAddress);
         gcConfig.server.http.bindPort = gcInputRender[2];
         console.log("http.bindPort " + gcConfig.server.http.bindPort);
@@ -434,7 +460,7 @@ async function writeAcConfig (action, gcInputRender, proxyInputRender) {
       });
     } else {
       if (gcConfig.server.http) {
-        gcConfig.server.http.accessAddress = gcInput[0];
+        gcConfig.server.http.accessAddress = gcInput[3];
         console.log("http.accessAddress " + gcConfig.server.http.accessAddress);
         gcConfig.server.http.bindPort = gcInput[2];
         console.log("http.bindPort " + gcConfig.server.http.bindPort);
@@ -476,7 +502,8 @@ async function checkJava() {
       win.webContents.send('jdk-already-installed');
       console.log('JDK is already installed.');
       javaPath = 'java';
-      fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+      fixAppConfig();
+      await fs.promises.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', async (err, data) => {
         if (err) {
           console.error('Err when reading config file:', err);
           return;
@@ -489,7 +516,7 @@ async function checkJava() {
             config.java = { exec: javaPath };
           }
         }
-        fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, null, 2), 'utf8', err => {
+        await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, null, 2), 'utf8', err => {
           if (err) {
             console.error('Err when writing config file:', err);
             return;
@@ -551,6 +578,7 @@ async function downloadJDK() {
           process.env.PATH = `${process.env.PATH};${jdkPath}`;
           javaPath = jdkPath;
           console.log(jdkPath);
+          fixAppConfig();
           fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
             if (err) {
               console.error('Err when reading config file:', err);
@@ -719,6 +747,7 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', (event) => {
             win.webContents.send('chooseJavaPathButton_was-jdk',javaPath);
             javaPath = result.filePaths[0];
             console.log(javaPath);
+            fixAppConfig();
             fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
               if (err) {
                 console.error('Err when reading config file:', err);
