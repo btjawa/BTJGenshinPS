@@ -11,24 +11,16 @@ async function package() {
   try {
     await exec(`rmdir BTJGenshinPS-${version}-win32-ia32-alpha /s /q`);
     ({error, stderr, stdout} = await exec(`node_modules\\.bin\\electron-packager . BTJGenshinPS --platform=win32 --overwrite --icon=./dist/favicon.ico --arch=ia32 --asar --ignore=GateServer --ignore=data --download.mirrorOptions.mirror=https://npm.taobao.org/mirrors/electron/`));
-    if (error) { console.log(error); return; }
-    console.log(stdout);
-    console.log(stderr);
+    error ? config.error(error) : console.log(`${stdout}\n${stderr}`)
 
     ({error, stderr, stdout} = await exec(`move BTJGenshinPS-win32-ia32 BTJGenshinPS-${version}-win32-ia32-alpha`));
-    if (error) { console.log(error); return; }
-    console.log(stdout);
-    console.log(stderr);
+    error ? config.error(error) : console.log(`${stdout}\n${stderr}`)
 
     ({error, stderr, stdout} = await exec(`xcopy .\\data .\\BTJGenshinPS-${version}-win32-ia32-alpha\\resources\\data /E /I`));
-    if (error) { console.log(error); return; }
-    console.log(stdout);
-    console.log(stderr);
+    error ? config.error(error) : console.log(`${stdout}\n${stderr}`)
 
     ({error, stderr, stdout} = await exec(`xcopy .\\GateServer .\\BTJGenshinPS-${version}-win32-ia32-alpha\\resources\\GateServer /E /I`));
-    if (error) { console.log(error); return; }
-    console.log(stdout);
-    console.log(stderr);
+    error ? config.error(error) : console.log(`${stdout}\n${stderr}`)
 
     const files = await fs.readdir(localesDir);
     const filesToKeep = ['en-US.pak', 'zh-CN.pak', 'zh-TW.pak'];
