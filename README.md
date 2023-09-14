@@ -10,7 +10,7 @@ GateServer 请从Release中获取
 
 ## To Do
 
-- [ ] 修复console输出中文锟斤拷
+- [x] 修复console输出中文锟斤拷
 
 - [ ] 十分详细的文档
 
