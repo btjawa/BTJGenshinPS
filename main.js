@@ -343,7 +343,11 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
         appConfig.grasscutter.host = gcInputRender[0];
         appConfig.grasscutter.port = gcInputRender[1];
         if (appConfig.grasscutter.dispatch) {
-          appConfig.grasscutter.dispatch.host = gcInputRender[3];
+          if (appConfig.grasscutter.host!="127.0.0.1" || appConfig.grasscutter.host!="localhost"){
+            appConfig.grasscutter.dispatch.host = gcInputRender[3];
+          } else {
+            appConfig.grasscutter.dispatch.host = "127.0.0.1";
+          }
         }
       }
       if (appConfig.grasscutter.dispatch) {
@@ -381,7 +385,11 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
           else if (appConfig.grasscutter.dispatch.ssl == "official") {
             executofficialKeystore();
           }
-          gcInput[3] = appConfig.grasscutter.dispatch.host;
+          if (appConfig.grasscutter.host!="127.0.0.1" || appConfig.grasscutter.host!="localhost"){
+            appConfig.grasscutter.dispatch.host = gcInput[3];
+          } else {
+            appConfig.grasscutter.dispatch.host = "127.0.0.1";
+          }
         }
         gcInput[0] = appConfig.grasscutter.host;
         gcInput[1] = appConfig.grasscutter.port;
@@ -400,13 +408,13 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
       gcInput[0] = "127.0.0.1";
       gcInput[1] = "22102";
       gcInput[2] = "443";
-      gcInput[3] = "dispatchcnglobal.yuanshen.com";
+      gcInput[3] = "127.0.0.1";
       proxyInput[0] = "127.0.0.1";
       proxyInput[1] = "443";
       const app_config = {
         version: config_version,
         game: { path: "" },
-        grasscutter: { port: "22102", host: "127.0.0.1", dispatch: { port: "443", host: "dispatchcnglobal.yuanshen.com", ssl: "selfsigned" } },
+        grasscutter: { port: "22102", host: "127.0.0.1", dispatch: { port: "443", host: "127.0.0.1", ssl: "selfsigned" } },
         proxy: { port: "443", host: "127.0.0.1" },
         mongodb: { port: "27017" },
         java: { exec: "" }
