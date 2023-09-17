@@ -4,6 +4,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const version = "1.0.0";
 const type = "alpha";
+const iconv = require('iconv-lite');
 
 const localesDir = path.join(__dirname, `BTJGenshinPS-${version}-win32-ia32-${type}`, 'locales');
 let error, stderr, stdout;
@@ -17,24 +18,36 @@ let error, stderr, stdout;
       if (err.code === 'ENOENT') {
           await package();
       } else {
-          console.error(err);
+        console.error(err);
       }
   }
 })();
 
+exec("chcp 65001",(error,stdout,stderr) => {
+  error ? console.error(error) : console.log(`${stderr}\n${stdout}`)
+})
+
 async function package() {
   try {
-    ({error, stderr, stdout} = await exec(`node_modules\\.bin\\electron-packager . BTJGenshinPS --platform=win32 --overwrite --icon=./dist/favicon.ico --arch=ia32 --asar --ignore=GateServer --ignore=data --download.mirrorOptions.mirror=https://npm.taobao.org/mirrors/electron/`));
-    error ? console.error(error) : console.log(`${stdout}\n${stderr}`);
+    ({error, stdout, stderr} = await exec(`node_modules\\.bin\\electron-packager . BTJGenshinPS --platform=win32 --overwrite --icon=./dist/favicon.ico --arch=ia32 --extra-resource=./data --extra-resource=./GateServer --ignore=GateServer --ignore=data --ignore=release.md --download.mirrorOptions.mirror=https://npm.taobao.org/mirrors/electron/`));
+    if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
 
-    ({error, stderr, stdout} = await exec(`move BTJGenshinPS-win32-ia32 BTJGenshinPS-${version}-win32-ia32-${type}`));
-    error ? console.error(error) : console.log(`${stdout}\n${stderr}`);
+    ({error, stdout, stderr} = await exec(`xcopy .\\node_modules\\iconv-lite .\\BTJGenshinPS-win32-ia32\\resources\\app\\node_modules\\iconv-lite /E /I /Y`));
+    if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
 
-    ({error, stderr, stdout} = await exec(`xcopy .\\data .\\BTJGenshinPS-${version}-win32-ia32-${type}\\resources\\data /E /I`));
-    error ? console.error(error) : console.log(`${stdout}\n${stderr}`);
+    ({error, stdout, stderr} = await exec(`move BTJGenshinPS-win32-ia32 BTJGenshinPS-${version}-win32-ia32-${type}`));
+    if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
 
-    ({error, stderr, stdout} = await exec(`xcopy .\\GateServer .\\BTJGenshinPS-${version}-win32-ia32-${type}\\resources\\GateServer /E /I`));
-    error ? console.error(error) : console.log(`${stdout}\n${stderr}`);
+    ({error, stdout, stderr} = await exec(`asar pack BTJGenshinPS-${version}-win32-ia32-${type}\\resources\\app BTJGenshinPS-${version}-win32-ia32-${type}\\resources\\app.asar && rmdir BTJGenshinPS-${version}-win32-ia32-${type}\\resources\\app /s /q`));
+    if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
 
     const files = await fs.readdir(localesDir);
     const filesToKeep = ['en-US.pak', 'zh-CN.pak', 'zh-TW.pak'];

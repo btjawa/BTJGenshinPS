@@ -32,6 +32,8 @@ GateServer 请从Release中获取
 
 ## Development
 
+若package后想要用命令行运行，请先使用 `chcp 65001` 将代码页改为 UTF-8
+
 Using NPM
 
 **Requirements:**
@@ -55,11 +57,17 @@ npm run package # Package
 
 ## Update
 
-用一键更新就好（目前在todo里）
+### Update App
+
+一键更新目前在 TODO
 
 手动更新时只用下载Release中带有app的zip，替换掉除resources文件夹以外的所有文件
 
 然后替换掉resources文件夹中的app.asar就更新完毕了
+
+### Update GateServer
+
+可切换到 主页 选项卡后点击 “更新资源”
 
 <img src="https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white">
 

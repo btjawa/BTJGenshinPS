@@ -25,7 +25,6 @@ global.packagedPaths = {
   entryPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, '.')
 };
 
-
 let win;
 let config_version = 1;
 let gamePath;
@@ -181,9 +180,9 @@ function createWindow() {
 
 app.whenReady().then(createWindow);
 
-app.on('window-all-closed', () => {
+app.on('window-all-closed', (event) => {
   if (process.platform !== 'darwin') {
-    app.quit();
+    app.exit();
   }
 });
 
@@ -684,11 +683,15 @@ async function update(gc_org_url) {
   try {
     await downloadFile(`${resURL[0]}${orgUrl.pathname}`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download`, "Grasscutter服务端");
     await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download`, "Resources");
-    exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar`,{ encoding: 'binary' },(stdout,stderr,error) => {
-      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar`,{ encoding: 'binary' },(error,stdout,stderr) => {
+      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
     })
-    exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip`,{ encoding: 'binary' },(stdout,stderr,error) => {
-      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip`,{ encoding: 'binary' },(error,stdout,stderr) => {
+      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
     })
     win.webContents.send('update_complete');
     console.log("Update Completed");
@@ -850,20 +853,20 @@ async function run_main_service (gcInputRender, proxyInputRender) {
     }
     console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
     console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
-    });
-    const add_root_crt_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\add_root_crt.bat`], {
-      stdio: 'ignore'
-    });
-    const mongo_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mongo.bat`], {
-      stdio: 'ignore'
-    });
-    const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`], {
-      stdio: 'ignore'
-    });
-    javaPath == "java" ? finalJavaPath = "java" : finalJavaPath = `${javaPath}\\bin\\java`;
-    const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat  ${finalJavaPath}`], {
-      stdio: 'ignore'
-    });
+  });
+  const add_root_crt_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\add_root_crt.bat`], {
+    stdio: 'ignore'
+  });
+  const mongo_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mongo.bat`], {
+    stdio: 'ignore'
+  });
+  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`], {
+    stdio: 'ignore'
+  });
+  javaPath == "java" ? finalJavaPath = "java" : finalJavaPath = `${javaPath}\\bin\\java`;
+  const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat  ${finalJavaPath}`], {
+    stdio: 'ignore'
+  });
 }
 
 ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
@@ -911,23 +914,35 @@ ipcMain.on('clear_data', async (event) => {
 
   if (resp0.response === 0) {
     win.webContents.send('clearing_data');
-    exec(`rm ${global.packagedPaths.entryPath}\\app.config.json`,{ encoding: 'binary' },(stderr,stdout,error) => {        
-      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    exec(`rm ${global.packagedPaths.entryPath}\\app.config.json`,{ encoding: 'binary' },(error,stdout,stderr) => {        
+      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
     });
     exec(`for /r ${global.packagedPaths.gateServerPath}\\MongoDB\\data %G in (*.*) do del /s /q %G & for /d %G in (${global.packagedPaths.gateServerPath}\\MongoDB\\data\\*) do rmdir /s /q %G`, { encoding: 'binary' }, (error, stdout, stderr) => {
-      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
     });
-    exec(`rmdir /s /q "${global.packagedPaths.gateServerPath}\\Grasscutter\\GM Handbook"`,{ encoding: 'binary' },(stderr,stdout,error) => {
-      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    exec(`rmdir /s /q "${global.packagedPaths.gateServerPath}\\Grasscutter\\GM Handbook"`,{ encoding: 'binary' },(error,stdout,stderr) => {
+      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
     });
-    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\logs`,{ encoding: 'binary' },(stderr,stdout,error) => {
-      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\logs`,{ encoding: 'binary' },(error,stdout,stderr) => {
+      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
     });
-    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\cache`,{ encoding: 'binary' },(stderr,stdout,error) => {
-      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\cache`,{ encoding: 'binary' },(error,stdout,stderr) => {
+      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
     });
-    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\data\\gacha`,{ encoding: 'binary' },(stderr,stdout,error) => {
-      error ? console.log(error) : console.log(`${stdout}\n${stderr}`);
+    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\data\\gacha`,{ encoding: 'binary' },(error,stdout,stderr) => {
+      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
     });
     const resp2 = await dialog.showMessageBox(win, {
       type: 'info',
