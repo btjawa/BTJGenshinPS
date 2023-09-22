@@ -3,7 +3,7 @@ const exec = util.promisify(require('child_process').exec);
 const fs = require('fs').promises;
 const path = require('path');
 const version = "1.0.0";
-const type = "alpha";
+const type = "beta";
 const iconv = require('iconv-lite');
 
 const localesDir = path.join(__dirname, `BTJGenshinPS-${version}-win32-ia32-${type}`, 'locales');
