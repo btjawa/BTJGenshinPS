@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog, Menu, webContents } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const AdmZip = require('adm-zip');
@@ -7,23 +7,39 @@ const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const Winreg = require('winreg');
 const iconv = require('iconv-lite');
-
-const zlog = require('electron-log');
-let filepath = path.join(__dirname, "..\\logs");
-let nowdate = new Date();
-let nowdate_str = nowdate.getFullYear() + "_" + (nowdate.getMonth() + 1) + "_" + nowdate.getDate() + "_" + nowdate.getHours();
-let filename = "app.console_" + nowdate_str + ".log";
-zlog.transports.file.resolvePath = () => path.join(filepath, filename);
-zlog.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
-zlog.transports.file.level = true;
-zlog.transports.console.level = false;
-global.zlog = zlog;
+const express = require('express');
+const express_app = express();
 
 global.packagedPaths = {
   dataPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, 'data'),
   gateServerPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, 'GateServer'),
-  entryPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, '.')
+  entryPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, '.'),
+  docsPath: app.isPackaged ? path.join(path.dirname(app.getAppPath()), 'docs') : path.join(__dirname, 'dist', 'docs'),
 };
+
+const EXPRESS_PORT = 52805;
+
+express_app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+
+  if (!req.headers['user-agent'] || !req.headers['user-agent'].includes('Electron')) {
+      return res.status(403).send(`<body>
+      <center><h1>403 Forbidden</h1></center>
+      <hr><center>btjawa</center>
+      </body>`);
+  }
+
+  next();
+});
+
+express_app.use('/BGP-docs', express.static(global.packagedPaths.docsPath));
+
+express_app.use('/main', express.static(path.join(__dirname, './dist')));
+
+express_app.listen(EXPRESS_PORT, () => {
+  console.log(`Server is running on http://localhost:${EXPRESS_PORT}`);
+});
 
 let win;
 let config_version = 1;
@@ -33,11 +49,11 @@ let patchExists = false;
 let action;
 let javaPath;
 let finalJavaPath;
-let resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top"];
+let resURL = new Array(2).fill("https://proxy.btl-cdn.top");
 let gcInput = new Array(4);
 let proxyInput = new Array(2);
 
-function packageNec() {
+async function packageNec() {
   const gc_batch = `@echo off\r
 chcp 65001>nul\r
 title Grasscutter - 不要关闭这个窗口\r
@@ -104,7 +120,7 @@ certutil -addstore -f "Root" "${global.packagedPaths.dataPath}\\root.crt"\r
 certutil -addstore -f "Root" "%USERPROFILE%\\.mitmproxy\\mitmproxy-ca-cert.cer"\r
 exit\r`;
 
-  fs.writeFile(path.join(global.packagedPaths.dataPath, 'run_gc.bat'), gc_batch, (err) => {
+  await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_gc.bat'), gc_batch, (err) => {
     if (err) {
       console.error('Err:', err);
     } else {
@@ -112,7 +128,7 @@ exit\r`;
     }
   });
 
-  fs.writeFile(path.join(global.packagedPaths.dataPath, 'run_mongo.bat'), mongo_batch, (err) => {
+  await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_mongo.bat'), mongo_batch, (err) => {
     if (err) {
       console.error('Err:', err);
     } else {
@@ -120,7 +136,7 @@ exit\r`;
     }
   });
 
-  fs.writeFile(path.join(global.packagedPaths.dataPath, 'run_mitm_proxy.bat'), mitm_proxy_batch, (err) => {
+  await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_mitm_proxy.bat'), mitm_proxy_batch, (err) => {
     if (err) {
       console.error('Err:', err);
     } else {
@@ -128,7 +144,7 @@ exit\r`;
     }
   });
 
-  fs.writeFile(path.join(global.packagedPaths.dataPath, 'add_root_crt.bat'), add_root_crt_batch, (err) => {
+  await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'add_root_crt.bat'), add_root_crt_batch, (err) => {
     if (err) {
       console.error('Err:', err);
     } else {
@@ -152,21 +168,7 @@ function createWindow() {
     },
   });
 
-  win.loadFile('./dist/index.html');
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: '复制',
-      role: 'copy',
-    },
-    {
-      label: '粘贴',
-      role: 'paste',
-    }
-  ]);
-
-  win.webContents.on('context-menu', (e, params) => {
-    contextMenu.popup(win, params.x, params.y);
-  });
+  win.loadURL(`http://localhost:${EXPRESS_PORT}/main`);
 
   win.on('maximize', function () {
     win.webContents.send('main-window-max');
@@ -175,14 +177,18 @@ function createWindow() {
     win.webContents.send('main-window-unmax');
   })
 
-  if (!app.isPackaged) { win.webContents.openDevTools(); }
+  if (!app.isPackaged) {
+    setTimeout(() => {
+      win.webContents.openDevTools();
+    }, 500);
+  }
 }
 
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', (event) => {
   if (process.platform !== 'darwin') {
-    app.exit();
+    app.quit();
   }
 });
 
@@ -200,7 +206,10 @@ app.on('activate', () => {
   }
 });
 
-packageNec();
+(async () => {
+  const result = await packageNec();
+  console.log(result);
+})();
 
 //create mitm ca crt
 if (fs.existsSync(path.join(process.env.USERPROFILE, '.mitmproxy'))) {
@@ -249,7 +258,8 @@ async function fixAppConfig() {
   } catch(err) {}
 }
 
-function sendPatchGamePath() {
+function sendPatchGamePath(gamePath) {
+  console.log(gamePath)
   if (fs.existsSync(`${gamePathDir}\\version.dll`)) {
     fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
       if (err) {
@@ -370,7 +380,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
       if (appConfig.game) {
         gamePath = appConfig.game.path;
         gamePathDir = path.dirname(gamePath);
-        sendPatchGamePath();
+        sendPatchGamePath(gamePath);
       }
       if (appConfig.java) {
         javaPath = appConfig.java.exec;
@@ -681,8 +691,8 @@ async function downloadFile(url, outputPath, action) {
 async function update(gc_org_url) {
   const orgUrl = new URL(gc_org_url);
   try {
-    await downloadFile(`${resURL[0]}${orgUrl.pathname}`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download`, "Grasscutter服务端");
-    await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download`, "Resources");
+    await downloadFile(`https://gh-${resURL[0]}${orgUrl.pathname}`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download`, "Grasscutter服务端");
+    await downloadFile(`https://glab-${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download`, "Resources");
     exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar`,{ encoding: 'binary' },(error,stdout,stderr) => {
       if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
       console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
@@ -721,7 +731,7 @@ ipcMain.on('open-url', (event, url) => {
 });
 
 ipcMain.on('resGetWayButton_0-set', () => {
-  resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top"];
+  resURL.fill("https://proxy.btl-cdn.top");
 });
 
 ipcMain.on('resGetWayButton_1-set', () => {
@@ -802,7 +812,7 @@ ipcMain.on('chooseGamePathButton_open-file-dialog', (event) => {
       console.log(gamePath);
       const gamePathFileName = path.basename(gamePath);
       if (gamePathFileName === 'GenshinImpact.exe' || gamePathFileName === 'YuanShen.exe') {
-        sendPatchGamePath();
+        sendPatchGamePath(gamePath);
       } else {
         event.sender.send('chooseGamePathButton_file-not-valid', gamePath, patchExists, action);
       }

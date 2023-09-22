@@ -12,7 +12,7 @@ GateServer 请从Release中获取
 
 - [x] 修复console输出中文锟斤拷
 
-- [ ] 十分详细的文档
+- [x] 十分详细的文档
 
 - [x] 实现一键更新资源
 
@@ -44,7 +44,7 @@ Using NPM
 
 ```shell
 git clone https://github.com/btjawa/BTJGenshinPS.git
-cd BTJGenshinPS
+cd BTJGenshinPS-master
 npm install
 ```
 

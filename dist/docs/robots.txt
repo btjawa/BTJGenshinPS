@@ -1,0 +1,5 @@
+
+User-agent:*
+Disallow:
+
+Sitemap: https://btjawa.github.io/BGP-docs/BGP-docs/sitemap.xml

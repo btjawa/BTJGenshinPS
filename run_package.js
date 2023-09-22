@@ -11,15 +11,15 @@ let error, stderr, stdout;
 
 (async function() {
   try {
-      await fs.access(`BTJGenshinPS-${version}-win32-ia32-${type}`);
-      await exec(`rmdir BTJGenshinPS-${version}-win32-ia32-${type} /s /q`);
-      await package();
+    await fs.access(`BTJGenshinPS-${version}-win32-ia32-${type}`);
+    await exec(`rmdir BTJGenshinPS-${version}-win32-ia32-${type} /s /q`);
+    await package();
   } catch (err) {
-      if (err.code === 'ENOENT') {
-          await package();
-      } else {
-        console.error(err);
-      }
+    if (err.code === 'ENOENT') {
+        await package();
+    } else {
+      console.error(err);
+    }
   }
 })();
 
@@ -29,7 +29,7 @@ exec("chcp 65001",(error,stdout,stderr) => {
 
 async function package() {
   try {
-    ({error, stdout, stderr} = await exec(`node_modules\\.bin\\electron-packager . BTJGenshinPS --platform=win32 --overwrite --icon=./dist/favicon.ico --arch=ia32 --extra-resource=./data --extra-resource=./GateServer --ignore=GateServer --ignore=data --ignore=release.md --download.mirrorOptions.mirror=https://npm.taobao.org/mirrors/electron/`));
+    ({error, stdout, stderr} = await exec(`electron-packager . BTJGenshinPS --platform=win32 --overwrite --icon=./dist/favicon.ico --arch=ia32 --extra-resource=data --extra-resource=GateServer --ignore=GateServer --ignore=data --ignore=release.md --ignore=dist/docs --ignore=BGP-docs --download.mirrorOptions.mirror=https://npm.taobao.org/mirrors/electron/`));
     if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
       console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
       console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
@@ -39,12 +39,21 @@ async function package() {
       console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
       console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
 
-    ({error, stdout, stderr} = await exec(`move BTJGenshinPS-win32-ia32 BTJGenshinPS-${version}-win32-ia32-${type}`));
+    try {
+      ({error, stdout, stderr} = await exec(`xcopy .\\BGP-docs\\src\\.vuepress\\dist .\\BTJGenshinPS-win32-ia32\\resources\\docs /E /I /Y`));
+      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+        console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+        console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+    } catch(err) {
+      console.log("BGP-docs doesn\'t exists")
+    }
+
+    ({error, stdout, stderr} = await exec(`asar pack BTJGenshinPS-win32-ia32\\resources\\app BTJGenshinPS-win32-ia32\\resources\\app.asar && rmdir BTJGenshinPS-win32-ia32\\resources\\app /s /q`));
     if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
       console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
       console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
 
-    ({error, stdout, stderr} = await exec(`asar pack BTJGenshinPS-${version}-win32-ia32-${type}\\resources\\app BTJGenshinPS-${version}-win32-ia32-${type}\\resources\\app.asar && rmdir BTJGenshinPS-${version}-win32-ia32-${type}\\resources\\app /s /q`));
+    ({error, stdout, stderr} = await exec(`move BTJGenshinPS-win32-ia32 BTJGenshinPS-${version}-win32-ia32-${type}`));
     if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
       console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
       console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));

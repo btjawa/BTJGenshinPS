@@ -27,7 +27,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm install
-    - run: npm run actions_package
+    - run: npm run package_actions
     - uses: actions/upload-artifact@v3
       with:
         name: BTJGenshinPS-win32-ia32

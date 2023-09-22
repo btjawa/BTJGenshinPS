@@ -1,16 +1,16 @@
 {
   "name": "btjgenshinps",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha",
   "description": "A Click-To-Run Application To Help You Access Grasscutter GenshinPS.",
   "main": "main.js",
   "scripts": {
     "start": "chcp 65001 && electron .",
     "package": "node run_package.js",
-    "actions_package": "electron-packager . BTJGenshinPS --platform=win32 --overwrite --icon=./dist/favicon.ico --arch=ia32 --asar --ignore=GateServer --ignore=data"
+    "package_actions": "node run_package_actions.js"
   },
   "repository": {
-    "type": "git",
-    "url": "git+https://github.com/btjawa/BTJGenshinPS.git"
+    "type": "github",
+    "url": "https://github.com/btjawa/BTJGenshinPS"
   },
   "keywords": [
     "Click-To-Run",
@@ -30,7 +30,7 @@
   "dependencies": {
     "adm-zip": "^0.5.10",
     "asar": "^3.2.0",
-    "electron-log": "^4.4.8",
+    "express": "^4.18.2",
     "iconv-lite": "^0.6.3",
     "izitoast": "^1.4.0",
     "rage-edit": "^1.2.0",
