@@ -61,14 +61,14 @@ let gcInputRender = new Array(4);
 let proxyInputRender = new Array(2);
 
 function getLatestCommitID (){
-    fetch('https://api.github.com/repos/Grasscutters/Grasscutter/commits')
+    fetch('https://api-gh-proxy.btl-cdn.top/repos/Grasscutters/Grasscutter/commits')
     .then(response => response.json())
     .then(commits => {
         gc_latestCommitSha = commits[0].sha.slice(0, 9);
         gcVersionLink.addEventListener('click', () => {
             ipcRenderer.send('open-url', `https://github.com/Grasscutters/Grasscutter/commit/${gc_latestCommitSha}`);
         });
-        return fetch('https://api.github.com/repos/Grasscutters/Grasscutter/releases/latest');
+        return fetch('https://api-gh-proxy.btl-cdn.top/repos/Grasscutters/Grasscutter/releases/latest');
     })
     .then(response => response.json())
     .then(data => {
@@ -327,7 +327,12 @@ selfSignedKeystoreButton.addEventListener('click', () => {
 });
 
 operationBoxBtn_0.addEventListener('click', () => {
-    gcInputRender = [gcIp.value, gcGamePort.value, gcDispatchPort.value, "dispatchcnglobal.yuanshen.com"];
+    gcInputRender = [gcIp.value, gcGamePort.value, gcDispatchPort.value];
+    if (gcIp.value!=="127.0.0.1" && gcIp.value!=="localhost" && gcIp.value!=="0.0.0.0") {
+        gcInputRender[3] = "dispatchcnglobal.yuanshen.com";
+    } else {
+        gcInputRender[3] = "127.0.0.1";
+    }
     proxyInputRender = [proxyIP.value, proxyPort.value];
     ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender);
     toggleMenuState('menu_selector_log', 'make-active');
@@ -462,6 +467,32 @@ ipcRenderer.on('update_complete', (event) => {
         }
     });
 });
+
+ipcRenderer.on('app_update', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '更新',
+        message: '开始下载APP更新...',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+});
+
+ipcRenderer.on('app_update_download_complete', (event) => {
+    updateProgress.innerHTML = "下载进度将会显示在这里";
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '更新',
+        message: '成功下载APP更新！准备重启以完成更新...',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+});
+
 
 clearData.addEventListener('click', () => {
     ipcRenderer.send('clear_data');

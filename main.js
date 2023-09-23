@@ -9,6 +9,8 @@ const Winreg = require('winreg');
 const iconv = require('iconv-lite');
 const express = require('express');
 const express_app = express();
+const packageJson = require('./package.json');
+const currentVersion = packageJson.version;
 
 global.packagedPaths = {
   dataPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, 'data'),
@@ -38,7 +40,7 @@ express_app.use('/BGP-docs', express.static(global.packagedPaths.docsPath));
 express_app.use('/main', express.static(path.join(__dirname, './dist')));
 
 express_app.listen(EXPRESS_PORT, () => {
-  console.log(`Server is running on http://localhost:${EXPRESS_PORT}`);
+  console.log(`Doc server is running on http://localhost:${EXPRESS_PORT}`);
 });
 
 let win;
@@ -49,8 +51,8 @@ let patchExists = false;
 let action;
 let javaPath;
 let finalJavaPath;
-let resURL = new Array(2).fill("https://proxy.btl-cdn.top");
-let gcInput = new Array(4);
+let resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top", "https://api-gh-proxy.btl-cdn.top"];
+let gcInput = new Array(3);
 let proxyInput = new Array(2);
 
 async function packageNec() {
@@ -120,38 +122,153 @@ certutil -addstore -f "Root" "${global.packagedPaths.dataPath}\\root.crt"\r
 certutil -addstore -f "Root" "%USERPROFILE%\\.mitmproxy\\mitmproxy-ca-cert.cer"\r
 exit\r`;
 
-  await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_gc.bat'), gc_batch, (err) => {
-    if (err) {
-      console.error('Err:', err);
-    } else {
-      console.log('Created run_gc.bat');
-    }
-  });
+try {
+  await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_gc.bat'), gc_batch);
+  console.log('Created run_gc.bat');
 
-  await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_mongo.bat'), mongo_batch, (err) => {
-    if (err) {
-      console.error('Err:', err);
-    } else {
-      console.log('Created run_mongo.bat');
-    }
-  });
+  await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_mongo.bat'), mongo_batch);
+  console.log('Created run_mongo.bat');
 
-  await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_mitm_proxy.bat'), mitm_proxy_batch, (err) => {
-    if (err) {
-      console.error('Err:', err);
-    } else {
-      console.log('Created run_mitm_proxy.bat');
-    }
-  });
+  await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_mitm_proxy.bat'), mitm_proxy_batch);
+  console.log('Created run_mitm_proxy.bat');
 
-  await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'add_root_crt.bat'), add_root_crt_batch, (err) => {
-    if (err) {
-      console.error('Err:', err);
-    } else {
-      console.log('Created add_root_crt.bat');
-    }
-  });
+  await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'add_root_crt.bat'), add_root_crt_batch);
+  console.log('Created add_root_crt.bat');
+
+} catch (err) {
+  console.error(err);
+}
+
 };
+
+function compareVersions(v1, v1suffix, v2, v2suffix) {
+  let s1 = v1.split('.').map(Number);
+  let s2 = v2.split('.').map(Number);
+
+  for(let i = 0; i < Math.max(s1.length, s2.length); i++) {
+      let n1 = s1[i] || 0;
+      let n2 = s2[i] || 0;
+
+      if (n1 > n2) return 1;
+      if (n2 > n1) return -1;
+  }
+
+  const versionSuffixPriority = {
+    'alpha': 1,
+    'beta': 2,
+    '': 3
+  };
+  
+  if (versionSuffixPriority[v1suffix] > versionSuffixPriority[v2suffix]) return 1;
+  if (versionSuffixPriority[v1suffix] < versionSuffixPriority[v2suffix]) return -1;
+  
+  return 0;
+}
+
+async function updateAPP() {
+  try {
+    console.log("Current Version:", currentVersion);
+    
+    const response = await fetch(`${resURL[2]}/repos/btjawa/BTJGenshinPS/tags`);
+    const tags = await response.json();
+    const latestTag = tags[0].name.replace('v', '');
+    const latestMatches = latestTag.match(/^([\d\.]+)-?(\w+)?/);
+    const latestTagVersion = latestMatches[1];
+    const latestTagType = latestMatches[2];
+
+    const currentMatches = currentVersion.match(/^([\d\.]+)-?(\w+)?/);
+    let currentVersionNum;
+    let currentVersionType;
+    if (currentMatches) {
+        currentVersionNum = currentMatches[1];
+        currentVersionType = currentMatches[2];
+    } else {
+      console.log("Format err:",currentVersion);
+      return;
+    }
+    if (compareVersions(latestTagVersion, latestTagType, currentVersionNum, currentVersionType) === 1) {
+      if (app.isPackaged) {
+        console.log("Update available:", latestTag);
+        const resp0 = await dialog.showMessageBox(win, {
+          type: 'info',
+          title: '更新',
+          message: 'Github发布了新版本！是否更新APP？（不影响游戏数据）',
+          buttons: ['确定', '取消'],
+          defaultId: 1,
+          cancelId: 1
+        });
+        if (resp0.response === 0) {
+          win.webContents.send('app_update');
+          const downloadAppURL = `${resURL[0]}/btjawa/BTJGenshinPS/releases/download/v${latestTagVersion}-${latestTagType}/BTJGenshinPS-${latestTagVersion}-win32-ia32-app-${latestTagType}.zip`;
+          console.log("APP URL:", downloadAppURL);
+          await downloadFile(downloadAppURL, path.join(global.packagedPaths.entryPath, `BTJGenshinPS-win32-ia32-app.zip`), "App本体");
+          win.webContents.send('app_update_download_complete');
+          console.log("Download APP Update Completed");
+
+          const appExtractPath = path.join(global.packagedPaths.entryPath, "temp_update");
+          const app_zip = new AdmZip(path.join(global.packagedPaths.entryPath, "BTJGenshinPS-win32-ia32-app.zip"));
+          const appZipPath = path.join(global.packagedPaths.entryPath, "BTJGenshinPS-win32-ia32-app.zip");
+          app_zip.extractAllTo(appExtractPath, true);
+
+          fs.unlink(appZipPath, (err) => {
+            if (err) {
+              console.error('Error deleting APP ZIP file:', err);
+              reject(err);
+              return;
+            }
+            console.log('APP ZIP file deleted successfully.');
+            console.log(appZipPath);
+          });
+
+          const update_app_batch = `@echo off\r
+  chcp 65001>nul\r
+  title Update\r
+  for /D %%D in (*) do (\r
+    if /I not "%%D"=="resources" (\r
+        rmdir /s /q "%%D"\r
+    )\r
+  )\r
+  for %%F in (*) do (\r
+    del "%%F"\r
+  )\r
+  rmdir /s /q resources\\data\r
+  rmdir /s /q resources\\docs\r
+  del resources\\app.asar\r
+  xcopy "${global.packagedPaths.entryPath}\\temp_update" . /E /Y\r
+  rmdir /s /q "${global.packagedPaths.entryPath}\\temp_update"\r
+  start "" BTJGenshinPS.exe\r
+  del resources\\update_app.bat\r`;
+
+          await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, 'update_app.bat'), update_app_batch, (err) => {
+            if (err) {
+              console.error(err);
+            } else {
+              console.log('Created update_app.bat');
+            }
+          });
+          console.log("Restart APP to Complete Update");
+
+          spawn('cmd.exe', ['/c', `${path.join(global.packagedPaths.entryPath, 'update_app.bat')}`], {
+            detached: true,
+            stdio: 'ignore'
+          }).unref();
+
+          app.quit();
+        }
+      } else {
+        const resp1 = await dialog.showMessageBox(win, {
+          type: 'info',
+          title: '更新',
+          message: '有新Release！请前往Github查看以更新该开发版本！',
+        });
+      }
+    } else {
+      console.log("You are up to date! Github Latest Version:", latestTag);
+  }
+  } catch (error) {
+      console.error(error);
+  }
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -200,15 +317,13 @@ app.on('before-quit', () => {
   exec(`del ${global.packagedPaths.dataPath}\\add_root_crt.bat`)
 });
 
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
-
 (async () => {
-  const result = await packageNec();
-  console.log(result);
+  await exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
+  await exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
+  await exec(`del ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`)
+  await exec(`del ${global.packagedPaths.dataPath}\\add_root_crt.bat`)
+  await packageNec();
+  await updateAPP();
 })();
 
 //create mitm ca crt
@@ -282,7 +397,7 @@ function sendPatchGamePath(gamePath) {
           console.error('Err when writing config file:', err);
           return;
         }
-        console.log('../app.config.json Updated Successfully');
+        console.log('app.config.json Updated Successfully');
       });
     });
   } else {
@@ -314,7 +429,7 @@ function sendPatchGamePath(gamePath) {
 }
 
 
-function executeSelfSignedKeystore() {
+async function executeSelfSignedKeystore() {
   exec(`copy "${global.packagedPaths.dataPath}\\keystore_selfsigned.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, { encoding: 'binary' }, (error, stdout, stderr) => {
     if (error) {
       console.log(error);
@@ -324,10 +439,23 @@ function executeSelfSignedKeystore() {
     console.log("selfSignedKeystore");
     console.log(stderr);
   });
+  try {
+    await fs.promises.access(`${global.packagedPaths.entryPath}\\app.config.json`);
+    const appConfigData = await fs.promises.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf-8');
+    const appConfig = JSON.parse(appConfigData);
+    if (appConfig.grasscutter.dispatch) {
+      appConfig.grasscutter.dispatch.ssl = "selfsigned"
+    }
+    await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(appConfig, null, 2), 'utf8');
+    fixAppConfig();
+    console.log('app.config.json Updated successfully');
+  } catch (err) {
+    console.error(err)
+  }
 };
 
 
-function executofficialKeystore() {
+async function executofficialKeystore() {
   exec(`copy "${global.packagedPaths.dataPath}\\keystore_official.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, { encoding: 'binary' }, (error, stdout, stderr) => {
     if (error) {
       console.log(error);
@@ -337,6 +465,19 @@ function executofficialKeystore() {
     console.log("officialKeystore");
     console.log(stderr);
   });
+  try {
+    await fs.promises.access(`${global.packagedPaths.entryPath}\\app.config.json`);
+    const appConfigData = await fs.promises.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf-8');
+    const appConfig = JSON.parse(appConfigData);
+    if (appConfig.grasscutter.dispatch) {
+      appConfig.grasscutter.dispatch.ssl = "official"
+    }
+    await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(appConfig, null, 2), 'utf8');
+    fixAppConfig();
+    console.log('app.config.json Updated successfully');
+  } catch (err) {
+    console.error(err)
+  }
 };
 
 
@@ -352,8 +493,8 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
         appConfig.grasscutter.host = gcInputRender[0];
         appConfig.grasscutter.port = gcInputRender[1];
         if (appConfig.grasscutter.dispatch) {
-          if (appConfig.grasscutter.host!="127.0.0.1" || appConfig.grasscutter.host!="localhost"){
-            appConfig.grasscutter.dispatch.host = gcInputRender[3];
+          if (appConfig.grasscutter.host!=="127.0.0.1" && appConfig.grasscutter.host!=="localhost" && appConfig.grasscutter.host!=="0.0.0.0"){
+            appConfig.grasscutter.dispatch.host = "dispatchcnglobal.yuanshen.com";
           } else {
             appConfig.grasscutter.dispatch.host = "127.0.0.1";
           }
@@ -372,7 +513,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
           return;
         }
         fixAppConfig();
-        console.log('../app.config.json Created successfully');
+        console.log('app.config.json Created successfully');
       }); 
       await writeAcConfig("main-service-save", gcInputRender, proxyInputRender);
 
@@ -394,8 +535,8 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
           else if (appConfig.grasscutter.dispatch.ssl == "official") {
             executofficialKeystore();
           }
-          if (appConfig.grasscutter.host!="127.0.0.1" || appConfig.grasscutter.host!="localhost"){
-            appConfig.grasscutter.dispatch.host = gcInput[3];
+          if (appConfig.grasscutter.host!=="127.0.0.1" && appConfig.grasscutter.host!=="localhost" && appConfig.grasscutter.host!=="0.0.0.0"){
+            appConfig.grasscutter.dispatch.host = "dispatchcnglobal.yuanshen.com";
           } else {
             appConfig.grasscutter.dispatch.host = "127.0.0.1";
           }
@@ -403,6 +544,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
         gcInput[0] = appConfig.grasscutter.host;
         gcInput[1] = appConfig.grasscutter.port;
         gcInput[2] = appConfig.grasscutter.dispatch.port;
+        gcInput[3] = appConfig.grasscutter.dispatch.host;
         win.webContents.send('gc_text', gcInput[0], gcInput[1], gcInput[2]);
       }
       if (appConfig.proxy) {
@@ -426,15 +568,15 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
         grasscutter: { port: "22102", host: "127.0.0.1", dispatch: { port: "443", host: "127.0.0.1", ssl: "selfsigned" } },
         proxy: { port: "443", host: "127.0.0.1" },
         mongodb: { port: "27017" },
-        java: { exec: "" }
+        java: { exec: "java" }
       };
       gamePath = "";
       gamePathDir = path.dirname(gamePath);
-      javaPath = "";
+      javaPath = "java";
       console.log(javaPath);
       await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(app_config, null, 2), 'utf8');
       fixAppConfig();
-      console.log('../app.config.json Created successfully');
+      console.log('app.config.json Created successfully');
     } else {
       console.error(err)
     }
@@ -535,7 +677,7 @@ async function checkJava() {
             return;
           }
           fixAppConfig();
-          console.log('../app.config.json Updated Successfully');
+          console.log('app.config.json Updated Successfully');
         });
       });
     } else {
@@ -563,68 +705,37 @@ async function checkJava() {
 async function downloadJDK() {
   const jdkURL = 'https://repo.huaweicloud.com/openjdk/17.0.2/openjdk-17.0.2_windows-x64_bin.zip';
   const jdkZipPath = path.join(__dirname, '../jdk-17.0.2.zip');
-  await new Promise((resolve, reject) => {
-    const curl = spawn('curl', ['-o', jdkZipPath, '-L', jdkURL]);
-    curl.stderr.on('data', (data) => {
-      const strData = data.toString();
-      console.log(strData);
-      win.webContents.send('update_progress', strData, 'Java Developement Kit');
-    });
-    curl.stderr.on('data', (data) => {
-      console.error(`stderr: ${data}`);
-    });
-    curl.on('close', (code) => {
-      if (code === 0) {
-        win.webContents.send('download-jdk', 'jdk-true');
-        console.log('JDK downloaded successfully.');
+  try {
+      await downloadFile(jdkURL, jdkZipPath, 'Java Development Kit');
+      win.webContents.send('download-jdk', 'jdk-true');
+      console.log('JDK downloaded successfully.');
 
-        const jdkExtractPath = path.join(__dirname, '../');
-        const jdk_zip = new AdmZip(jdkZipPath);
-        const jdkPath = path.join(__dirname, '../jdk-17.0.2');
-        jdk_zip.extractAllTo(jdkExtractPath, true);
-        fs.unlink(jdkZipPath, (err) => {
-          if (err) {
-            console.error('Error deleting JDK ZIP file:', err);
-            reject(err);
-            return;
-          }
-          console.log('JDK ZIP file deleted successfully.');
-          process.env.PATH = `${process.env.PATH};${jdkPath}`;
-          javaPath = jdkPath;
-          console.log(jdkPath);
-          fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
-            if (err) {
-              console.error('Err when reading config file:', err);
-              reject(err);
-              return;
-            }
-            const config = JSON.parse(data);
-            if (javaPath != "") {
-              if (config.java) {
-                config.java.path = `${javaPath}`;
-              } else {
-                config.java = { path: `${javaPath}` };
-              }
-            }
-            fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, null, 2), 'utf8', err => {
-              if (err) {
-                console.error('Err when writing config file:', err);
-                reject(err);
-                return;
-              }
-              fixAppConfig();
-              console.log('../app.config.json Updated Successfully');
-              resolve();
-            });
-          });
-        });
-      } else {
-        fs.unlinkSync(jdkZipPath);
-        console.error('Error downloading JDK:', new Error(`curl process exited with code ${code}`));
-        reject(new Error(`curl process exited with code ${code}`));
+      const jdkExtractPath = path.join(__dirname, '../');
+      const jdk_zip = new AdmZip(jdkZipPath);
+      const jdkPath = path.join(__dirname, '../jdk-17.0.2');
+      jdk_zip.extractAllTo(jdkExtractPath, true);
+
+      fs.unlink(jdkZipPath);
+      console.log('JDK ZIP file deleted successfully.');
+      process.env.PATH = `${process.env.PATH};${jdkPath}`;
+      javaPath = jdkPath;
+      const configFile = path.join(global.packagedPaths.entryPath, 'app.config.json');
+      const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+
+      if (javaPath != "") {
+        if (config.java) {
+          config.java.path = `${javaPath}`;
+        } else {
+          config.java = { path: `${javaPath}` };
+        }
       }
-    });
-  });
+
+      fs.writeFile(configFile, JSON.stringify(config, null, 2), 'utf8');
+      fixAppConfig();
+      console.log('app.config.json Updated Successfully');
+  } catch (error) {
+      console.error('Error:', error);
+  }
 }
 
 ipcMain.on('update_latest', (event, gc_org_url) => {
@@ -691,8 +802,8 @@ async function downloadFile(url, outputPath, action) {
 async function update(gc_org_url) {
   const orgUrl = new URL(gc_org_url);
   try {
-    await downloadFile(`https://gh-${resURL[0]}${orgUrl.pathname}`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download`, "Grasscutter服务端");
-    await downloadFile(`https://glab-${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download`, "Resources");
+    await downloadFile(`${resURL[0]}${orgUrl.pathname}`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download`, "Grasscutter服务端");
+    await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download`, "Resources");
     exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar`,{ encoding: 'binary' },(error,stdout,stderr) => {
       if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
       console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
@@ -731,11 +842,11 @@ ipcMain.on('open-url', (event, url) => {
 });
 
 ipcMain.on('resGetWayButton_0-set', () => {
-  resURL.fill("https://proxy.btl-cdn.top");
+  resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top", "https://api-gh-proxy.btl-cdn.top"];
 });
 
 ipcMain.on('resGetWayButton_1-set', () => {
-  resURL = ["https://github.com", "https://gitlab.com"];
+  resURL = ["https://github.com", "https://gitlab.com", "https://api.github.com"];
 });
 
 ipcMain.on('officialKeystoreButton-set', () => {
@@ -784,7 +895,7 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', (event) => {
                   return;
                 }
                 fixAppConfig();
-                console.log('../app.config.json Updated Successfully');
+                console.log('app.config.json Updated Successfully');
               });
             });
           } else {

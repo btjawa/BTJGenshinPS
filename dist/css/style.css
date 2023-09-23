@@ -1047,6 +1047,15 @@ button[name="choose_java_path"]{
     height: calc(100vh - 50px);
 }
 
+#iframe_button {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    position: fixed;
+    bottom: 10px;
+    left: 95px;
+}
+
 #refresh_iframe {
     position: fixed;
     bottom: 10px;
@@ -1061,19 +1070,34 @@ button[name="choose_java_path"]{
     background-color: #3d3f47;
 }
 
-#prev_page_iframe {
-    position: absolute;
+#home_page_iframe {
+    position: relative;
     z-index: 1000;
-    top: 100px;
+    bottom: 108px;
+    left: 0px;
+    border-radius: 10px;
+    width: 17px;
+    padding: 15px;
+    background-color: #353740;
+    padding-left: 13px;
+}
+
+#home_page_iframe:hover {
+    background-color: #3d3f47;
+}
+
+#backward_page_iframe {
+    position: relative;
+    z-index: 1000;
+    bottom: 8px;
     left: 0px;
     border-radius: 10px;
     width: 15px;
     padding: 15px;
     background-color: #353740;
-    display: none;
 }
 
-#prev_page_iframe:hover {
+#backward_page_iframe:hover {
     background-color: #3d3f47;
 }
 

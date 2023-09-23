@@ -1,7 +1,8 @@
 const iziToast = require("izitoast");
 
-const refreshIframeBtn = document.getElementById('refresh_iframe')
-const prevPageIframeBtn = document.getElementById('prev_page_iframe')
+const refreshIframeBtn = document.getElementById('refresh_iframe');
+const homePageIframeBtn = document.getElementById('home_page_iframe');
+const backwardPageIframeBtn = document.getElementById('backward_page_iframe');
 const DocsIframe = document.getElementById('doc_iframe');
 
 iziToast.settings({
@@ -30,7 +31,7 @@ document.body.oncopy = function () {
 getLatestCommitID();
 
 refreshIframeBtn.addEventListener('click', function() {
-    docIframe.src = docIframe.src;
+    DocsIframe.contentWindow.location.reload();
 });
 
 let attempts = 0;
@@ -58,6 +59,9 @@ function handleIframeContent() {
                 }
             }
         });
+        iframeDoc.addEventListener('auxclick', (event) => {
+            event.preventDefault();
+        });
     } else if (attempts >= MAX_ATTEMPTS) {
         clearInterval(checkIframeInterval);
         console.error("Unable to access iframe content after multiple attempts.");
@@ -66,3 +70,11 @@ function handleIframeContent() {
 }
 
 const checkIframeInterval = setInterval(handleIframeContent, 500);
+
+homePageIframeBtn.addEventListener('click', (event) => {
+    DocsIframe.src = "http://localhost:52805/BGP-docs";
+});
+
+backwardPageIframeBtn.addEventListener('click', (event) => {
+    DocsIframe.contentWindow.history.back();
+});

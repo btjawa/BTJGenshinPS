@@ -16,7 +16,7 @@ GateServer 请从Release中获取
 
 - [x] 实现一键更新资源
 
-- [ ] 实现一键更新本体
+- [x] 实现一键更新本体
 
 - [x] 联机模式
 
@@ -59,11 +59,11 @@ npm run package # Package
 
 ### Update App
 
-一键更新目前在 TODO
+自动更新：将会在每次启动应用时自动检测新版本
 
-手动更新时只用下载Release中带有app的zip，替换掉除resources文件夹以外的所有文件
+手动更新：下载Release中带有 `app` 的zip，替换掉除 `resources` 文件夹以外的所有文件
 
-然后替换掉resources文件夹中的app.asar就更新完毕了
+然后替换掉 `resources` 文件夹中的 `app.asar`
 
 ### Update GateServer
 
