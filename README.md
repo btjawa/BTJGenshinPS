@@ -6,7 +6,9 @@
 <a><img src="https://img.shields.io/badge/-HTML5-EF652A?style=flat&logo=HTML5&logoColor=white"></a>
 <a><img src="https://img.shields.io/badge/-CSS3-3C9CD7?style=flat&logo=CSS3&logoColor=white"></a>
 <a><img src="https://img.shields.io/badge/-JavaScript-FFDA3E?style=flat&logo=JavaScript&logoColor=white"></a>
+</center>
 
+<center>
 <a><img src="https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white"></a>
 <a><img src="https://img.shields.io/badge/-Electron-2F3242?style=flat&logo=Electron&logoColor=white"></a>
 <a href="https://github.com/Grasscutters/Grasscutter"><img src="https://img.shields.io/badge/-Grasscutter-010409?style=flat&logo=Github&Color=white"></a>
