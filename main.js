@@ -11,13 +11,45 @@ const express = require('express');
 const express_app = express();
 const packageJson = require('./package.json');
 const currentVersion = packageJson.version;
+const moment = require('moment-timezone');
+const currentMoment = moment().tz("Asia/Shanghai").format('YYYY-MM-DD_HH-mm-ss');
+const currentMomentLog = moment().tz("Asia/Shanghai").format('YYYY-MM-DD HH:mm:ss');
 
 global.packagedPaths = {
   dataPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, 'data'),
   gateServerPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, 'GateServer'),
   entryPath: path.join(app.isPackaged ? path.dirname(app.getAppPath()) : __dirname, '.'),
+  rootPath: app.isPackaged ? path.dirname(path.dirname(app.getAppPath())) : __dirname,
   docsPath: app.isPackaged ? path.join(path.dirname(app.getAppPath()), 'docs') : path.join(__dirname, 'dist', 'docs'),
 };
+
+const logDirPath = path.join(global.packagedPaths.rootPath, 'log');
+
+if (!fs.existsSync(logDirPath)) {
+  fs.mkdirSync(logDirPath);
+}
+
+function writeToLog(message, type = "log") {
+  fs.appendFileSync(path.join(logDirPath, `${currentMoment}.log`), `[${type} ${currentMomentLog}] ${message}\n`);
+}
+
+fs.appendFileSync(path.join(logDirPath, `${currentMoment}.log`), `[init ${currentMomentLog}] Log initialized\n当遇到错误时，请在 https://github.com/btjawa/BTJGenshinPS/issues 提供本日志并提交。\n\n`);
+
+process.stdout.write = (function(write) {
+  return function(string, encoding, fd) {
+      write.apply(process.stdout, arguments);
+      writeToLog(string, "log");
+  };
+})(process.stdout.write);
+
+process.stderr.write = (function(write) {
+  return function(string, encoding, fd) {
+      write.apply(process.stderr, arguments);
+      writeToLog(string, "error");
+  };
+})(process.stderr.write);
+
+console.log("Start Logging...")
 
 const EXPRESS_PORT = 52805;
 
@@ -231,13 +263,13 @@ async function updateAPP() {
   for %%F in (*) do (\r
     del "%%F"\r
   )\r
-  rmdir /s /q resources\\data\r
-  rmdir /s /q resources\\docs\r
-  del resources\\app.asar\r
+  rmdir /s /q ${global.packagedPaths.entryPath}\\data\r
+  rmdir /s /q ${global.packagedPaths.entryPath}\\docs\r
+  del ${global.packagedPaths.entryPath}\\app.asar\r
   xcopy "${global.packagedPaths.entryPath}\\temp_update" . /E /Y\r
   rmdir /s /q "${global.packagedPaths.entryPath}\\temp_update"\r
   start "" BTJGenshinPS.exe\r
-  del resources\\update_app.bat\r`;
+  del ${global.packagedPaths.entryPath}\\update_app.bat\r`;
 
           await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, 'update_app.bat'), update_app_batch, (err) => {
             if (err) {
@@ -310,6 +342,7 @@ app.on('window-all-closed', (event) => {
 });
 
 app.on('before-quit', () => {
+  console.log('App is quitting...');
   exec(`taskkill /f /im curl.exe`);
   exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
   exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
@@ -857,6 +890,33 @@ ipcMain.on('selfSignedKeystoreButton-set', () => {
   executeSelfSignedKeystore();
 });
 
+ipcMain.on('openLogDirBtn_open-log-dir', () => {
+  shell.openPath(logDirPath);
+})
+
+ipcMain.on('openLogLatestBtn_open-log-latest', () => {
+  const files = fs.readdirSync(logDirPath);
+  if (files.length) {
+    const sortedFiles = files.map(fileName => {
+    const filePath = path.join(logDirPath, fileName);
+    return {
+        name: fileName,
+        time: fs.statSync(filePath).birthtime.getTime()
+      };
+    })
+    .sort((a, b) => b.time - a.time)
+    .map(v => v.name);
+
+    const latestLogFile = sortedFiles[0];
+    if (latestLogFile) {
+      shell.openPath(path.join(logDirPath, latestLogFile));
+    } else {
+      console.log("Can't find a log file match.");
+    }
+  } else {
+    console.log("No files in directory.");
+  }
+})
 
 ipcMain.on('chooseJavaPathButton_open-file-dialog', (event) => {
   dialog.showOpenDialog({

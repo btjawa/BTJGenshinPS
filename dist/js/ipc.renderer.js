@@ -1,5 +1,6 @@
 const { ipcRenderer, ipcMain } = require('electron');
 const path = require('path');
+const { eventNames } = require('process');
 
 let dragbar_close = document.getElementById('dragbar_close');
 let dragbar_minimize = document.getElementById('dragbar_min');
@@ -27,6 +28,8 @@ let resVersion = document.querySelector('.res_version');
 let gcVersion = document.querySelector('.gc_version');
 let pageLogText0 = document.querySelector('.page_log_text_0');
 let clearData = document.querySelector('.clear_data');
+let openLogDirBtn = document.querySelector('button[name="open_log_dir"]');
+let openLogLatestBtn = document.querySelector('button[name="open_log_latest"]');
 
 let gcIp = document.querySelector('input[name=gc_ip]');
 let gcGamePort = document.querySelector('input[name=gc_game_port]');
@@ -167,6 +170,14 @@ chooseGamePathButton.addEventListener('click', () => {
 
 chooseJavaPathButton.addEventListener('click', () => {
     ipcRenderer.send('chooseJavaPathButton_open-file-dialog')
+});
+
+openLogDirBtn.addEventListener('click', () => {
+    ipcRenderer.send('openLogDirBtn_open-log-dir');
+})
+
+openLogLatestBtn.addEventListener('click', () => {
+    ipcRenderer.send('openLogLatestBtn_open-log-latest')
 });
 
 ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, action) => {

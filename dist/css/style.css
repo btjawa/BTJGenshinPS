@@ -192,6 +192,17 @@ button[name="choose_java_path"]{
     left: 5px;
 }
 
+button[name="open_log_dir"]{
+    left: 5px;
+    top: 35px;
+}
+
+button[name="open_log_latest"]{
+    left: 5px;
+    top: 35px;
+}
+
+
 .iconfont {
     font-family: "iconfont" !important;
     font-style: normal;
@@ -769,12 +780,12 @@ button[name="choose_java_path"]{
     }
 }
 
-.page_0_title {
+.page_title {
     color: #e5e5e5;
     font-size: 22px;
 }
 
-.page_0_subtitle {
+.page_subtitle {
     color: #999696;
 }
 
@@ -1049,56 +1060,28 @@ button[name="choose_java_path"]{
 
 #iframe_button {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    flex-direction: row;
+    justify-content: flex-end;
     position: fixed;
-    bottom: 10px;
-    left: 95px;
+    bottom: 6px;
+    left: 94px;
 }
 
-#refresh_iframe {
-    position: fixed;
-    bottom: 10px;
-    left: 95px;
+#refresh_iframe, #home_page_iframe, #backward_page_iframe {
     border-radius: 10px;
     width: 15px;
     padding: 15px;
     background-color: #353740;
+    margin-right: 5px;
 }
 
-#refresh_iframe:hover {
+#refresh_iframe:hover, #home_page_iframe:hover, #backward_page_iframe:hover {
     background-color: #3d3f47;
 }
 
 #home_page_iframe {
-    position: relative;
-    z-index: 1000;
-    bottom: 108px;
-    left: 0px;
-    border-radius: 10px;
     width: 17px;
-    padding: 15px;
-    background-color: #353740;
     padding-left: 13px;
-}
-
-#home_page_iframe:hover {
-    background-color: #3d3f47;
-}
-
-#backward_page_iframe {
-    position: relative;
-    z-index: 1000;
-    bottom: 8px;
-    left: 0px;
-    border-radius: 10px;
-    width: 15px;
-    padding: 15px;
-    background-color: #353740;
-}
-
-#backward_page_iframe:hover {
-    background-color: #3d3f47;
 }
 
 .page_settings {
@@ -1108,6 +1091,7 @@ button[name="choose_java_path"]{
     left: 100px;
     user-select: none;
 }
+
 .page_settings.active {
     display: block;
     animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1);
@@ -1121,10 +1105,12 @@ button[name="choose_java_path"]{
     user-select: none;
     display: none;
 }
+
 .page_log.active {
     display: block;
     animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1);
 }
+
 .page_log_console {
     position: relative;
     top: 10px;
@@ -1132,10 +1118,27 @@ button[name="choose_java_path"]{
     height: 490px;
     background-color: #363940;
 }
+
 .page_log_text_0 {
     display:block;
     color: #c4c4c4;
     position: relative;
     top: 10px;
+    left: 6px;
+}
+
+.page_settings_text_0 {
+    display:block;
+    color: #c4c4c4;
+    position: relative;
+    top: 10px;
+    left: 6px;
+}
+
+.page_settings_text_1 {
+    display:block;
+    color: #c4c4c4;
+    position: relative;
+    top: 30px;
     left: 6px;
 }

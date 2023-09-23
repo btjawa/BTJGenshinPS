@@ -37,6 +37,11 @@ async function package() {
       console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
       console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
 
+    ({error, stdout, stderr} = await exec(`xcopy .\\node_modules\\moment-timezone .\\BTJGenshinPS-win32-ia32\\resources\\app\\node_modules\\moment-timezone /E /I /Y`));
+    if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+
     ({error, stdout, stderr} = await exec(`xcopy .\\dist\\docs .\\BTJGenshinPS-win32-ia32\\resources\\docs /E /I /Y`));
     if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
       console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));

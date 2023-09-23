@@ -1,12 +1,21 @@
 # BTJGenshinPS
 
-为Grasscutter制作的GUI一键端，基于Node.js，Electron。
+![preview.png](https://socialify.git.ci/btjawa/BTJGenshinPS/image?description=1&font=Inter&forks=1&issues=1&language=1&logo=https%3A%2F%2Fs2.loli.net%2F2023%2F09%2F23%2F2XdQyJNUho3O6kT.png&name=1&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Dark)
 
-如果你不是开发者，就不要再看下面了，请直接前往Release
+<center>
+<img src="https://img.shields.io/badge/-HTML5-EF652A?style=flat&logo=HTML5&logoColor=white">
+<img src="https://img.shields.io/badge/-CSS3-3C9CD7?style=flat&logo=CSS3&logoColor=white">
+<img src="https://img.shields.io/badge/-JavaScript-FFDA3E?style=flat&logo=JavaScript&logoColor=white">
+<img src="https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white">
+<img src="https://img.shields.io/badge/-Electron-2F3242?style=flat&logo=Electron&logoColor=white">
 
-GateServer 请从Release中获取
+[![Grasscutter_Github](https://img.shields.io/badge/-Grasscutter-010409?style=flat&logo=Github&Color=white)](https://github.com/Grasscutters/Grasscutter)
+[![MongoDB](https://img.shields.io/badge/-MongoDB-E5E5E5?style=flat&logo=MongoDB&Color=white)](https://www.mongodb.com/)
+</center>
 
-![preview.png](https://raw.githubusercontent.com/btjawa/btjawa.top/master/preview.png)
+基于Node.js，Electron，后期可能会尝试优化Electron体积。
+
+GateServer请从Release中获取，repo中只包含APP
 
 ## To Do
 
@@ -33,6 +42,8 @@ GateServer 请从Release中获取
 ## Development
 
 若package后想要用命令行运行，请先使用 `chcp 65001` 将代码页改为 UTF-8
+
+可直接在 `resources/log` 文件夹内查看日志
 
 Using NPM
 
@@ -69,6 +80,4 @@ npm run package # Package
 
 可切换到 主页 选项卡后点击 “更新资源”
 
-<img src="https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white">
-
-<a title="Copyright" target="_blank" href="https://btjawa.top/"><img src="https://img.shields.io/badge/Copyright%20%C2%A9%202022--2023-%E7%99%BD%E5%BC%B9%E6%B1%B2-red"></a>
+<a title="Copyright" target="_blank" href="https://btjawa.top/"><img src="https://img.shields.io/badge/Copyright%20%C2%A9%202020--2023-%E7%99%BD%E5%BC%B9%E6%B1%B2-red"></a>
