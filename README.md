@@ -3,12 +3,12 @@
 ![preview.png](https://socialify.git.ci/btjawa/BTJGenshinPS/image?description=1&font=Inter&forks=1&issues=1&language=1&logo=https%3A%2F%2Fs2.loli.net%2F2023%2F09%2F23%2F2XdQyJNUho3O6kT.png&name=1&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Dark)
 
 <center>
-<img src="https://img.shields.io/badge/-HTML5-EF652A?style=flat&logo=HTML5&logoColor=white">
-<img src="https://img.shields.io/badge/-CSS3-3C9CD7?style=flat&logo=CSS3&logoColor=white">
-<img src="https://img.shields.io/badge/-JavaScript-FFDA3E?style=flat&logo=JavaScript&logoColor=white">
+<a><img src="https://img.shields.io/badge/-HTML5-EF652A?style=flat&logo=HTML5&logoColor=white"></a>
+<a><img src="https://img.shields.io/badge/-CSS3-3C9CD7?style=flat&logo=CSS3&logoColor=white"></a>
+<a><img src="https://img.shields.io/badge/-JavaScript-FFDA3E?style=flat&logo=JavaScript&logoColor=white"></a>
 
-<img src="https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white">
-<img src="https://img.shields.io/badge/-Electron-2F3242?style=flat&logo=Electron&logoColor=white">
+<a><img src="https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white"></a>
+<a><img src="https://img.shields.io/badge/-Electron-2F3242?style=flat&logo=Electron&logoColor=white"></a>
 <a href="https://github.com/Grasscutters/Grasscutter"><img src="https://img.shields.io/badge/-Grasscutter-010409?style=flat&logo=Github&Color=white"></a>
 <a href="https://www.mongodb.com"><img src="https://img.shields.io/badge/-MongoDB-E5E5E5?style=flat&logo=MongoDB&Color=white"></a>
 </center>
