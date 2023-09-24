@@ -82,7 +82,7 @@ function getLatestCommitID (){
         gcVersion.innerHTML = `Latest Commit<br>Grasscutter Release ${gc_latestReleaseTagName}-${gc_latestCommitSha}`;
     })
     .catch(error => {
-        console.error("Err:", error);
+        console.error(error);
     });
 
     fetch('https://gitlab.com/api/v4/projects/YuukiPS%2FGC-Resources/repository/commits')
@@ -95,7 +95,7 @@ function getLatestCommitID (){
         resVersion.innerHTML = `Yuuki GC-Resources ${res_latestCommitSha}`;
     })
     .catch(error => {
-        console.error("Err:", error);
+        console.error(error);
     });
 }
 
@@ -195,18 +195,6 @@ openHandbookHTMLBtn.addEventListener('click', () => {
     ipcRenderer.send('openHandbookHTMLBtn_try-open')
 });
 
-ipcRenderer.on('openHandbookHTMLBtn_open-html', (event) => {
-    iziToast.info({
-        icon: 'fa-solid fa-circle-exclamation',
-        layout: '2',
-        title: 'Handbook HTML',
-        message: '若打开的是代码而不是网页，请尝试复制打开的html的路径并在浏览器内打开',
-        onOpening: function() {
-            izi_notify()
-        }
-    });
-})
-
 ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-exclamation',
@@ -231,19 +219,28 @@ ipcRenderer.on('openHandbookHTMLBtn_not-found', (event) => {
     });
 })
 
+ipcRenderer.on('openGcToolsBtn_starting-download', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: 'GcTools',
+        message: '开始下载GcTools...',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+});
 
 ipcRenderer.on('openGcToolsBtn_download-complete', (event) => {
-    ipcRenderer.on('update_complete', (event) => {
-        updateProgress.innerHTML = "下载进度将会显示在这里";
-        iziToast.info({
-            icon: 'fa-solid fa-circle-info',
-            layout: '2',
-            title: 'GcTools',
-            message: 'GcTools下载成功！尝试打开...',
-            onOpening: function() {
-                izi_notify()
-            }
-        });
+    updateProgress.innerHTML = "下载进度将会显示在这里";
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: 'GcTools',
+        message: 'GcTools下载成功！尝试打开...',
+        onOpening: function() {
+            izi_notify()
+        }
     });
 });
 
@@ -404,27 +401,29 @@ selfSignedKeystoreButton.addEventListener('click', () => {
     });
 });
 
-operationBoxBtn_0.addEventListener('click', () => {
-    gcInputRender = [gcIp.value, gcGamePort.value, gcDispatchPort.value];
-    if (gcIp.value!=="127.0.0.1" && gcIp.value!=="localhost" && gcIp.value!=="0.0.0.0") {
-        gcInputRender[3] = "dispatchcnglobal.yuanshen.com";
-    } else {
-        gcInputRender[3] = "127.0.0.1";
-    }
-    proxyInputRender = [proxyIP.value, proxyPort.value];
-    ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender);
-    toggleMenuState('menu_selector_log', 'make-active');
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '2',
-        title: '启动服务',
-        message: '正在启动服务...',
-        onOpening: function() {
-            izi_notify()
+const operationBoxBtn_0_ClickHandler = () => {
+    operationBoxBtn_0.addEventListener('click', () => {
+        gcInputRender = [gcIp.value, gcGamePort.value, gcDispatchPort.value];
+        if (gcIp.value!=="127.0.0.1" && gcIp.value!=="localhost" && gcIp.value!=="0.0.0.0") {
+            gcInputRender[3] = "dispatchcnglobal.yuanshen.com";
+        } else {
+            gcInputRender[3] = "127.0.0.1";
         }
+        proxyInputRender = [proxyIP.value, proxyPort.value];
+        ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender);
+        toggleMenuState('menu_selector_log', 'make-active');
+        iziToast.info({
+            icon: 'fa-solid fa-circle-info',
+            layout: '2',
+            title: '启动服务',
+            message: '正在启动服务...',
+            onOpening: function() {
+                izi_notify()
+            }
+        });
+        pageLogText0.innerHTML += `请不要关闭稍后弹出来的任何一个窗口！<br>正在启动服务...<br>`; 
     });
-    pageLogText0.innerHTML += `请不要关闭稍后弹出来的任何一个窗口！<br>正在启动服务...<br>`; 
-});
+}
 
 operationBoxBtn_1.addEventListener('click', () => {
     ipcRenderer.send('operationBoxBtn_1-stop-service');
@@ -558,6 +557,25 @@ ipcRenderer.on('app_update', (event) => {
     });
 });
 
+ipcRenderer.on('gateserver_install', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: 'GateServer',
+        message: '开始下载GateServer...在此期间请勿运行服务',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+    operationBoxBtn_0.classList.add("disabled");
+    operationBoxBtn_0.removeEventListener('click', operationBoxBtn_0_ClickHandler);
+});
+
+ipcRenderer.on('gateserver_cancel-install', (event) => {
+    operationBoxBtn_0.classList.add("disabled");
+    operationBoxBtn_0.removeEventListener('click', operationBoxBtn_0_ClickHandler);
+})
+
 ipcRenderer.on('app_update_download_complete', (event) => {
     updateProgress.innerHTML = "下载进度将会显示在这里";
     iziToast.info({
@@ -565,6 +583,19 @@ ipcRenderer.on('app_update_download_complete', (event) => {
         layout: '2',
         title: '更新',
         message: '成功下载APP更新！准备重启以完成更新...',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+});
+
+ipcRenderer.on('gateserver_install_download_complete', (event) => {
+    updateProgress.innerHTML = "下载进度将会显示在这里";
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '更新',
+        message: '成功下载GateServer！准备解压...',
         onOpening: function() {
             izi_notify()
         }

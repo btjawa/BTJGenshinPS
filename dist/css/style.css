@@ -1039,6 +1039,11 @@ button[name="handbook_html"]{
     background-color: #6e6e6e;
 }
 
+.operation_box_btn_0.disabled {
+    background-color: #555555;
+    color: #a0a0a0;
+}
+
 .operation_box_btn_1 {
     position: relative;
     -webkit-app-region: no-drag;
@@ -1121,7 +1126,7 @@ button[name="handbook_html"]{
     flex-direction: row;
     justify-content: flex-end;
     position: fixed;
-    bottom: 6px;
+    bottom: 7px;
     left: 94px;
 }
 

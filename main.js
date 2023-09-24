@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, shell, dialog} = require('electron');
 const path = require('path');
 const fs = require('fs');
 const AdmZip = require('adm-zip');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const Winreg = require('winreg');
@@ -57,19 +57,40 @@ express_app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
 
-  if (!req.headers['user-agent'] || !req.headers['user-agent'].includes('Electron')) {
-      return res.status(403).send(`<body>
-      <center><h1>403 Forbidden</h1></center>
-      <hr><center>btjawa</center>
-      </body>`);
+  const BLACKLIST = [
+    /^\/app-main\//,
+    /^\/BGP-docs\//
+  ]
+
+  const isBlacklisted = BLACKLIST.some(pattern => pattern.test(req.path));
+
+  if (isBlacklisted) {
+    if (!req.headers['user-agent'] || !req.headers['user-agent'].includes('Electron')) {
+        return res.status(403).send(`<body>
+        <center><h1>403 Forbidden</h1></center>
+        <hr><center>btjawa</center>
+        </body>`);
+    }
   }
+  express_app.get('*', (req, res) => {
+    return res.status(404).send(`<body>
+    <center><h1>404 Not Found</h1>
+    <h2>尝试访问<a href="http://localhost:${EXPRESS_PORT}">根目录</a>以重新路由</2>
+    </center>
+    <hr><center>btjawa</center>
+    </body>`);
+  });
 
   next();
 });
 
 express_app.use('/BGP-docs', express.static(global.packagedPaths.docsPath));
 
-express_app.use('/main', express.static(path.join(__dirname, './dist')));
+express_app.use('/app-main', express.static(path.join(__dirname, './dist')));
+
+express_app.get('/', (req, res) => {
+  res.sendFile(path.join(global.packagedPaths.gateServerPath, 'Grasscutter', 'workdir', 'data', 'documentation', 'handbook.html'));
+});
 
 express_app.listen(EXPRESS_PORT, () => {
   console.log(`Doc server is running on http://localhost:${EXPRESS_PORT}`);
@@ -83,7 +104,7 @@ let patchExists = false;
 let action;
 let javaPath;
 let finalJavaPath;
-let resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top", "https://api-gh-proxy.btl-cdn.top"];
+let resURL = new Array(3);
 let gcInput = new Array(3);
 let proxyInput = new Array(2);
 
@@ -197,16 +218,71 @@ function compareVersions(v1, v1suffix, v2, v2suffix) {
   return 0;
 }
 
+function createWindow() {
+  win = new BrowserWindow({
+    width: 1030,
+    height: 635,
+    title: "BTJGenshinPS",
+    icon: "./dist/favicon.ico",
+    frame: false,
+    resizable: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      enableRemoteModule: true,
+    },
+  });
+
+  win.loadURL(`http://localhost:${EXPRESS_PORT}/app-main`);
+
+  win.on('maximize', function () {
+    win.webContents.send('main-window-max');
+  })
+  win.on('unmaximize', function () {
+    win.webContents.send('main-window-unmax');
+  })
+
+  if (!app.isPackaged) {
+    setTimeout(() => {
+      win.webContents.openDevTools();
+    }, 500);
+  }
+}
+
+app.whenReady().then(createWindow);
+
+app.on('window-all-closed', (event) => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+app.on('before-quit', () => {
+  console.log('App is quitting...');
+  exec(`taskkill /f /im curl.exe`);
+  exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
+  exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
+  exec(`del ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`)
+  exec(`del ${global.packagedPaths.dataPath}\\add_root_crt.bat`)
+});
+
+async function fetchRelease(resURL) {
+  const response = await fetch(`${resURL[2]}/repos/btjawa/BTJGenshinPS/tags`);
+  const tags = await response.json();
+  const latestTag = tags[0].name.replace('v', '');
+  const latestMatches = latestTag.match(/^([\d\.]+)-?(\w+)?/);
+  const latestTagVersion = latestMatches[1];
+  const latestTagType = latestMatches[2];
+
+  return {
+      latestTagVersion,
+      latestTagType
+  };
+}
+
 async function updateAPP() {
   try {
     console.log("Current Version:", currentVersion);
-    
-    const response = await fetch(`${resURL[2]}/repos/btjawa/BTJGenshinPS/tags`);
-    const tags = await response.json();
-    const latestTag = tags[0].name.replace('v', '');
-    const latestMatches = latestTag.match(/^([\d\.]+)-?(\w+)?/);
-    const latestTagVersion = latestMatches[1];
-    const latestTagType = latestMatches[2];
 
     const currentMatches = currentVersion.match(/^([\d\.]+)-?(\w+)?/);
     let currentVersionNum;
@@ -218,6 +294,9 @@ async function updateAPP() {
       console.log("Format err:",currentVersion);
       return;
     }
+
+    const { latestTagVersion, latestTagType } = await fetchRelease(resURL);
+
     if (compareVersions(latestTagVersion, latestTagType, currentVersionNum, currentVersionType) === 1) {
       if (app.isPackaged) {
         console.log("Update available:", latestTag);
@@ -278,6 +357,12 @@ async function updateAPP() {
               console.log('Created update_app.bat');
             }
           });
+          const resp1 = await dialog.showMessageBox(win, {
+            type: 'info',
+            title: '更新',
+            message: '将重启应用以应用更改',
+            buttons: ['确定']
+          });
           console.log("Restart APP to Complete Update");
 
           spawn('cmd.exe', ['/c', `${path.join(global.packagedPaths.entryPath, 'update_app.bat')}`], {
@@ -302,53 +387,127 @@ async function updateAPP() {
   }
 }
 
-function createWindow() {
-  win = new BrowserWindow({
-    width: 1030,
-    height: 635,
-    title: "BTJGenshinPS",
-    icon: "./dist/favicon.ico",
-    frame: false,
-    resizable: false,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      enableRemoteModule: true,
-    },
-  });
+async function fixAppConfig() {
+  const configPath = path.join(global.packagedPaths.entryPath, "app.config.json");
+  const defaultConfig = {
+      version: config_version,
+      getRes: "proxy",
+      game: { path: "" },
+      grasscutter: { port: "22102", host: "127.0.0.1", dispatch: { port: "443", host: "127.0.0.1", ssl: "selfsigned" } },
+      proxy: { port: "443", host: "127.0.0.1" },
+      mongodb: { port: "27017" },
+      java: { exec: "java" }
+  };
 
-  win.loadURL(`http://localhost:${EXPRESS_PORT}/main`);
-
-  win.on('maximize', function () {
-    win.webContents.send('main-window-max');
-  })
-  win.on('unmaximize', function () {
-    win.webContents.send('main-window-unmax');
-  })
-
-  if (!app.isPackaged) {
-    setTimeout(() => {
-      win.webContents.openDevTools();
-    }, 500);
+  try {
+      let data = await fs.promises.readFile(configPath, 'utf-8');
+      while (data.length) {
+          try {
+              let appConfig = JSON.parse(data);
+              for (const key in defaultConfig) {
+                  if (!appConfig.hasOwnProperty(key)) {
+                      appConfig[key] = defaultConfig[key];
+                  } else if (typeof defaultConfig[key] === 'object' && defaultConfig[key] !== null) {
+                      for (const subKey in defaultConfig[key]) {
+                          if (!appConfig[key].hasOwnProperty(subKey)) {
+                              appConfig[key][subKey] = defaultConfig[key][subKey];
+                          }
+                      }
+                  }
+              }
+              await fs.promises.writeFile(configPath, JSON.stringify(appConfig, null, 2), 'utf-8');
+              console.log('Config fixed and saved successfully.');
+              return;
+          } catch (err) {
+              data = data.slice(0, -1);
+          }
+      }
+      await fs.promises.writeFile(configPath, JSON.stringify(defaultConfig, null, 2), 'utf-8');
+      console.log('app.config.json was corrupted. Reset to default settings.');
+  } catch (err) {
+      console.error("Error while fixing the app config:", err);
   }
 }
 
-app.whenReady().then(createWindow);
+async function checkGateServer() {
+  try {
+    await fs.promises.access(global.packagedPaths.gateServerPath);
+  } catch(err) {
+    if (err.code === "ENOENT") {
+      console.log("GateServer not found");
+      if (!app.isPackaged) {
+        const resp0 = await dialog.showMessageBox(win, {
+          type: 'info',
+          title: 'GateServer',
+          message: 'GateServer不存在！是否自动下载？',
+          buttons: ['确定', '取消'],
+          defaultId: 1,
+          cancelId: 1
+        });
+        if (resp0.response === 0) {
+          const { latestTagVersion, latestTagType } = await fetchRelease(resURL);
+          win.webContents.send('gateserver_install');
+          const downloadGateServerURL = `${resURL[0]}/btjawa/BTJGenshinPS/releases/download/v${latestTagVersion}-${latestTagType}/BTJGenshinPS-${latestTagVersion}-win32-ia32-${latestTagType}.zip`;
+          console.log("FULL URL:", downloadGateServerURL);
+          await downloadFile(downloadGateServerURL, path.join(global.packagedPaths.entryPath, `BTJGenshinPS-win32-ia32.zip`), "GateServer");
+          win.webContents.send('gateserver_install_download_complete');
+          console.log("Download GateServer Completed");
 
-app.on('window-all-closed', (event) => {
-  if (process.platform !== 'darwin') {
-    app.quit();
+          const appExtractPath = path.join(global.packagedPaths.entryPath, "temp_gateserver");
+          const app_zip = new AdmZip(path.join(global.packagedPaths.entryPath, "BTJGenshinPS-win32-ia32.zip"));
+          const appZipPath = path.join(global.packagedPaths.entryPath, "BTJGenshinPS-win32-ia32.zip");
+          app_zip.extractAllTo(appExtractPath, true);
+
+          await fs.promises.unlink(appZipPath, (err) => {
+            if (err) {
+              console.error('Error deleting APP ZIP file:', err);
+              reject(err);
+              return;
+            }
+            console.log('APP ZIP file deleted successfully.');
+            console.log(appZipPath);
+          });
+
+          try {
+            execSync(`xcopy "${path.join(appExtractPath, "resources", "GateServer")}\\" "${path.join(global.packagedPaths.entryPath, "GateServer")}\\" /E /Y`,{ encoding: 'binary' },(error,stdout,stderr) => {
+              if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+              console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+              console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+            });
+            execSync(`rmdir /s /q ${path.join(global.packagedPaths.entryPath, "temp_gateserver")}`,{ encoding: 'binary' },(error,stdout,stderr) => {
+              if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+              console.log('Temp GateServer deleted successfully.');
+              console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+              console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+            });
+          } catch (err) {
+              console.error('Error deleting Temp GateServer:', err);
+          }
+          
+          const resp1 = await dialog.showMessageBox(win, {
+            type: 'info',
+            title: 'GateServer',
+            message: '将重启应用以应用更改',
+            buttons: ['确定']
+          });
+          app.relaunch();
+          app.exit(0);
+        } else {
+          win.webContents.send("gateserver_cancel-install");
+        }
+      } else {
+        console.log("GateServer not found");
+        const resp1 = await dialog.showMessageBox(win, {
+          type: 'warning',
+          title: 'GateServer',
+          message: 'GateServer不存在！',
+        });
+      }
+    } else {
+      console.error(err);
+    }
   }
-});
-
-app.on('before-quit', () => {
-  console.log('App is quitting...');
-  exec(`taskkill /f /im curl.exe`);
-  exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
-  exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
-  exec(`del ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`)
-  exec(`del ${global.packagedPaths.dataPath}\\add_root_crt.bat`)
-});
+}
 
 (async () => {
   await exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
@@ -357,6 +516,8 @@ app.on('before-quit', () => {
   await exec(`del ${global.packagedPaths.dataPath}\\add_root_crt.bat`)
   await packageNec();
   await updateAPP();
+  await checkGateServer();
+  await fixAppConfig();
 })();
 
 //create mitm ca crt
@@ -385,31 +546,10 @@ if (fs.existsSync(path.join(process.env.USERPROFILE, '.mitmproxy'))) {
   }, 100);
 }
 
-async function fixAppConfig() {
-  try {
-    await fs.promises.access(`${global.packagedPaths.entryPath}\\app.config.json`);
-    let data = await fs.promises.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf-8');
-    while (data.length) {
-      try {
-        JSON.parse(data);
-        console.log("fixed app.config.json")
-        break;
-      } catch (err) {
-        data = data.slice(0, -1);
-      }
-    }
-    if (data.length) {
-      await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, data, 'utf-8');
-    } else {
-      console.error("connot fix app.config.json")
-    }
-  } catch(err) {}
-}
-
 function sendPatchGamePath(gamePath) {
   console.log(gamePath)
   if (fs.existsSync(`${gamePathDir}\\version.dll`)) {
-    fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+    fs.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf8', (err, data) => {
       if (err) {
         console.error('Err when reading config file:', err);
         return;
@@ -425,7 +565,7 @@ function sendPatchGamePath(gamePath) {
           config.game = { path: `${gamePath}` };
         }
       };
-      fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, JSON.stringify(config, null, 2), 2), 'utf8', err => {
+      fs.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(config, JSON.stringify(config, null, 2), 2), 'utf8', err => {
         if (err) {
           console.error('Err when writing config file:', err);
           return;
@@ -447,7 +587,7 @@ function sendPatchGamePath(gamePath) {
         console.log(stderr);
       });
     };
-    fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+    fs.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf8', (err, data) => {
       if (err) {
         console.error('Err when reading config file:', err);
         return;
@@ -473,14 +613,14 @@ async function executeSelfSignedKeystore() {
     console.log(stderr);
   });
   try {
-    await fs.promises.access(`${global.packagedPaths.entryPath}\\app.config.json`);
-    const appConfigData = await fs.promises.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf-8');
+    await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
+    const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
     const appConfig = JSON.parse(appConfigData);
     if (appConfig.grasscutter.dispatch) {
       appConfig.grasscutter.dispatch.ssl = "selfsigned"
     }
-    await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(appConfig, null, 2), 'utf8');
-    fixAppConfig();
+    await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
+    await fixAppConfig();
     console.log('app.config.json Updated successfully');
   } catch (err) {
     console.error(err)
@@ -499,14 +639,14 @@ async function executofficialKeystore() {
     console.log(stderr);
   });
   try {
-    await fs.promises.access(`${global.packagedPaths.entryPath}\\app.config.json`);
-    const appConfigData = await fs.promises.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf-8');
+    await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
+    const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
     const appConfig = JSON.parse(appConfigData);
     if (appConfig.grasscutter.dispatch) {
       appConfig.grasscutter.dispatch.ssl = "official"
     }
-    await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(appConfig, null, 2), 'utf8');
-    fixAppConfig();
+    await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
+    await fixAppConfig();
     console.log('app.config.json Updated successfully');
   } catch (err) {
     console.error(err)
@@ -517,10 +657,17 @@ async function executofficialKeystore() {
 // app.config.json
 async function rwAppConfig(action, gcInputRender, proxyInputRender) {
   try {
-    await fs.promises.access(`${global.packagedPaths.entryPath}\\app.config.json`);
-    const appConfigData = await fs.promises.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf-8');
+    await fixAppConfig();
+    await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
+    const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
     const appConfig = JSON.parse(appConfigData);
     
+    if (appConfig.getRes === "proxy") {
+      resSetProxy();
+    } else if (appConfig.getRes === "direct") {
+      resSetDirect();
+    }
+
     if (action === "main-service-save") {
       if (appConfig.grasscutter) {
         appConfig.grasscutter.host = gcInputRender[0];
@@ -540,12 +687,12 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
         appConfig.proxy.host = proxyInputRender[0];
         appConfig.proxy.port = proxyInputRender[1];
       }
-      await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(appConfig, null, 2), 'utf8', (err) => {
+      await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8', async (err) => {
         if (err) {
           console.error('Err when writing config to file:', err);
           return;
         }
-        fixAppConfig();
+        await fixAppConfig();
         console.log('app.config.json Created successfully');
       }); 
       await writeAcConfig("main-service-save", gcInputRender, proxyInputRender);
@@ -597,6 +744,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
       proxyInput[1] = "443";
       const app_config = {
         version: config_version,
+        getRes: "proxy",
         game: { path: "" },
         grasscutter: { port: "22102", host: "127.0.0.1", dispatch: { port: "443", host: "127.0.0.1", ssl: "selfsigned" } },
         proxy: { port: "443", host: "127.0.0.1" },
@@ -606,9 +754,10 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
       gamePath = "";
       gamePathDir = path.dirname(gamePath);
       javaPath = "java";
+      resSetProxy();
       console.log(javaPath);
-      await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(app_config, null, 2), 'utf8');
-      fixAppConfig();
+      await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(app_config, null, 2), 'utf8');
+      await fixAppConfig();
       console.log('app.config.json Created successfully');
     } else {
       console.error(err)
@@ -691,7 +840,7 @@ async function checkJava() {
       win.webContents.send('jdk-already-installed');
       console.log('JDK is already installed.');
       javaPath = 'java';
-      await fs.promises.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', async (err, data) => {
+      await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf8', async (err, data) => {
         if (err) {
           console.error('Err when reading config file:', err);
           return;
@@ -704,12 +853,12 @@ async function checkJava() {
             config.java = { exec: javaPath };
           }
         }
-        await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, null, 2), 'utf8', err => {
+        await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(config, null, 2), 'utf8', async err => {
           if (err) {
             console.error('Err when writing config file:', err);
             return;
           }
-          fixAppConfig();
+          await fixAppConfig();
           console.log('app.config.json Updated Successfully');
         });
       });
@@ -764,7 +913,7 @@ async function downloadJDK() {
       }
 
       fs.writeFile(configFile, JSON.stringify(config, null, 2), 'utf8');
-      fixAppConfig();
+      await fixAppConfig();
       console.log('app.config.json Updated Successfully');
   } catch (error) {
       console.error('Error:', error);
@@ -854,6 +1003,42 @@ async function update(gc_org_url) {
   }
 }
 
+async function resSetProxy () {
+  resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top", "https://api-gh-proxy.btl-cdn.top"];
+  console.log("proxy");
+  try {
+    await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
+    const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
+    const appConfig = JSON.parse(appConfigData);
+    if (appConfig.grasscutter.getRes) {
+      appConfig.grasscutter.getRes = "proxy";
+    }
+    await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
+    await fixAppConfig();
+    console.log('app.config.json Updated successfully');
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+async function resSetDirect () {
+  resURL = ["https://github.com", "https://gitlab.com", "https://api.github.com"];
+  console.log("direct");
+  try {
+    await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
+    const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
+    const appConfig = JSON.parse(appConfigData);
+    if (appConfig.grasscutter.getRes) {
+      appConfig.grasscutter.getRes = "direct";
+    }
+    await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
+    await fixAppConfig();
+    console.log('app.config.json Updated successfully');
+  } catch (err) {
+    console.error(err)
+  }
+}
+
 ipcMain.on('handelClose', () => {
   app.quit();
 })
@@ -875,11 +1060,11 @@ ipcMain.on('open-url', (event, url) => {
 });
 
 ipcMain.on('resGetWayButton_0-set', () => {
-  resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top", "https://api-gh-proxy.btl-cdn.top"];
+  resSetProxy();
 });
 
 ipcMain.on('resGetWayButton_1-set', () => {
-  resURL = ["https://github.com", "https://gitlab.com", "https://api.github.com"];
+  resSetDirect();
 });
 
 ipcMain.on('officialKeystoreButton-set', () => {
@@ -930,45 +1115,45 @@ ipcMain.on('openLogLatestBtn_open-log-latest', () => {
 
 ipcMain.on('openGcToolsBtn_try-open', () => {
   if (fs.existsSync(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"))) {
-    console.log("run gctools")
-    shell.openPath(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"))
+    console.log("run gctools");
+    shell.openPath(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"));
   } else {
     console.error("GcTools not found, try download");
-    win.webContents.send("openGcToolsBtn_download-complete")
+    win.webContents.send("openGcToolsBtn_starting-download");
     (async () => {
       try {
         await downloadFile(`${resURL[0]}/jie65535/GrasscutterCommandGenerator/releases/download/v1.12.2/GcTools-v1.12.2.exe`, path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"), "GcTools v1.12.2");
+        win.webContents.send("openGcToolsBtn_download-complete");
+        try {
+          shell.openPath(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"));
+          console.log("run gctools");
+        } catch(err) {
+          console.error(err);
+        }
       } catch (error) {
         console.error(error);
       }
     })();
-    try {
-      shell.openPath(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"))
-      console.log("run gctools")
-    } catch(err) {
-      console.error(err)
-    }
   }
 })
 
 ipcMain.on('openHandbookTXTBtn_try-open', () => {
   if (fs.existsSync(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GM Handbook"))) {
-    console.log("open handbook txt")
-    shell.openPath(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GM Handbook", "GM Handbook - CHS.txt"))
+    console.log("open handbook txt");
+    shell.openPath(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GM Handbook", "GM Handbook - CHS.txt"));
   } else {
     console.error("Handbook txt not found");
-    win.webContents.send("openHandbookTXTBtn_not-found")
+    win.webContents.send("openHandbookTXTBtn_not-found");
   }
 })
 
 ipcMain.on('openHandbookHTMLBtn_try-open', () => {
   if (fs.existsSync(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "data", "documentation"))) {
-    console.log("open handbook html")
-    shell.openExternal(`file://${path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "data", "documentation", "handbook.html")}`);
-    win.webContents.send("openHandbookHTMLBtn_open-html")
+    console.log("open handbook html");
+    shell.openExternal(`http://localhost:${EXPRESS_PORT}`);
   } else {
     console.error("Handbook html not found");
-    win.webContents.send("openHandbookHTMLBtn_not-found")
+    win.webContents.send("openHandbookHTMLBtn_not-found");
   }
 })
 
@@ -990,7 +1175,7 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', (event) => {
             win.webContents.send('chooseJavaPathButton_was-jdk',javaPath);
             javaPath = result.filePaths[0];
             console.log(javaPath);
-            fs.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf8', (err, data) => {
+            fs.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf8', (err, data) => {
               if (err) {
                 console.error('Err when reading config file:', err);
                 return;
@@ -1003,12 +1188,12 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', (event) => {
                   config.java = { exec: `${javaPath}` };
                 }
               };
-              fs.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, JSON.stringify(config, JSON.stringify(config, null, 2), 2), 'utf8', err => {
+              fs.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(config, JSON.stringify(config, null, 2), 2), 'utf8', async err => {
                 if (err) {
                   console.error('Err when writing config file:', err);
                   return;
                 }
-                fixAppConfig();
+                await fixAppConfig();
                 console.log('app.config.json Updated Successfully');
               });
             });

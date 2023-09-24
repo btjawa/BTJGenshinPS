@@ -8,7 +8,7 @@
     <a><img src="https://img.shields.io/badge/-JavaScript-FFDA3E?style=flat&logo=JavaScript&logoColor=white"></a>
     <a><img src="https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white"></a>
     <br>
-    <a><img src="https://img.shields.io/badge/-Electron-2F3242?style=flat&logo=Electron&logoColor=white"></a>
+    <a href="https://github.com/electron/electron"><img src="https://img.shields.io/badge/-Electron-2F3242?style=flat&logo=Electron&logoColor=white"></a>
     <a href="https://github.com/Grasscutters/Grasscutter"><img src="https://img.shields.io/badge/-Grasscutter-010409?style=flat&logo=Github&Color=white"></a>
     <a href="https://www.mongodb.com"><img src="https://img.shields.io/badge/-MongoDB-E5E5E5?style=flat&logo=MongoDB&Color=white"></a>
 </div>
