@@ -30,6 +30,9 @@ let pageLogText0 = document.querySelector('.page_log_text_0');
 let clearData = document.querySelector('.clear_data');
 let openLogDirBtn = document.querySelector('button[name="open_log_dir"]');
 let openLogLatestBtn = document.querySelector('button[name="open_log_latest"]');
+let openGcToolsBtn = document.querySelector('button[name="gctools_btn"]')
+let openHandbookTXTBtn = document.querySelector('button[name="handbook_txt"]')
+let openHandbookHTMLBtn = document.querySelector('button[name="handbook_html"]')
 
 let gcIp = document.querySelector('input[name=gc_ip]');
 let gcGamePort = document.querySelector('input[name=gc_game_port]');
@@ -152,7 +155,7 @@ dragbar_window.addEventListener('click', () => {
 
 dragbar_question.addEventListener('click', () => {
     ipcRenderer.send('handelQuestion');
-    ipcRenderer.send('open-url', 'https://blog.btjawa.top/?p=244');
+    ipcRenderer.send('open-url', 'https://github.com/btjawa/BTJGenshinPS');
 });
 
 ipcRenderer.on('main-window-max', () => {
@@ -178,6 +181,70 @@ openLogDirBtn.addEventListener('click', () => {
 
 openLogLatestBtn.addEventListener('click', () => {
     ipcRenderer.send('openLogLatestBtn_open-log-latest')
+});
+
+openGcToolsBtn.addEventListener('click', () => {
+    ipcRenderer.send('openGcToolsBtn_try-open')
+});
+
+openHandbookTXTBtn.addEventListener('click', () => {
+    ipcRenderer.send('openHandbookTXTBtn_try-open')
+});
+
+openHandbookHTMLBtn.addEventListener('click', () => {
+    ipcRenderer.send('openHandbookHTMLBtn_try-open')
+});
+
+ipcRenderer.on('openHandbookHTMLBtn_open-html', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-exclamation',
+        layout: '2',
+        title: 'Handbook HTML',
+        message: '若打开的是代码而不是网页，请尝试复制打开的html的路径并在浏览器内打开',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+})
+
+ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-exclamation',
+        layout: '2',
+        title: 'Handbook TXT',
+        message: '找不到txt！请尝试运行服务生成！',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+})
+
+ipcRenderer.on('openHandbookHTMLBtn_not-found', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-exclamation',
+        layout: '2',
+        title: 'Handbook TXT',
+        message: '找不到txt！请尝试运行服务生成！',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+})
+
+
+ipcRenderer.on('openGcToolsBtn_download-complete', (event) => {
+    ipcRenderer.on('update_complete', (event) => {
+        updateProgress.innerHTML = "下载进度将会显示在这里";
+        iziToast.info({
+            icon: 'fa-solid fa-circle-info',
+            layout: '2',
+            title: 'GcTools',
+            message: 'GcTools下载成功！尝试打开...',
+            onOpening: function() {
+                izi_notify()
+            }
+        });
+    });
 });
 
 ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, action) => {

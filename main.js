@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog, session } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog} = require('electron');
 const path = require('path');
 const fs = require('fs');
 const AdmZip = require('adm-zip');
@@ -892,9 +892,19 @@ ipcMain.on('selfSignedKeystoreButton-set', () => {
 
 ipcMain.on('openLogDirBtn_open-log-dir', () => {
   shell.openPath(logDirPath);
+  if (fs.existsSync(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "logs"))) {
+    shell.openPath(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "logs"))
+  } else {
+    console.error("Grasscutter logs not found")
+  }
 })
 
 ipcMain.on('openLogLatestBtn_open-log-latest', () => {
+  if (fs.existsSync(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "logs", "latest.log"))) {
+    shell.openPath(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "logs", "latest.log"))
+  } else {
+    console.error("Grasscutter logs not found")
+  }
   const files = fs.readdirSync(logDirPath);
   if (files.length) {
     const sortedFiles = files.map(fileName => {
@@ -915,6 +925,50 @@ ipcMain.on('openLogLatestBtn_open-log-latest', () => {
     }
   } else {
     console.log("No files in directory.");
+  }
+})
+
+ipcMain.on('openGcToolsBtn_try-open', () => {
+  if (fs.existsSync(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"))) {
+    console.log("run gctools")
+    shell.openPath(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"))
+  } else {
+    console.error("GcTools not found, try download");
+    win.webContents.send("openGcToolsBtn_download-complete")
+    (async () => {
+      try {
+        await downloadFile(`${resURL[0]}/jie65535/GrasscutterCommandGenerator/releases/download/v1.12.2/GcTools-v1.12.2.exe`, path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"), "GcTools v1.12.2");
+      } catch (error) {
+        console.error(error);
+      }
+    })();
+    try {
+      shell.openPath(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"))
+      console.log("run gctools")
+    } catch(err) {
+      console.error(err)
+    }
+  }
+})
+
+ipcMain.on('openHandbookTXTBtn_try-open', () => {
+  if (fs.existsSync(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GM Handbook"))) {
+    console.log("open handbook txt")
+    shell.openPath(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GM Handbook", "GM Handbook - CHS.txt"))
+  } else {
+    console.error("Handbook txt not found");
+    win.webContents.send("openHandbookTXTBtn_not-found")
+  }
+})
+
+ipcMain.on('openHandbookHTMLBtn_try-open', () => {
+  if (fs.existsSync(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "data", "documentation"))) {
+    console.log("open handbook html")
+    shell.openExternal(`file://${path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "data", "documentation", "handbook.html")}`);
+    win.webContents.send("openHandbookHTMLBtn_open-html")
+  } else {
+    console.error("Handbook html not found");
+    win.webContents.send("openHandbookHTMLBtn_not-found")
   }
 })
 

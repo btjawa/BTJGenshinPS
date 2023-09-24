@@ -17,6 +17,23 @@
     url('../font/SourceHanSansCN-Regular.otf') format('OpenType');
 }
 
+::-webkit-scrollbar {
+    width: 7.5px;
+    height: 7.5px;
+}
+
+::-webkit-scrollbar-track {
+    background: #58585c
+}
+
+::-webkit-scrollbar-thumb {
+    background: #808080;
+    border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #666666;
+}
 
 body {
     margin: 0;
@@ -125,7 +142,14 @@ input[name="java_path"]{
     width: 325px;
 }
 
-button[name="res_getway"] {
+button[name="res_getway_0"] {
+    position: relative;
+    top: 10px;
+    right: 117px;
+    vertical-align: middle;
+}
+
+button[name="res_getway_1"] {
     position: relative;
     top: 10px;
     right: 117px;
@@ -150,14 +174,14 @@ button[name="update"] {
 }
 
 .res_getway_0.active {
-    animation: res_getway_anime 0.66s cubic-bezier(0,1,.6,1);
+    animation: res_getway_anime 0.66s cubic-bezier(0,1,.6,1), fadeIn 0.5s cubic-bezier(0,1,.6,1);
 }
 
 .res_getway_1.active {
-    animation: res_getway_anime 0.66s cubic-bezier(0,1,.6,1);
+    animation: res_getway_anime 0.66s cubic-bezier(0,1,.6,1), fadeIn 0.5s cubic-bezier(0,1,.6,1);
 }
 .update.active {
-    animation: update_anime 0.66s cubic-bezier(0,1,.6,1);
+    animation: update_anime 0.66s cubic-bezier(0,1,.6,1), fadeIn 0.5s cubic-bezier(0,1,.6,1);
 }
 
 button {
@@ -202,6 +226,17 @@ button[name="open_log_latest"]{
     top: 35px;
 }
 
+button[name="gctools_btn"]{
+    left: 5px;
+}
+
+button[name="handbook_txt"]{
+    left: 5px;
+}
+
+button[name="handbook_html"]{
+    left: 5px;
+}
 
 .iconfont {
     font-family: "iconfont" !important;
@@ -216,10 +251,11 @@ button[name="open_log_latest"]{
     -webkit-app-region: drag;
     background-color: #353740;
     height: 50px;
-    position: relative;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
+    z-index: 1000;
 }
 
 #dragbar_close {
@@ -335,7 +371,7 @@ button[name="open_log_latest"]{
 .menu_background {
     width: 88px;
     height: calc(100vh - 50px);
-    position: absolute;
+    position: fixed;
     left: 0px;
     top: 50px;
     background-color: #2c2e34;
@@ -343,7 +379,7 @@ button[name="open_log_latest"]{
 }
 
 .menu_selector_0 {
-    position: absolute;
+    position: fixed;
     top: 85px;
     left: 10px;
     display: block;
@@ -353,9 +389,9 @@ button[name="open_log_latest"]{
     width: 72.5px;
     height: 72.5px;
     border-radius: 5px;
-    position: absolute;
-    left: -3px;
-    top: -22.5px;
+    position: fixed;
+    left: 7px;
+    top: 62px;
     transform-origin: center;
     transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
 }
@@ -421,7 +457,7 @@ button[name="open_log_latest"]{
 
 .menu_selector_1 {
     -webkit-user-drag: none;
-    position: absolute;
+    position: fixed;
     top: 162px;
     left: 10px;
     display: block;
@@ -432,9 +468,9 @@ button[name="open_log_latest"]{
     width: 72.5px;
     height: 72.5px;
     border-radius: 5px;
-    position: absolute;
-    left: -3px;
-    top: -22.5px;
+    position: fixed;
+    left: 7px;
+    top: 139px;
     transform-origin: center;
     transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
 }
@@ -499,7 +535,7 @@ button[name="open_log_latest"]{
 
 .menu_selector_2 {
     -webkit-user-drag: none;
-    position: absolute;
+    position: fixed;
     top: 239px;
     left: 10px;
     display: block;
@@ -510,9 +546,9 @@ button[name="open_log_latest"]{
     width: 72.5px;
     height: 72.5px;
     border-radius: 5px;
-    position: absolute;
-    left: -3px;
-    top: -22.5px;
+    position: fixed;
+    left: 7px;
+    top: 216px;
     transform-origin: center;
     transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
 }
@@ -577,7 +613,7 @@ button[name="open_log_latest"]{
 
 
 .menu_selector_settings {
-    position: absolute;
+    position: fixed;
     bottom: 40px;
     left: 10px;
     display: block;
@@ -654,7 +690,7 @@ button[name="open_log_latest"]{
 }
 
 .menu_selector_log {
-    position: absolute;
+    position: fixed;
     bottom: 117px;
     left: 10px;
     display: block;
@@ -733,7 +769,7 @@ button[name="open_log_latest"]{
 .page_0 {
     position: relative;
     width: max-content;
-    top: 10px;
+    top: 60px;
     left: 100px;
     user-select: none;
 }
@@ -750,10 +786,19 @@ button[name="open_log_latest"]{
 
 .page_0.active {
     display: block;
-    animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1);
+    animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1), fadeIn 0.5s cubic-bezier(0,1,.6,1);
 }
 
 @keyframes page_active_anime {
+    0% {
+        top: 43px;
+    }
+    100% {
+        top: 60px;
+    }
+}
+
+@keyframes page_0_text_1_active_anime {
     0% {
         top: -7px;
     }
@@ -830,12 +875,25 @@ button[name="open_log_latest"]{
     color: #c4c4c4;
 }
 
+.patch_state.active {
+    animation: path_state_active_anime 0.66s cubic-bezier(0,1,.6,1), fadeIn 0.5s cubic-bezier(0,1,.6,1);
+}
+
+@keyframes path_state_active_anime {
+    0% {
+        top: 133px;
+    }
+    100% {
+        top: 150px;
+    }
+}
+
 .page_0_text_1 {
     right: 120px;
     top: 10px;
     color: #c4c4c4;
     position: relative;
-    animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1)
+    animation: page_0_text_1_active_anime 0.66s cubic-bezier(0,1,.6,1)
 }
 
 .page_0_text_2 {
@@ -1026,19 +1084,19 @@ button[name="open_log_latest"]{
 .page_1 {
     position: relative;
     width: max-content;
-    top: 10px;
+    top: 60px;
     left: 100px;
     user-select: none;
 }
 .page_1.active {
     display: block;
-    animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1);
+    animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1), fadeIn 0.5s cubic-bezier(0,1,.6,1);
 }
 
 .page_2 {
     position: relative;
     width: max-content;
-    top: 10px;
+    top: 60px;
     left: 100px;
     user-select: none;
 }
@@ -1087,20 +1145,20 @@ button[name="open_log_latest"]{
 .page_settings {
     position: relative;
     width: max-content;
-    top: 10px;
+    top: 60px;
     left: 100px;
     user-select: none;
 }
 
 .page_settings.active {
     display: block;
-    animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1);
+    animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1), fadeIn 0.5s cubic-bezier(0,1,.6,1);
 }
 
 .page_log {
     position: relative;
     width: max-content;
-    top: 10px;
+    top: 60px;
     left: 100px;
     user-select: none;
     display: none;
@@ -1108,14 +1166,14 @@ button[name="open_log_latest"]{
 
 .page_log.active {
     display: block;
-    animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1);
+    animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1), fadeIn 0.5s cubic-bezier(0,1,.6,1);
 }
 
 .page_log_console {
     position: relative;
-    top: 10px;
-    width: 800px;
-    height: 490px;
+    top: 1vh;
+    width: 85vw;
+    height: 75vh;
     background-color: #363940;
 }
 
@@ -1140,5 +1198,21 @@ button[name="open_log_latest"]{
     color: #c4c4c4;
     position: relative;
     top: 30px;
+    left: 6px;
+}
+
+.page_tools_text_0 {
+    display:block;
+    color: #c4c4c4;
+    position: relative;
+    top: 10px;
+    left: 6px;
+}
+
+.page_tools_text_1 {
+    display:block;
+    color: #c4c4c4;
+    position: relative;
+    top: 20px;
     left: 6px;
 }

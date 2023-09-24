@@ -8,6 +8,7 @@ const menuState = {
 
 const pages = ['page_0', 'page_1', 'page_settings', 'page_log'];
 const menuSelectors = ['menu_selector_0', 'menu_selector_1', 'menu_selector_settings', 'menu_selector_log', 'menu_selector_2'];
+const homeEss = ['res_getway_0', 'res_getway_1', 'update']
 const classNames = ['fa-home', 'fa-screwdriver-wrench', 'fa-gear', 'fa-memo-circle-info', 'fa-book'];
 
 function toggleMenuState(activeSelector, action = null) {
@@ -31,6 +32,24 @@ function toggleMenuState(activeSelector, action = null) {
             menuState[key] = 'inactive';
             pageElement.style.display = 'none';
             pageElement.classList.remove('active');
+        }
+        for (const buttonSelector of homeEss) {
+            const button = document.querySelector(`button[name="${buttonSelector}"]`);
+            if (button) {
+                if (activeSelector === "menu_selector_0") {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            }
+        }
+        const patchState = document.querySelector('.patch_state');
+        if (patchState) {
+            if (activeSelector === "menu_selector_0") {
+                patchState.classList.add('active');
+            } else {
+                patchState.classList.remove('active');
+            }
         }
     }
 }

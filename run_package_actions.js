@@ -27,7 +27,7 @@ exec("chcp 65001",(error,stdout,stderr) => {
 
 async function package() {
   try {
-    ({error, stdout, stderr} = await exec(`electron-packager . BTJGenshinPS --platform=win32 --overwrite --icon=./dist/favicon.ico --arch=ia32 --extra-resource=data --ignore=data --ignore=dist/docs`));
+    ({error, stdout, stderr} = await exec(`electron-packager . BTJGenshinPS --platform=win32 --overwrite --icon=./dist/favicon.ico --arch=ia32 --extra-resource=data --ignore=data --ignore=dist/docs --prune`));
     if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
       console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
       console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
