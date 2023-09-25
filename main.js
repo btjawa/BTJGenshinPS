@@ -12,6 +12,7 @@ const express_app = express();
 const packageJson = require('./package.json');
 const currentVersion = packageJson.version;
 const moment = require('moment-timezone');
+const { eventNames } = require('process');
 const currentMoment = moment().tz("Asia/Shanghai").format('YYYY-MM-DD_HH-mm-ss');
 const currentMomentLog = moment().tz("Asia/Shanghai").format('YYYY-MM-DD HH:mm:ss');
 
@@ -100,6 +101,8 @@ let win;
 let config_version = 1;
 let gamePath;
 let gamePathDir;
+let _3DMigotoPath;
+let _3DMigotoPathDir;
 let patchExists = false;
 let action;
 let javaPath;
@@ -107,6 +110,16 @@ let finalJavaPath;
 let resURL = new Array(3);
 let gcInput = new Array(3);
 let proxyInput = new Array(2);
+
+const defaultAppConfig = { 
+  version: config_version,
+  getRes: "proxy",
+  game: { path: "", "_3dmigoto": path.join(global.packagedPaths.gateServerPath, "3DMigoto", "3DMigoto Loader.exe") },
+  grasscutter: { port: "22102", host: "127.0.0.1", dispatch: { port: "443", host: "127.0.0.1", ssl: "selfsigned" } },
+  proxy: { port: "443", host: "127.0.0.1" },
+  mongodb: { port: "27017" },
+  java: { exec: "java" }
+}
 
 async function packageNec() {
   const gc_batch = `@echo off\r
@@ -218,7 +231,7 @@ function compareVersions(v1, v1suffix, v2, v2suffix) {
   return 0;
 }
 
-function createWindow() {
+async function createWindow() {
   win = new BrowserWindow({
     width: 1030,
     height: 635,
@@ -249,7 +262,9 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(async () => {
+  await createWindow();
+});
 
 app.on('window-all-closed', (event) => {
   if (process.platform !== 'darwin') {
@@ -276,7 +291,8 @@ async function fetchRelease(resURL) {
 
   return {
       latestTagVersion,
-      latestTagType
+      latestTagType,
+      latestTag
   };
 }
 
@@ -295,7 +311,7 @@ async function updateAPP() {
       return;
     }
 
-    const { latestTagVersion, latestTagType } = await fetchRelease(resURL);
+    const { latestTagVersion, latestTagType, latestTag } = await fetchRelease(resURL);
 
     if (compareVersions(latestTagVersion, latestTagType, currentVersionNum, currentVersionType) === 1) {
       if (app.isPackaged) {
@@ -388,45 +404,17 @@ async function updateAPP() {
 }
 
 async function fixAppConfig() {
-  const configPath = path.join(global.packagedPaths.entryPath, "app.config.json");
-  const defaultConfig = {
-      version: config_version,
-      getRes: "proxy",
-      game: { path: "" },
-      grasscutter: { port: "22102", host: "127.0.0.1", dispatch: { port: "443", host: "127.0.0.1", ssl: "selfsigned" } },
-      proxy: { port: "443", host: "127.0.0.1" },
-      mongodb: { port: "27017" },
-      java: { exec: "java" }
-  };
-
-  try {
-      let data = await fs.promises.readFile(configPath, 'utf-8');
-      while (data.length) {
-          try {
-              let appConfig = JSON.parse(data);
-              for (const key in defaultConfig) {
-                  if (!appConfig.hasOwnProperty(key)) {
-                      appConfig[key] = defaultConfig[key];
-                  } else if (typeof defaultConfig[key] === 'object' && defaultConfig[key] !== null) {
-                      for (const subKey in defaultConfig[key]) {
-                          if (!appConfig[key].hasOwnProperty(subKey)) {
-                              appConfig[key][subKey] = defaultConfig[key][subKey];
-                          }
-                      }
-                  }
-              }
-              await fs.promises.writeFile(configPath, JSON.stringify(appConfig, null, 2), 'utf-8');
-              console.log('Config fixed and saved successfully.');
-              return;
-          } catch (err) {
-              data = data.slice(0, -1);
-          }
+  let appConfigData = await fs.promises.readFile(`${global.packagedPaths.entryPath}\\app.config.json`, 'utf-8');
+  
+  while (appConfigData.startsWith('{') && appConfigData.endsWith('}')) {
+      try {
+          JSON.parse(appConfigData);
+          return;
+      } catch (err) {
+          appConfigData = appConfigData.slice(1, -1);
       }
-      await fs.promises.writeFile(configPath, JSON.stringify(defaultConfig, null, 2), 'utf-8');
-      console.log('app.config.json was corrupted. Reset to default settings.');
-  } catch (err) {
-      console.error("Error while fixing the app config:", err);
   }
+  await fs.promises.writeFile(`${global.packagedPaths.entryPath}\\app.config.json`, appConfigData, 'utf-8');
 }
 
 async function checkGateServer() {
@@ -512,13 +500,24 @@ async function checkGateServer() {
 (async () => {
   await exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
   await exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
-  await exec(`del ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`)
-  await exec(`del ${global.packagedPaths.dataPath}\\add_root_crt.bat`)
+  await exec(`del ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`);
+  await exec(`del ${global.packagedPaths.dataPath}\\add_root_crt.bat`);
   await packageNec();
-  await updateAPP();
-  await checkGateServer();
-  await fixAppConfig();
+  try {
+    await fs.promises.access(path.join(global.packagedPaths.entryPath), "app.config.json");
+    await fixAppConfig();
+  } catch(err) {
+    console.log("app.config.json not exists");
+  }
 })();
+
+ipcMain.on('render-ready', (event) => {
+  (async () => {
+    await rwAppConfig();
+    await updateAPP();
+    await checkGateServer();
+  })()
+})
 
 //create mitm ca crt
 if (fs.existsSync(path.join(process.env.USERPROFILE, '.mitmproxy'))) {
@@ -546,63 +545,47 @@ if (fs.existsSync(path.join(process.env.USERPROFILE, '.mitmproxy'))) {
   }, 100);
 }
 
-function sendPatchGamePath(gamePath) {
-  console.log(gamePath)
-  if (fs.existsSync(`${gamePathDir}\\version.dll`)) {
-    fs.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf8', (err, data) => {
-      if (err) {
-        console.error('Err when reading config file:', err);
-        return;
+async function sendPatchGamePath(gamePath, action) {
+  console.log(gamePath);
+  const configFile = path.join(global.packagedPaths.entryPath, "app.config.json");
+  let config;
+  try {
+      try {
+          await fs.promises.access(`${gamePathDir}\\version.dll`);
+          const data = await fs.promises.readFile(configFile, 'utf8');
+          config = JSON.parse(data);
+          if (gamePath !== "") {
+              patchExists = true;
+              win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
+              if (config.game) {
+                  config.game.path = gamePath;
+              } else {
+                  config.game = { path: gamePath };
+              }
+          }
+          await fs.promises.writeFile(configFile, JSON.stringify(config, null, 2), 'utf8');
+          console.log('app.config.json Updated Successfully');
+      } catch (error) {
+          if (gamePath !== "") {
+              const result = execSync(`copy "${global.packagedPaths.dataPath}\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, { encoding: 'binary' });
+              console.log(iconv.decode(Buffer.from(result, 'binary'), 'GBK'));
+              console.log("RSA Patched");
+              patchExists = true;
+              win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
+          }
+          const data = await fs.promises.readFile(configFile, 'utf8');
+          config = JSON.parse(data);
+          if (config.game && config.game.path) {
+              patchExists = true;
+          }
       }
-      const config = JSON.parse(data);
-      if (gamePath != "") {
-        patchExists = true;
-        win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
-        
-        if (config.game) {
-          config.game.path = `${gamePath}`;
-        } else {
-          config.game = { path: `${gamePath}` };
-        }
-      };
-      fs.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(config, JSON.stringify(config, null, 2), 2), 'utf8', err => {
-        if (err) {
-          console.error('Err when writing config file:', err);
-          return;
-        }
-        console.log('app.config.json Updated Successfully');
-      });
-    });
-  } else {
-    patchExists = false;
-    win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
-    if (gamePath != "") {
-      exec(`copy "${global.packagedPaths.dataPath}\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, { encoding: 'binary' }, (error, stdout, stderr) => {
-        if (error) {
-          console.log(error);
-          return;
-        }
-        console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-        console.log("RSA Patched");
-        console.log(stderr);
-      });
-    };
-    fs.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf8', (err, data) => {
-      if (err) {
-        console.error('Err when reading config file:', err);
-        return;
-      }
-      const config = JSON.parse(data);
-      if (config.game.path == "") { } else {
-        patchExists = true;
-      };
-    });
-
+  } catch (err) {
+      console.error(err);
   }
 }
 
 
-async function executeSelfSignedKeystore() {
+async function selfSignedKeystore() {
   exec(`copy "${global.packagedPaths.dataPath}\\keystore_selfsigned.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, { encoding: 'binary' }, (error, stdout, stderr) => {
     if (error) {
       console.log(error);
@@ -613,6 +596,7 @@ async function executeSelfSignedKeystore() {
     console.log(stderr);
   });
   try {
+    await fixAppConfig();
     await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
     const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
     const appConfig = JSON.parse(appConfigData);
@@ -628,7 +612,7 @@ async function executeSelfSignedKeystore() {
 };
 
 
-async function executofficialKeystore() {
+async function officialKeystore() {
   exec(`copy "${global.packagedPaths.dataPath}\\keystore_official.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, { encoding: 'binary' }, (error, stdout, stderr) => {
     if (error) {
       console.log(error);
@@ -639,6 +623,7 @@ async function executofficialKeystore() {
     console.log(stderr);
   });
   try {
+    await fixAppConfig();
     await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
     const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
     const appConfig = JSON.parse(appConfigData);
@@ -657,10 +642,10 @@ async function executofficialKeystore() {
 // app.config.json
 async function rwAppConfig(action, gcInputRender, proxyInputRender) {
   try {
-    await fixAppConfig();
     await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
     const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
     const appConfig = JSON.parse(appConfigData);
+    await fixAppConfig();
     
     if (appConfig.getRes === "proxy") {
       resSetProxy();
@@ -701,19 +686,28 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
       if (appConfig.game) {
         gamePath = appConfig.game.path;
         gamePathDir = path.dirname(gamePath);
-        sendPatchGamePath(gamePath);
+        await sendPatchGamePath(gamePath);
+        if (appConfig.game) {
+          if (appConfig.game._3dmigoto !== "") {
+            _3DMigotoPath = appConfig.game._3dmigoto;
+            _3DMigotoPathDir = path.dirname(_3DMigotoPath)
+            console.log(_3DMigotoPath);
+            win.webContents.send('choose3DMigotoPathButton_was', _3DMigotoPath)
+          }
+        }
       }
-      if (appConfig.java) {
+      if (appConfig.java !== "") {
         javaPath = appConfig.java.exec;
         console.log(javaPath)
+        win.webContents.send('chooseJavaPathButton_was-jdk', javaPath);
       }
       if (appConfig.grasscutter) {
         if (appConfig.grasscutter.dispatch) {
           if (appConfig.grasscutter.dispatch.ssl == "selfsigned") {
-            executeSelfSignedKeystore();
+            selfSignedKeystore();
           }
           else if (appConfig.grasscutter.dispatch.ssl == "official") {
-            executofficialKeystore();
+            officialKeystore();
           }
           if (appConfig.grasscutter.host!=="127.0.0.1" && appConfig.grasscutter.host!=="localhost" && appConfig.grasscutter.host!=="0.0.0.0"){
             appConfig.grasscutter.dispatch.host = "dispatchcnglobal.yuanshen.com";
@@ -721,42 +715,25 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
             appConfig.grasscutter.dispatch.host = "127.0.0.1";
           }
         }
-        gcInput[0] = appConfig.grasscutter.host;
-        gcInput[1] = appConfig.grasscutter.port;
-        gcInput[2] = appConfig.grasscutter.dispatch.port;
-        gcInput[3] = appConfig.grasscutter.dispatch.host;
-        win.webContents.send('gc_text', gcInput[0], gcInput[1], gcInput[2]);
+        gcInput = [appConfig.grasscutter.host, appConfig.grasscutter.port, appConfig.grasscutter.dispatch.port, appConfig.grasscutter.dispatch.host];
+        win.webContents.send('gc_text', gcInput);
       }
       if (appConfig.proxy) {
-        proxyInput[0] = appConfig.proxy.host;
-        proxyInput[1] = appConfig.proxy.port;
-        win.webContents.send('proxy_text', proxyInput[0], proxyInput[1]);
+        proxyInput = [appConfig.proxy.host, appConfig.proxy.port];
+        win.webContents.send('proxy_text', proxyInput);
       }
       writeAcConfig();
     }
   } catch (err) {
     if (err.code === "ENOENT") {
-      gcInput[0] = "127.0.0.1";
-      gcInput[1] = "22102";
-      gcInput[2] = "443";
-      gcInput[3] = "127.0.0.1";
-      proxyInput[0] = "127.0.0.1";
-      proxyInput[1] = "443";
-      const app_config = {
-        version: config_version,
-        getRes: "proxy",
-        game: { path: "" },
-        grasscutter: { port: "22102", host: "127.0.0.1", dispatch: { port: "443", host: "127.0.0.1", ssl: "selfsigned" } },
-        proxy: { port: "443", host: "127.0.0.1" },
-        mongodb: { port: "27017" },
-        java: { exec: "java" }
-      };
+      gcInput = ["127.0.0.1", "22102", "443", "127.0.0.1"]
+      proxyInput = ["127.0.0.1", "443"];
       gamePath = "";
       gamePathDir = path.dirname(gamePath);
       javaPath = "java";
-      resSetProxy();
       console.log(javaPath);
-      await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(app_config, null, 2), 'utf8');
+      await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(defaultAppConfig, null, 2), 'utf8');
+      await resSetProxy();
       await fixAppConfig();
       console.log('app.config.json Created successfully');
     } else {
@@ -826,9 +803,6 @@ async function writeAcConfig (action, gcInputRender, proxyInputRender) {
     console.error(err)
   }
 }
-
-
-rwAppConfig();
 
 async function checkJava() {
   try {
@@ -1068,11 +1042,11 @@ ipcMain.on('resGetWayButton_1-set', () => {
 });
 
 ipcMain.on('officialKeystoreButton-set', () => {
-  executofficialKeystore();
+  officialKeystore();
 });
 
 ipcMain.on('selfSignedKeystoreButton-set', () => {
-  executeSelfSignedKeystore();
+  selfSignedKeystore();
 });
 
 ipcMain.on('openLogDirBtn_open-log-dir', () => {
@@ -1172,7 +1146,7 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', (event) => {
           if (stdout.includes('Java(TM) SE Runtime Environment') && !stdout.includes('HotSpot')){
             win.webContents.send('chooseJavaPathButton_was-jre');
           } else if (stdout.includes('Java(TM) SE Runtime Environment') && stdout.includes('HotSpot')) {
-            win.webContents.send('chooseJavaPathButton_was-jdk',javaPath);
+            win.webContents.send('chooseJavaPathButton_was-jdk', javaPath, "init");
             javaPath = result.filePaths[0];
             console.log(javaPath);
             fs.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf8', (err, data) => {
@@ -1208,6 +1182,45 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', (event) => {
   });
 });
 
+ipcMain.on('choose3DMigotoPathButton_open-file-dialog', (event) => {
+  dialog.showOpenDialog({
+    title: '请定位到3DMigoto文件夹并选择exe文件',
+    filters: [
+      { name: '应用程序', extensions: ['exe'] }
+    ],
+    properties: ['openFile',]
+  }).then(result => {
+    if (!result.canceled && result.filePaths.length > 0) {
+      _3DMigotoPath = result.filePaths[0];
+      _3DMigotoPathDir = path.dirname(_3DMigotoPath);
+      console.log(_3DMigotoPath);
+      const gamePathFileName = path.basename(_3DMigotoPath);
+      if (gamePathFileName === '3DMigoto Loader.exe') {
+        (async () => {
+          try {
+            win.webContents.send('choose3DMigotoPathButton_was', _3DMigotoPath, "init");
+            fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
+            const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
+            const appConfig = JSON.parse(appConfigData);
+            if (appConfig.game._3dmigoto) {
+              appConfig.grasscutter._3dmigoto = _3DMigotoPath
+            }
+            await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
+            await fixAppConfig();
+            console.log('app.config.json Updated successfully');
+          } catch(err) {
+            console.error(err);
+          }
+        })()
+      } else {
+        event.sender.send('choose3DMigotoPathButton_file-not-valid');
+      }
+    }
+  }).catch(err => {
+    console.log(err);
+  });
+});
+
 ipcMain.on('chooseGamePathButton_open-file-dialog', (event) => {
   dialog.showOpenDialog({
     title: '请定位到游戏文件夹并选择exe文件',
@@ -1222,7 +1235,9 @@ ipcMain.on('chooseGamePathButton_open-file-dialog', (event) => {
       console.log(gamePath);
       const gamePathFileName = path.basename(gamePath);
       if (gamePathFileName === 'GenshinImpact.exe' || gamePathFileName === 'YuanShen.exe') {
-        sendPatchGamePath(gamePath);
+        (async () => {
+          await sendPatchGamePath(gamePath, "init");
+        })();
       } else {
         event.sender.send('chooseGamePathButton_file-not-valid', gamePath, patchExists, action);
       }
@@ -1245,17 +1260,14 @@ ipcMain.on('restoreOfficialButton_delete-path', (event) => {
         console.error(`${stderr}`);
       });
       patchExists = false;
-      action = "delete_patch_succ";
-      event.sender.send('chooseGamePathButton_selected-file', gamePath, patchExists, action);
+      event.sender.send('chooseGamePathButton_selected-file', gamePath, patchExists, "delete_patch_succ");
     } else {
       patchExists = false;
-      action = "patch_not_exst";
-      event.sender.send('chooseGamePathButton_selected-file', gamePath, patchExists, action);
+      event.sender.send('chooseGamePathButton_selected-file', gamePath, patchExists, "patch_not_exst");
     }
   } else {
     patchExists = false;
-    action = "game_patch_undf"
-    event.sender.send('chooseGamePathButton_selected-file', gamePath, patchExists, action);
+    event.sender.send('chooseGamePathButton_selected-file', gamePath, patchExists, "game_patch_undf");
   }
 });
 

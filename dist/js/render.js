@@ -1,5 +1,3 @@
-const iziToast = require("izitoast");
-
 const refreshIframeBtn = document.getElementById('refresh_iframe');
 const homePageIframeBtn = document.getElementById('home_page_iframe');
 const backwardPageIframeBtn = document.getElementById('backward_page_iframe');

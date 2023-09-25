@@ -1,6 +1,6 @@
 const { ipcRenderer, ipcMain } = require('electron');
 const path = require('path');
-const { eventNames } = require('process');
+const iziToast = require("izitoast");
 
 let dragbar_close = document.getElementById('dragbar_close');
 let dragbar_minimize = document.getElementById('dragbar_min');
@@ -9,8 +9,10 @@ let dragbar_maximize = document.getElementById('dragbar_maximize');
 let dragbar_question = document.getElementById('dragbar_question');
 let chooseGamePathButton = document.querySelector('button[name="choose_game_path"]');
 let chooseJavaPathButton = document.querySelector('button[name=choose_java_path]');
+let choose3DMigotoPathButton = document.querySelector('button[name=choose_3dmigoto_path]');
 let gamePathInput = document.querySelector('input[name="game_path"]');
 let javaPathInput = document.querySelector('input[name="java_path"]')
+let _3DMigotoPathPathInput = document.querySelector('input[name="3dmigoto_path"]')
 let restoreOfficialButton = document.querySelector('button[name="restore_official"]');
 let resGetWayButton_0 = document.querySelector('.res_getway_0');
 let resGetWayButton_1 = document.querySelector('.res_getway_1');
@@ -42,25 +44,31 @@ let proxyPort = document.querySelector('input[name=proxy_port]');
 
 const izi_notify_wav = new Audio("sounds/izi_notify.wav");
 
-function izi_notify () {
+function izi_notify() {
     izi_notify_wav.pause();
     izi_notify_wav.currentTime = 0;
-    izi_notify_wav.play();
+    setTimeout(() => {
+        izi_notify_wav.play();
+    }, 100);
 }
 
 let gc_latestCommitSha;
 let gc_latestReleaseTagName;
 let res_latestCommitSha;
 
-ipcRenderer.on('gc_text', (event, input0, input1, input2) => {
-    gcIp.value = input0;
-    gcGamePort.value = input1;
-    gcDispatchPort.value = input2;
+document.addEventListener('DOMContentLoaded', (event) => {
+    ipcRenderer.send('render-ready');
+});
+
+ipcRenderer.on('gc_text', (event, input) => {
+    gcIp.value = input[0];
+    gcGamePort.value = input[1];
+    gcDispatchPort.value = input[2];
 })
 
-ipcRenderer.on('proxy_text', (event, input0, input1) => {
-    proxyIP.value = input0;
-    proxyPort.value = input1;
+ipcRenderer.on('proxy_text', (event, input) => {
+    proxyIP.value = input[0];
+    proxyPort.value = input[1];
 })
 
 let gcInputRender = new Array(4);
@@ -175,6 +183,10 @@ chooseJavaPathButton.addEventListener('click', () => {
     ipcRenderer.send('chooseJavaPathButton_open-file-dialog')
 });
 
+choose3DMigotoPathButton.addEventListener('click', () => {
+    ipcRenderer.send('choose3DMigotoPathButton_open-file-dialog')
+});
+
 openLogDirBtn.addEventListener('click', () => {
     ipcRenderer.send('openLogDirBtn_open-log-dir');
 })
@@ -262,7 +274,7 @@ ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, 
         
     }
     if (action == "patch_not_exst") {
-        iziToast.warn({
+        iziToast.info({
             icon: 'fa-solid fa-circle-exclamation',
             title: '警告',
             layout: '2',
@@ -284,7 +296,7 @@ ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, 
         });
     }
     if (action == "game_patch_undf") {
-        iziToast.warn({
+        iziToast.info({
             icon: 'fa-solid fa-circle-exclamation',
             title: '警告',
             layout: '2',
@@ -308,6 +320,18 @@ ipcRenderer.on('chooseGamePathButton_file-not-valid', (event) => {
     });
 })
 
+ipcRenderer.on('choose3DMigotoPathButton_file-not-valid', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-exclamation',
+        layout: '4',
+        title: '警告',
+        message: '请选择有效的3DMigoto可执行文件！<br>示例:&nbsp;"3DMigoto Loader.exe"',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+})
+
 ipcRenderer.on('chooseJavaPathButton_was-jre', (event) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-exclamation',
@@ -320,17 +344,34 @@ ipcRenderer.on('chooseJavaPathButton_was-jre', (event) => {
     });
 });
 
-ipcRenderer.on('chooseJavaPathButton_was-jdk', (event, path) => {
+ipcRenderer.on('chooseJavaPathButton_was-jdk', (event, path, action) => {
     javaPathInput.value = path;
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '2',
-        title: 'javaPath',
-        message: 'JDK校验已通过！已保存至配置文件！',
-        onOpening: function() {
-            izi_notify()
-        }
-    });
+    if (action == "init") {
+        iziToast.info({
+            icon: 'fa-solid fa-circle-info',
+            layout: '2',
+            title: 'javaPath',
+            message: 'JDK校验已通过！已保存至配置文件！',
+            onOpening: function() {
+                izi_notify()
+            }
+        });
+    }
+});
+
+ipcRenderer.on('choose3DMigotoPathButton_was', (event, path, action) => {
+    _3DMigotoPathPathInput.value = path;
+    if (action == "init") {
+        iziToast.info({
+            icon: 'fa-solid fa-circle-info',
+            layout: '2',
+            title: 'javaPath',
+            message: '3DMigoto校验已通过！已保存至配置文件！',
+            onOpening: function() {
+                izi_notify()
+            }
+        });
+    }
 });
 
 ipcRenderer.on('chooseJavaPathButton_not-valid', (event) => {
@@ -401,7 +442,7 @@ selfSignedKeystoreButton.addEventListener('click', () => {
     });
 });
 
-const operationBoxBtn_0_ClickHandler = () => {
+function operationBoxBtn_0_ClickHandler() {
     operationBoxBtn_0.addEventListener('click', () => {
         gcInputRender = [gcIp.value, gcGamePort.value, gcDispatchPort.value];
         if (gcIp.value!=="127.0.0.1" && gcIp.value!=="localhost" && gcIp.value!=="0.0.0.0") {
@@ -424,6 +465,8 @@ const operationBoxBtn_0_ClickHandler = () => {
         pageLogText0.innerHTML += `请不要关闭稍后弹出来的任何一个窗口！<br>正在启动服务...<br>`; 
     });
 }
+
+operationBoxBtn_0_ClickHandler();
 
 operationBoxBtn_1.addEventListener('click', () => {
     ipcRenderer.send('operationBoxBtn_1-stop-service');
@@ -488,7 +531,7 @@ updateBtn.addEventListener('click' , () => {
             
         })
         .catch(error => {
-        iziToast.warning({
+        iziToast.info({
             icon: 'fa-solid fa-circle-exclamation',
             layout: '2',
             title: 'Github API 已超限！请等待一分钟！',
