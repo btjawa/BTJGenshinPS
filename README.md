@@ -13,9 +13,9 @@
     <a href="https://www.mongodb.com"><img src="https://img.shields.io/badge/-MongoDB-E5E5E5?style=flat&logo=MongoDB&Color=white"></a>
 </div>
 
-基于Node.js，Electron，后期可能会尝试优化Electron体积。
+基于Node.js，Electron，包体积过大的问题暂时还没有精力去优化。
 
-GateServer请从Release中获取，repo中只包含APP
+GateServer请从Release中获取，code只包含app
 
 ## To Do
 
@@ -37,7 +37,7 @@ GateServer请从Release中获取，repo中只包含APP
 
 - [ ] 自由选择服务端版本
 
-- [ ] API
+- [x] 注入模组 (WIP)
 
 ## Development
 
