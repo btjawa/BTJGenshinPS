@@ -1065,7 +1065,7 @@ button[name="handbook_html"]{
     right: 12px;
     transform: translateY(-50%);
     font-size: 14px;
-    padding: 7.5px 14px;
+    padding: 7.5px 38px;
     transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
     border: 2px solid #565656;
     border-radius: 10px;
@@ -1086,7 +1086,7 @@ button[name="handbook_html"]{
     left: 12px;
     transform: translateY(-50%);
     font-size: 14px;
-    padding: 7.5px 14px;
+    padding: 7.5px 38px;
     transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
     border: 2px solid #565656;
     border-radius: 10px;
@@ -1103,8 +1103,8 @@ button[name="handbook_html"]{
     color: #ebebeb;
     background-color: #828282;
     position: absolute;
-    top: 110px;
-    left: 100px;
+    top: 240px;
+    left: 0px;
     transform: translateY(-50%);
     font-size: 12px;
     padding: 8.5px 10px;
@@ -1168,10 +1168,12 @@ button[name="handbook_html"]{
     padding: 15px;
     background-color: #353740;
     margin-right: 5px;
+    color: #ebebeb;
 }
 
 #refresh_iframe:hover, #home_page_iframe:hover, #backward_page_iframe:hover {
     background-color: #3d3f47;
+    cursor: pointer;
 }
 
 #home_page_iframe {

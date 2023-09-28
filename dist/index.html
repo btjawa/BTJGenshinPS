@@ -101,7 +101,6 @@
                 <div class="operation_box_btn_0">启动全部服务</div>
                 <div class="operation_box_btn_1">停止服务</div>
                 <div class="operation_box_btn_2">启动游戏</div>
-                <div class="operation_box_btn_3">注入3DMigoto</div>
             </div>
             <button name="clear_data" class="clear_data">恢复出厂</button>
             <i class="gc_version" target="_blank">Latest Commit<br>Grasscutter Release N/A-N/A</i>
@@ -113,7 +112,8 @@
             <div class="page_tools_text_0">GcTools&nbsp;v1.12.2&nbsp;<button name="gctools_btn">下载/打开</button></div>
             <div class="page_tools_text_1">Handbook手册&nbsp;(官方)&nbsp;<button name="handbook_txt">TXT</button><button name="handbook_html">可视化网页</button></div>
             <div class="page_tools_text_2">模组管理</div>
-            <i class="page_tools_text_2_sub">请先在主页点击"注入3DMigoto"再启动游戏!<br>可在设置中指定3DMigoto路径,&nbsp;默认使用自带版本</i>
+            <i class="page_tools_text_2_sub">若想使用模组,&nbsp;请在启动服务后下方点击&nbsp;"注入3DMigoto",&nbsp;不用再额外启动游戏！<br>可在设置中指定3DMigoto路径,&nbsp;默认使用自带版本</i>
+            <div class="operation_box_btn_3">注入3DMigoto</div>
         </div>
         <div class="page_2">
             <iframe class="doc_iframe" id="doc_iframe" src="http://localhost:52805/BGP-docs"></iframe>
@@ -134,11 +134,11 @@
             <div class="page_title">设置</div>
             <i class="page_subtitle">BTJGenshinPS</i>
             <div class="page_settings_text_0">Java路径&nbsp;<button name="choose_java_path">选择Java路径</button></div>
-            <input type="text" name="java_path" disabled="disabled">
+            <input type="text" name="java_path" disabled="disabled" text="自动检测">
             <div class="page_settings_text_1">查看日志</div>
             <button name="open_log_dir">打开日志目录</button>
             <button name="open_log_latest">打开最新日志</button>
-            <div class="page_settings_text_2">3DMigoto路径&nbsp;<button name="choose_3dmigoto_path">选择3DMigoto路径</button><i class="page_settings_text_2_sub">请将exe命名为&nbsp;"3DMigoto Loader.exe"</i></div>
+            <div class="page_settings_text_2">3DMigoto路径&nbsp;<button name="choose_3dmigoto_path">(WIP)选择3DMigoto路径</button><i class="page_settings_text_2_sub">请将exe命名为&nbsp;"3DMigoto Loader.exe"</i></div>
             <input type="text" name="3dmigoto_path" disabled="disabled">
         <script type="text/javascript" src="./js/ipc.renderer.js"></script>
         <script type="text/javascript" src="./js/render.js"></script>

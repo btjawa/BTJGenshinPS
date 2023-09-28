@@ -1,6 +1,7 @@
 const { ipcRenderer, ipcMain } = require('electron');
 const path = require('path');
 const iziToast = require("izitoast");
+const { eventNames } = require('process');
 
 let dragbar_close = document.getElementById('dragbar_close');
 let dragbar_minimize = document.getElementById('dragbar_min');
@@ -24,6 +25,7 @@ let patchState = document.querySelector('.patch_state');
 let operationBoxBtn_0 = document.querySelector('.operation_box_btn_0');
 let operationBoxBtn_1 = document.querySelector('.operation_box_btn_1');
 let operationBoxBtn_2 = document.querySelector('.operation_box_btn_2');
+let operationBoxBtn_3 = document.querySelector('.operation_box_btn_3');
 let updateBtn = document.querySelector('.update')
 let updateProgress = document.querySelector('.update_progress');
 let resVersion = document.querySelector('.res_version');
@@ -183,9 +185,11 @@ chooseJavaPathButton.addEventListener('click', () => {
     ipcRenderer.send('chooseJavaPathButton_open-file-dialog')
 });
 
-choose3DMigotoPathButton.addEventListener('click', () => {
-    ipcRenderer.send('choose3DMigotoPathButton_open-file-dialog')
-});
+/*
+ choose3DMigotoPathButton.addEventListener('click', () => {
+     ipcRenderer.send('choose3DMigotoPathButton_open-file-dialog')
+    });
+*/
 
 openLogDirBtn.addEventListener('click', () => {
     ipcRenderer.send('openLogDirBtn_open-log-dir');
@@ -345,7 +349,7 @@ ipcRenderer.on('chooseJavaPathButton_was-jre', (event) => {
 });
 
 ipcRenderer.on('chooseJavaPathButton_was-jdk', (event, path, action) => {
-    javaPathInput.value = path;
+    javaPathInput.value = path;    
     if (action == "init") {
         iziToast.info({
             icon: 'fa-solid fa-circle-info',
@@ -365,7 +369,7 @@ ipcRenderer.on('choose3DMigotoPathButton_was', (event, path, action) => {
         iziToast.info({
             icon: 'fa-solid fa-circle-info',
             layout: '2',
-            title: 'javaPath',
+            title: '3DMigotoPath',
             message: '3DMigoto校验已通过！已保存至配置文件！',
             onOpening: function() {
                 izi_notify()
@@ -379,7 +383,7 @@ ipcRenderer.on('chooseJavaPathButton_not-valid', (event) => {
         icon: 'fa-solid fa-circle-exclamation',
         layout: '2',
         title: 'javaPath',
-        message: '请选择有效的Java文件夹！',
+        message: '请选择有效的Java文件夹！Java校验未通过！\n请尝试选择bin的上一级，即java根目录',
         onOpening: function() {
             izi_notify()
         }
@@ -473,6 +477,7 @@ operationBoxBtn_1.addEventListener('click', () => {
 });
 
 ipcRenderer.on('download-jdk', (event, message) => {
+    updateProgress.innerHTML = "下载进度将会显示在这里";
     if (message == "jdk-false") {
         pageLogText0.innerHTML += `未检测到JDK！正在下载JDK...<br>`;
     } else if (message == "jdk-true") {
@@ -482,6 +487,10 @@ ipcRenderer.on('download-jdk', (event, message) => {
 
 ipcRenderer.on('jdk-already-installed', (event) => {
     pageLogText0.innerHTML += `已检测到JDK！<br>`;   
+});
+
+ipcRenderer.on('jre-already-installed', (event) => {
+    pageLogText0.innerHTML += `已检测到JRE，但未检测到JDK<br>`;   
 });
 
 ipcRenderer.on('operationBoxBtn_1-success', (event) => {
@@ -507,6 +516,22 @@ ipcRenderer.on('operationBoxBtn_2-success', (event) => {
         layout: '2',
         title: '启动游戏',
         message: '成功启动游戏！',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+});
+
+operationBoxBtn_3.addEventListener('click', () => {
+    ipcRenderer.send('operationBoxBtn_3-run-3dmigoto');
+});
+
+ipcRenderer.on('operationBoxBtn_3-success', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '3',
+        title: '启动3DMigoto',
+        message: '成功启动3DMigoto！',
         onOpening: function() {
             izi_notify()
         }
@@ -656,6 +681,19 @@ ipcRenderer.on('clearing_data', (event) => {
         layout: '2',
         title: '恢复出厂',
         message: '正在清除数据...',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+});
+
+ipcRenderer.on('vc_redist_init', (event, path) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '初始化',
+        timeout: 5000,
+        message: `初次使用，请按照弹出的窗口中的指引安装必要依赖<br>或手动安装:&nbsp;${path}<br>若显示"修改安装程序"，请点击"修复"`,
         onOpening: function() {
             izi_notify()
         }

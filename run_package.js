@@ -29,7 +29,7 @@ exec("chcp 65001",(error,stdout,stderr) => {
 
 async function package() {
   try {
-    ({error, stdout, stderr} = await exec(`electron-packager . BTJGenshinPS --platform=win32 --overwrite --icon=./dist/favicon.ico --arch=ia32 --extra-resource=data --extra-resource=GateServer --ignore=GateServer --ignore=data --ignore=release.md --ignore=dist/docs --ignore=BGP-docs --ignore=log --ignore=app.config.json --prune --download.mirrorOptions.mirror=https://npm.taobao.org/mirrors/electron/`));
+    ({error, stdout, stderr} = await exec(`electron-packager . BTJGenshinPS --platform=win32 --overwrite --icon=./dist/favicon.ico --arch=ia32 --extra-resource=data --extra-resource=GateServer --ignore=GateServer --ignore=data --ignore=release.md --ignore=BGP-docs --ignore=log --ignore=app.config.json --prune --download.mirrorOptions.mirror=https://npm.taobao.org/mirrors/electron/`));
     if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
       console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
       console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
@@ -43,15 +43,6 @@ async function package() {
     if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
       console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
       console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
-
-    try {
-      ({error, stdout, stderr} = await exec(`xcopy .\\BGP-docs\\src\\.vuepress\\dist .\\BTJGenshinPS-win32-ia32\\resources\\docs /E /I /Y`));
-      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-        console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-        console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
-    } catch(err) {
-      console.log("BGP-docs dist doesn\'t exists")
-    }
 
     ({error, stdout, stderr} = await exec(`asar pack BTJGenshinPS-win32-ia32\\resources\\app BTJGenshinPS-win32-ia32\\resources\\app.asar && rmdir BTJGenshinPS-win32-ia32\\resources\\app /s /q`));
     if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
