@@ -223,8 +223,10 @@ button[name="choose_java_path"]{
     left: 5px;
 }
 
-button[name="choose_3dmigotos_path"]{
+button[name="choose_3dmigoto_path"]{
     left: 5px;
+    background-color: #555555;
+    color: #a0a0a0;
 }
 
 button[name="open_log_dir"]{
@@ -256,6 +258,10 @@ button[name="handbook_html"]{
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
     border: 1px solid transparent;
+}
+
+.bottom-spacing {
+    height: 10px;
 }
 
 .dragbar {
@@ -1102,12 +1108,10 @@ button[name="handbook_html"]{
     -webkit-app-region: no-drag;
     color: #ebebeb;
     background-color: #828282;
-    position: absolute;
-    top: 240px;
-    left: 0px;
-    transform: translateY(-50%);
     font-size: 12px;
     padding: 8.5px 10px;
+    width: 80px;
+    margin-top: 10px;
     transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
     border: 2px solid #565656;
     border-radius: 10px;
@@ -1256,30 +1260,205 @@ button[name="handbook_html"]{
     font-size: 14px;
 }
 
-.page_tools_text_0 {
-    display:block;
-    color: #c4c4c4;
-    position: relative;
-    top: 10px;
-}
-
-.page_tools_text_1 {
-    display:block;
-    color: #c4c4c4;
-    position: relative;
-    top: 20px;
-}
-
+.page_tools_text_0,
+.page_tools_text_1,
 .page_tools_text_2 {
-    display:block;
     color: #c4c4c4;
-    position: relative;
-    top: 30px;
+    margin-top: 10px;
 }
 
 .page_tools_text_2_sub {
-    position: relative;
     color: #999696;
-    top: 30px;
     font-size: 14px;
+    margin-top: 10px;
+}
+
+.page_tools_mods_actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.page_tools_mods_drag_area {
+    display: inline-block;
+    font-size: 14px;
+    padding: 7.5px 15px;
+    border: 2px dashed #828282;
+    border-radius: 8px;
+    margin-top: 10px;
+    margin-left: -5px;
+    color: #aeaeae;
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+.page_tools_plugs_drag_area:hover {
+    background-color: #4b4f5e;
+}
+
+.page_tools_plugs_drag_area {
+    display: inline-block;
+    font-size: 14px;
+    padding: 7.5px 15px;
+    border: 2px dashed #828282;
+    border-radius: 8px;
+    margin-top: 18px;
+    margin-left: 5px;
+    color: #aeaeae;
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+.page_tools_mods_drag_area:hover {
+    background-color: #4b4f5e;
+}
+
+.page_tools_mods_list_item {
+    position: relative;
+    top: 7px;
+    color: #c4c4c4;
+    border-radius: 10px;
+    width: 100%;
+    padding: 12.5px;
+    background-color: #353740;
+    margin-right: 5px;
+    margin: 7px 0px;
+    font-size: 15px;
+}
+
+.page_tools_mods_list_open_select {
+    position: absolute;
+    right: 47px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #c4c4c4;
+    border-radius: 8px;
+    width: 12px;
+    padding: 10px;
+    background-color: #686b80;
+    font-size: 12px;
+    z-index: 1000;
+    transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
+}
+
+.page_tools_mods_list_open_select:hover {
+    cursor: pointer;
+    background-color: #4b4f5e;
+}
+
+.page_tools_mods_list_delete {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #c4c4c4;
+    border-radius: 8px;
+    width: 12px;
+    padding: 10px;
+    background-color: #686b80;
+    font-size: 12px;
+    z-index: 1000;
+    transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
+}
+
+.page_tools_mods_list_delete:hover {
+    cursor: pointer;
+    background-color: #4b4f5e;
+}
+
+.page_tools_mods_name {
+    font-size: 14px;
+}
+
+.page_tools_mods_list_item {
+    color: #c4c4c4;
+    border-radius: 10px;
+    width: 100%;
+    padding: 12.5px;
+    background-color: #353740;
+    margin-right: 5px;
+    margin: 7px 0px;
+    font-size: 15px;
+    position: relative;
+}
+
+.page_tools_text_3,
+.page_tools_plugs_drag_area {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.page_tools_text_3 {
+    color: #c4c4c4;
+    margin-top: 20px;
+    margin-right: 10px;
+}
+
+.page_tools_plugs_list_item {
+    position: relative;
+    top: 7px;
+    color: #c4c4c4;
+    border-radius: 10px;
+    width: 100%;
+    padding: 12.5px;
+    background-color: #353740;
+    margin-right: 5px;
+    margin: 7px 0px;
+    font-size: 15px;
+}
+
+.page_tools_plugs_list_open_select {
+    position: absolute;
+    right: 47px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #c4c4c4;
+    border-radius: 8px;
+    width: 12px;
+    padding: 10px;
+    background-color: #686b80;
+    font-size: 12px;
+    z-index: 1000;
+    transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
+}
+
+.page_tools_plugs_list_open_select:hover {
+    cursor: pointer;
+    background-color: #4b4f5e;
+}
+
+.page_tools_plugs_list_delete {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #c4c4c4;
+    border-radius: 8px;
+    width: 12px;
+    padding: 10px;
+    background-color: #686b80;
+    font-size: 12px;
+    z-index: 1000;
+    transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
+}
+
+.page_tools_plugs_list_delete:hover {
+    cursor: pointer;
+    background-color: #4b4f5e;
+}
+
+.page_tools_plugs_name {
+    font-size: 14px;
+}
+
+.page_tools_mods_list_item {
+    color: #c4c4c4;
+    border-radius: 10px;
+    width: 100%;
+    padding: 12.5px;
+    background-color: #353740;
+    margin-right: 5px;
+    margin: 7px 0px;
+    font-size: 15px;
+    position: relative;
 }

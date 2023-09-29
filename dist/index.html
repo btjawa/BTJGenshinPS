@@ -41,7 +41,7 @@
             <div class="menu_selector_1">
                 <div class="menu_selector_1_background"></div>
                 <i id="menu_selector_1_icon" class="fa-light fa-screwdriver-wrench"></i>
-                <a class="menu_selector_1_text">工具/模组</a>
+                <a class="menu_selector_1_text">工具/扩展</a>
                 <div class="menu_underline_1"></div>
             </div>
             <div class="menu_selector_2">
@@ -87,7 +87,7 @@
             <input type="text" name="gc_ip" value="127.0.0.1">
             <input type="text" name="gc_game_port" value="22102">
             <input type="text" name="gc_dispatch_port" value="443">
-            <div class="page_0_text_3">SSL&nbsp;<a class="page_0_text_3 sub_0">keystore.p12</a>&nbsp;<button name="self-signed-keystore">使用自签名证书</button><button name="official-keystore">使用官方证书</button></div>
+            <div class="page_0_text_3">SSL证书&nbsp;<a class="page_0_text_3 sub_0">keystore.p12</a>&nbsp;<button name="self-signed-keystore">使用自签名证书</button><button name="official-keystore">使用官方证书</button></div>
             <div class="page_0_text_4">MongoDB设置</div>
             <div class="page_0_text_4 sub_0">数据库端口<div class="page_0_text_4 sub_1">数据文件夹</div></div>
             <input type="text" name="mongo_port" value="27017" disabled="disabled">
@@ -107,13 +107,30 @@
             <i class="res_version" target="_blank">Yuuki GC-Resources N/A</i>
         </div>
         <div class="page_1">
-            <div class="page_title">工具/模组</div>
+            <div class="page_title">工具/扩展</div>
             <i class="page_subtitle">BTJGenshinPS</i>
             <div class="page_tools_text_0">GcTools&nbsp;v1.12.2&nbsp;<button name="gctools_btn">下载/打开</button></div>
             <div class="page_tools_text_1">Handbook手册&nbsp;(官方)&nbsp;<button name="handbook_txt">TXT</button><button name="handbook_html">可视化网页</button></div>
             <div class="page_tools_text_2">模组管理</div>
             <i class="page_tools_text_2_sub">若想使用模组,&nbsp;请在启动服务后下方点击&nbsp;"注入3DMigoto",&nbsp;不用再额外启动游戏！<br>可在设置中指定3DMigoto路径,&nbsp;默认使用自带版本</i>
-            <div class="operation_box_btn_3">注入3DMigoto</div>
+            <div class="page_tools_mods_actions">
+                <div class="operation_box_btn_3">注入3DMigoto</div>
+                <div class="page_tools_mods_drag_area">将文件夹拖放至此处以添加模组</div>
+            </div>
+            <div class="page_tools_mods_list">
+                <div class="page_tools_mods_list_item">
+                    <div class="page_tools_mods_name">模组名称将会在此处显示...</div>
+                    <div class="bottom-spacing"></div>
+                </div>
+            </div>
+            <div class="page_tools_text_3">Grasscutter插件管理</div>
+            <div class="page_tools_plugs_drag_area">将JAR拖放至此处以添加插件</div>
+            <div class="page_tools_plugs_list">
+                <div class="page_tools_plugs_list_item">
+                    <div class="page_tools_plugs_name">插件名称将会在此处显示...</div>
+                    <div class="bottom-spacing"></div>
+                </div>
+            </div>
         </div>
         <div class="page_2">
             <iframe class="doc_iframe" id="doc_iframe" src="http://localhost:52805/BGP-docs"></iframe>
@@ -140,6 +157,7 @@
             <button name="open_log_latest">打开最新日志</button>
             <div class="page_settings_text_2">3DMigoto路径&nbsp;<button name="choose_3dmigoto_path">(WIP)选择3DMigoto路径</button><i class="page_settings_text_2_sub">请将exe命名为&nbsp;"3DMigoto Loader.exe"</i></div>
             <input type="text" name="3dmigoto_path" disabled="disabled">
+        </div>
         <script type="text/javascript" src="./js/ipc.renderer.js"></script>
         <script type="text/javascript" src="./js/render.js"></script>
         <script type="text/javascript" src="./js/menu.js"></script>

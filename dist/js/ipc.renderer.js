@@ -1,7 +1,7 @@
-const { ipcRenderer, ipcMain } = require('electron');
-const path = require('path');
+const { ipcRenderer } = require('electron');
 const iziToast = require("izitoast");
-const { eventNames } = require('process');
+const path = require('path');
+const fs = require('fs');
 
 let dragbar_close = document.getElementById('dragbar_close');
 let dragbar_minimize = document.getElementById('dragbar_min');
@@ -37,6 +37,9 @@ let openLogLatestBtn = document.querySelector('button[name="open_log_latest"]');
 let openGcToolsBtn = document.querySelector('button[name="gctools_btn"]')
 let openHandbookTXTBtn = document.querySelector('button[name="handbook_txt"]')
 let openHandbookHTMLBtn = document.querySelector('button[name="handbook_html"]')
+
+let modsDragArea = document.querySelector('.page_tools_mods_drag_area');
+let plugsDragArea = document.querySelector('.page_tools_plugs_drag_area');
 
 let gcIp = document.querySelector('input[name=gc_ip]');
 let gcGamePort = document.querySelector('input[name=gc_game_port]');
@@ -698,4 +701,222 @@ ipcRenderer.on('vc_redist_init', (event, path) => {
             izi_notify()
         }
     });
+});
+
+ipcRenderer.on('mods-list', (event, modsList) => {
+    const container = document.querySelector('.page_tools_mods_list');
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
+    if (modsList == "empty") {
+        let modElement = document.createElement('div');
+            modElement.className = 'page_tools_mods_list_item';
+            let modNameElement = document.createElement('div');
+            modNameElement.className = 'page_tools_mods_name';
+            modNameElement.innerText = "Mod 文件夹为空！";
+            modElement.appendChild(modNameElement);
+            container.appendChild(modElement);
+    } else {
+        for (let mod of modsList) {
+            let modElement = document.createElement('div');
+            modElement.className = 'page_tools_mods_list_item';
+            let modNameElement = document.createElement('div');
+            modNameElement.className = 'page_tools_mods_name';
+            modNameElement.innerText = mod;
+            let deleteButton = document.createElement('div');
+            deleteButton.className = 'page_tools_mods_list_delete fa-solid fa-trash';
+            let openSelectButton = document.createElement('div');
+            openSelectButton.className = 'page_tools_mods_list_open_select fa-solid fa-folder-open';
+            modElement.appendChild(modNameElement);
+            modElement.appendChild(deleteButton);
+            modElement.appendChild(openSelectButton);
+            container.appendChild(modElement);
+        }
+        const deleteButtons = document.querySelectorAll('.page_tools_mods_list_delete');
+        const openSelectButtons = document.querySelectorAll('.page_tools_mods_list_open_select')
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                let parent = this.parentNode;
+                let modNameElement = parent.querySelector('.page_tools_mods_name');
+                let modName = modNameElement ? modNameElement.textContent : null;
+                if (modName) {
+                    ipcRenderer.send('modsListDeleteBtn-delete', modName);
+                    iziToast.info({
+                        icon: 'fa-solid fa-circle-info',
+                        layout: '2',
+                        title: '删除模组',
+                        timeout: 3500,
+                        message: `已将模组扔进回收站！若想恢复可进入回收站右键"还原"`,
+                        onOpening: function() {
+                            izi_notify()
+                        }
+                    });
+                }
+            });
+        });
+        openSelectButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                let parent = this.parentNode;
+                let modNameElement = parent.querySelector('.page_tools_mods_name');
+                let modName = modNameElement ? modNameElement.textContent : null;
+                if (modName) {
+                    ipcRenderer.send('modsListOpenSelectBtn-open-select', modName);
+                }
+            });
+        });
+    }
+});
+
+ipcRenderer.on('plugs-list', (event, plugsList) => {
+    const container = document.querySelector('.page_tools_plugs_list');
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
+    if (plugsList == "empty") {
+        let plugElement = document.createElement('div');
+            plugElement.className = 'page_tools_plugs_list_item';
+            let plugNameElement = document.createElement('div');
+            plugNameElement.className = 'page_tools_plugs_name';
+            plugNameElement.innerText = "插件文件夹为空！";
+            plugElement.appendChild(plugNameElement);
+            container.appendChild(plugElement);
+    } else {
+        for (let plug of plugsList) {
+            let plugElement = document.createElement('div');
+            plugElement.className = 'page_tools_plugs_list_item';
+            let plugNameElement = document.createElement('div');
+            plugNameElement.className = 'page_tools_plugs_name';
+            plugNameElement.innerText = plug;
+            let deleteButton = document.createElement('div');
+            deleteButton.className = 'page_tools_plugs_list_delete fa-solid fa-trash';
+            let openSelectButton = document.createElement('div');
+            openSelectButton.className = 'page_tools_plugs_list_open_select fa-solid fa-folder-open';
+            plugElement.appendChild(plugNameElement);
+            plugElement.appendChild(deleteButton);
+            plugElement.appendChild(openSelectButton);
+            container.appendChild(plugElement);
+        }
+        const deleteButtons = document.querySelectorAll('.page_tools_plugs_list_delete');
+        const openSelectButtons = document.querySelectorAll('.page_tools_plugs_list_open_select')
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                let parent = this.parentNode;
+                let plugNameElement = parent.querySelector('.page_tools_plugs_name');
+                let plugName = plugNameElement ? plugNameElement.textContent : null;
+                if (plugName) {
+                    ipcRenderer.send('plugsListDeleteBtn-delete', plugName);
+                    iziToast.info({
+                        icon: 'fa-solid fa-circle-info',
+                        layout: '2',
+                        title: '删除插件',
+                        timeout: 3500,
+                        message: `已将插件扔进回收站！若想恢复可进入回收站右键"还原"`,
+                        onOpening: function() {
+                            izi_notify()
+                        }
+                    });
+                }
+            });
+        });
+        openSelectButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                let parent = this.parentNode;
+                let plugNameElement = parent.querySelector('.page_tools_plugs_name');
+                let plugName = plugNameElement ? plugNameElement.textContent : null;
+                if (plugName) {
+                    ipcRenderer.send('plugsListOpenSelectBtn-open-select', plugName);
+                }
+            });
+        });
+    }
+    const spacer = document.createElement('div');
+    spacer.className = 'bottom-spacing';
+    container.appendChild(spacer);
+});
+
+modsDragArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    modsDragArea.style.backgroundColor = '#353740';
+});
+
+modsDragArea.addEventListener('dragleave', () => {
+    modsDragArea.style.backgroundColor = '';
+});
+
+modsDragArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    modsDragArea.style.backgroundColor = '';
+    const files = e.dataTransfer.files;
+    const filePaths = Array.from(files).map(file => file.path);
+    const fileNames = filePaths.map(filePaths => path.basename(filePaths));
+    for (let filePath of filePaths) {
+        if (!fs.statSync(filePath).isDirectory()) {
+            iziToast.error({
+                icon: 'fa-solid fa-circle-exclamation',
+                title: '错误',
+                layout: '2',
+                message: `${fileNames}&nbsp;不是文件夹!请拖入文件夹!`,
+                onOpening: function() {
+                    izi_notify()
+                }
+            });
+            return;
+        }
+    }
+    ipcRenderer.send('modsDragArea-add-file', filePaths);
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '添加模组',
+        timeout: 3500,
+        message: `已添加模组：${fileNames}`,
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+    console.log('modsDragArea add files', filePaths);
+});
+
+plugsDragArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    plugsDragArea.style.backgroundColor = '#353740';
+});
+
+plugsDragArea.addEventListener('dragleave', () => {
+    plugsDragArea.style.backgroundColor = '';
+});
+
+plugsDragArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    plugsDragArea.style.backgroundColor = '';
+    const files = e.dataTransfer.files;
+    const filePaths = Array.from(files).map(file => file.path);
+    const fileNames = filePaths.map(filePaths => path.basename(filePaths));
+    for (let filePath of filePaths) {
+        const extension = path.extname(filePath);
+        if (extension !== '.jar') {
+            iziToast.error({
+                icon: 'fa-solid fa-circle-exclamation',
+                title: '错误',
+                layout: '2',
+                message: `${fileNames}&nbsp;不是JAR!请拖入JAR!`,
+                onOpening: function() {
+                    izi_notify()
+                }
+            });
+            return;
+        }
+    }
+    ipcRenderer.send('plugsDragArea-add-file', filePaths);
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '添加插件',
+        timeout: 3500,
+        message: `已添加插件：${fileNames}`,
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+    console.log('plugsDragArea add files', filePaths);
 });

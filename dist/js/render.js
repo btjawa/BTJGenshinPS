@@ -32,13 +32,8 @@ refreshIframeBtn.addEventListener('click', function() {
     DocsIframe.contentWindow.location.reload();
 });
 
-let attempts = 0;
-const MAX_ATTEMPTS = 30;
-
 function handleIframeContent() {
     if (DocsIframe && DocsIframe.contentWindow && DocsIframe.contentWindow.document) {
-        clearInterval(checkIframeInterval);
-
         const iframeDoc = DocsIframe.contentWindow.document;
         iframeDoc.addEventListener('click', (event) => {
             let targetElement = event.target;
@@ -60,19 +55,50 @@ function handleIframeContent() {
         iframeDoc.addEventListener('auxclick', (event) => {
             event.preventDefault();
         });
-    } else if (attempts >= MAX_ATTEMPTS) {
-        clearInterval(checkIframeInterval);
-        console.error("Unable to access iframe content after multiple attempts.");
+    } else {
+        console.error("Unable to access iframe content.");
     }
-    attempts++;
 }
 
-const checkIframeInterval = setInterval(handleIframeContent, 500);
+function setIframeListeners() {
+    const iframeDoc = DocsIframe.contentWindow.document;
+
+    iframeDoc.addEventListener('click', (event) => {
+        let targetElement = event.target;
+        
+        while (targetElement && targetElement !== iframeDoc.body && !targetElement.hasAttribute('href')) {
+            targetElement = targetElement.parentElement;
+        }
+    
+        if (targetElement && targetElement.hasAttribute('href')) {
+            const link = targetElement.getAttribute('href');
+            
+            const httpRegex = /^https?:\/\//;
+            if (httpRegex.test(link)) {
+                event.preventDefault();
+                ipcRenderer.send('open-url', link);
+            }
+        }
+    });
+    iframeDoc.addEventListener('auxclick', (event) => {
+        event.preventDefault();
+    });
+}
+
+DocsIframe.addEventListener('load', setIframeListeners);
 
 homePageIframeBtn.addEventListener('click', (event) => {
     DocsIframe.src = "http://localhost:52805/BGP-docs";
+    DocsIframe.onload = () => {
+        setIframeListeners();
+        DocsIframe.onload = null;
+    };
 });
 
 backwardPageIframeBtn.addEventListener('click', (event) => {
     DocsIframe.contentWindow.history.back();
+    DocsIframe.onload = () => {
+        setIframeListeners();
+        DocsIframe.onload = null;
+    };
 });

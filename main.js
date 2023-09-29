@@ -48,6 +48,8 @@ let finalJavaPath;
 let resURL = new Array(3);
 let gcInput = new Array(3);
 let proxyInput = new Array(2);
+let modsList = [];
+let proxyPort = 54321;
 
 
 
@@ -73,7 +75,9 @@ process.stderr.write = (function(write) {
 })(process.stderr.write);
 
 
+
 // PROCESS
+
 
 
 console.log("Start Logging...")
@@ -148,7 +152,7 @@ app.on('before-quit', () => {
 (async () => {
   await createMitmCA();
   try {
-    await fs.promises.access(path.join(global.packagedPaths.entryPath), "app.config.json");
+    await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
   } catch(err) {
     console.log("app.config.json not exists");
   }
@@ -162,6 +166,8 @@ app.on('before-quit', () => {
 
 ipcMain.on('render-ready', async (event) => {
   await rwAppConfig();
+  await rwMods();
+  await rwPlugs();
   await updateAPP();
   await checkGateServer();
 });
@@ -268,6 +274,131 @@ ipcMain.on('openLogLatestBtn_open-log-latest', () => {
     console.log("No files in directory.");
   }
 })
+
+ipcMain.on('modsListOpenSelectBtn-open-select', async (event, mod) => {
+  try {
+    await fs.promises.access(path.join(_3DMigotoPathDir, "Mods", mod));
+    if (process.platform !== 'darwin') {
+      exec(`explorer /select,"${path.join(_3DMigotoPathDir, "Mods", mod)}"`,{ encoding: 'binary' },(error,stdout,stderr) => {
+        if (error) {
+          if (!error.message.includes("explorer")) {
+            console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
+          }
+        }
+        if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+        if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+      })
+      
+    }
+  } catch(err) {
+    console.error(err);
+  }
+})
+
+ipcMain.on('modsListDeleteBtn-delete', async (event, mod) => {
+  try {
+    await fs.promises.access(path.join(_3DMigotoPathDir, "Mods", mod));
+    const moveToTrash = shell.trashItem(path.join(_3DMigotoPathDir, "Mods", mod));
+    if (moveToTrash) {
+      console.log(`Moved ${mod} to trash`);
+      (async function() {
+        while (true) {
+          try {
+            await fs.promises.access(path.join(_3DMigotoPathDir, "Mods", mod));
+            await new Promise(resolve => setTimeout(resolve, 100));
+          } catch(err) {
+            await rwMods();
+            break;
+          }
+        }
+      })();
+    } else {
+      throw new Error(`Failed to move ${mod} to trash`);
+    }
+  } catch(err) {
+    console.error(err);
+  }
+});
+
+ipcMain.on('plugsListDeleteBtn-delete', async (event, plug) => {
+  try {
+    await fs.promises.access(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins"));
+    const moveToTrash = shell.trashItem(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins", plug));
+    if (moveToTrash) {
+      console.log(`Moved ${plug} to trash`);
+      (async function() {
+        while (true) {
+          try {
+            await fs.promises.access(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins", plug));
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          } catch(err) {
+            await rwPlugs();
+            break;
+          }
+        }
+      })();
+    } else {
+      throw new Error(`Failed to move ${plug} to trash`);
+    }
+  } catch(err) {
+    console.error(err);
+  }
+});
+
+ipcMain.on('plugsListOpenSelectBtn-open-select', async (event, plug) => {
+  try {
+    await fs.promises.access(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins"));
+    if (process.platform !== 'darwin') {
+      exec(`explorer /select,"${path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins", plug)}"`,{ encoding: 'binary' },(error,stdout,stderr) => {
+        if (error) {
+          if (!error.message.includes("explorer")) {
+            console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
+          }
+        }
+        if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+        if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+      })
+    }
+  } catch(err) {
+    console.error(err);
+  }
+})
+
+ipcMain.on('modsDragArea-add-file', async (event, filePaths) => {
+  try {
+    for (const filePath of filePaths) {
+      await fs.promises.access(filePath);
+      const fileName = path.basename(filePath);
+      const destinationPath = path.join(_3DMigotoPathDir, "Mods", fileName);
+      exec(`xcopy "${filePath}" "${destinationPath}" /E /Y /I`, {encoding: "binary"}, async (error, stdout, stderr) => {
+        if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+        if (stdout) {
+          console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+          console.log(`Copied ${fileName} to Mods`);
+          await rwMods();
+        };
+        if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+      });
+    }
+  } catch(err) {
+    console.error(err);
+  }
+});
+
+ipcMain.on('plugsDragArea-add-file', async (event, filePaths) => {
+  try {
+    for (const filePath of filePaths) {
+      await fs.promises.access(filePath);
+      const fileName = path.basename(filePath);
+      const destinationPath = path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins", fileName);
+      await fs.promises.copyFile(filePath, destinationPath);
+      console.log(`Copied ${fileName} to Plugs`);
+      await rwPlugs();
+    }
+  } catch(err) {
+    console.error(err);
+  }
+});
 
 ipcMain.on('openGcToolsBtn_try-open', () => {
   if (fs.existsSync(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"))) {
@@ -442,8 +573,8 @@ ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
       console.error(error);
       return;
     }
-    console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-    console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+    if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+    if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
     event.sender.send('operationBoxBtn_1-success');
   });
 });
@@ -470,33 +601,33 @@ ipcMain.on('clear_data', async (event) => {
     win.webContents.send('clearing_data');
     exec(`rm ${global.packagedPaths.entryPath}\\app.config.json`,{ encoding: 'binary' },(error,stdout,stderr) => {        
       if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
     });
     exec(`for /r ${global.packagedPaths.gateServerPath}\\MongoDB\\data %G in (*.*) do del /s /q %G & for /d %G in (${global.packagedPaths.gateServerPath}\\MongoDB\\data\\*) do rmdir /s /q %G`, { encoding: 'binary' }, (error, stdout, stderr) => {
       if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
     });
     exec(`rmdir /s /q "${global.packagedPaths.gateServerPath}\\Grasscutter\\GM Handbook"`,{ encoding: 'binary' },(error,stdout,stderr) => {
       if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
     });
     exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\logs`,{ encoding: 'binary' },(error,stdout,stderr) => {
       if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
     });
     exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\cache`,{ encoding: 'binary' },(error,stdout,stderr) => {
       if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
     });
     exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\data\\gacha`,{ encoding: 'binary' },(error,stdout,stderr) => {
       if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
     });
     const resp2 = await dialog.showMessageBox(win, {
       type: 'info',
@@ -599,11 +730,11 @@ reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" 
 echo.\r
 echo 设置系统代理...\r
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 1 /f\r
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "127.0.0.1:54321" /f\r
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "127.0.0.1:${proxyPort}" /f\r
 echo.\r
 echo 正在启动Mitm代理...\r
 cd "${global.packagedPaths.gateServerPath}\\Proxy"\r
-mitmdump -s proxy.py --ssl-insecure --set block_global=false --listen-port 54321\r
+mitmdump -s proxy.py --ssl-insecure --set block_global=false --listen-port ${proxyPort}\r
 echo 清除系统代理...\r
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f\r
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f\r
@@ -644,8 +775,8 @@ async function createMitmCA () {
         console.log(error);
         return;
       }
-      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-      console.log(stderr);
+      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+      if (stderr) { console.log(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
     });
     const checkMitm = setInterval(() => {
       if (fs.existsSync(path.join(process.env.USERPROFILE, '.mitmproxy'))) {
@@ -887,14 +1018,14 @@ async function checkGateServer() {
           try {
             execSync(`xcopy "${path.join(appExtractPath, "resources", "GateServer")}\\" "${path.join(global.packagedPaths.entryPath, "GateServer")}\\" /E /Y`,{ encoding: 'binary' },(error,stdout,stderr) => {
               if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-              console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-              console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+              if (stdout) { console.log(iconv.decode(Buffer.from(out, 'binary'), 'GBK')) };
+              if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
             });
             execSync(`rmdir /s /q ${path.join(global.packagedPaths.entryPath, "temp_gateserver")}`,{ encoding: 'binary' },(error,stdout,stderr) => {
               if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
               console.log('Temp GateServer deleted successfully.');
-              console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-              console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+              if (stdout) { console.log(iconv.decode(Buffer.from(out, 'binary'), 'GBK')) };
+              if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
             });
           } catch (err) {
               console.error('Error deleting Temp GateServer:', err);
@@ -970,9 +1101,9 @@ async function selfSignedKeystore() {
       console.log(error);
       return;
     }
-    console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+    if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
     console.log("selfSignedKeystore");
-    console.log(stderr);
+    if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
   });
   try {    
     await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
@@ -995,9 +1126,9 @@ async function officialKeystore() {
       console.log(error);
       return;
     }
-    console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+    if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
     console.log("officialKeystore");
-    console.log(stderr);
+    if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
   });
   try {
     await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
@@ -1155,8 +1286,8 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
           console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
           return;
         }
-        console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-        console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+        if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+        if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
       })
       */
     } else {
@@ -1351,6 +1482,42 @@ async function getSystemProxy() {
 };
 
 
+async function rwMods() {
+  try {
+    await fs.promises.access(path.join(_3DMigotoPathDir, "Mods"));
+    modsList = [];
+    const modsPath = path.join(_3DMigotoPathDir, "Mods");
+    const allMods = await fs.promises.readdir(modsPath);
+    for (const file of allMods) {
+      if (fs.statSync(path.join(modsPath, file)).isDirectory()) {
+        modsList.push(file);
+      }
+    }
+    if (modsList.length == 0) {
+      win.webContents.send('mods-list', "empty");
+    } else {
+      win.webContents.send('mods-list', modsList);
+    }
+  } catch(err) {
+    console.error(err);
+  }
+}
+
+async function rwPlugs() {
+  try {
+    await fs.promises.access(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins"));
+    const plugsPath = path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins");
+    const allPlugs = await fs.promises.readdir(plugsPath);
+    if (allPlugs.length == 0) {
+      win.webContents.send('plugs-list', "empty");
+    } else {
+      win.webContents.send('plugs-list', allPlugs);
+    }
+  } catch(err) {
+    console.error(err);
+  }
+}
+
 async function update(gc_org_url) {
   const orgUrl = new URL(gc_org_url);
   try {
@@ -1358,13 +1525,13 @@ async function update(gc_org_url) {
     await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download`, "Resources");
     exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar`,{ encoding: 'binary' },(error,stdout,stderr) => {
       if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+      if (stderr) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+      if (stdout) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
     })
     exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip`,{ encoding: 'binary' },(error,stdout,stderr) => {
       if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+      if (stderr) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+      if (stdout) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
     })
     win.webContents.send('update_complete');
     console.log("Update Completed");
@@ -1405,8 +1572,8 @@ async function run_main_service (gcInputRender, proxyInputRender) {
       console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
       return;
     }
-    console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-    console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+    if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+    if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
   });
   const add_root_crt_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\add_root_crt.bat`], {
     stdio: 'ignore'
