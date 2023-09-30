@@ -66,7 +66,10 @@
         <div class="page_0">
             <div class="page_title">主页</div>
             <i class="page_subtitle">BTJGenshinPS</i>
-            <div class="page_0_text_0">游戏目录路径&nbsp;<button name="choose_game_path">选择路径</button><button name="restore_official">恢复官服 (去除补丁)</button></div>
+            <div class="page_0_text_0">游戏目录路径&nbsp;
+                <button name="choose_game_path">选择路径</button>
+                <button name="restore_official">恢复官服 (去除补丁)</button>
+            </div>
             <input type="text" name="game_path" disabled="disabled">
             <div class="patch_state">已检测到补丁&nbsp;(version.dll)</div>
             <div class="page_0_right_banner"><div class="page_0_text_1">获取资源方式</div>
@@ -82,25 +85,44 @@
                 </p></a>
                 <div class="update_progress">下载进度将会显示在这里</div>
             </div>
-            <div class="page_0_text_2">Grasscutter设置&nbsp;</div>
-            <div class="page_0_text_2 sub_0">IP / 域名<div class="page_0_text_2 sub_1">游戏服务器端口</div><div class="page_0_text_2 sub_2">DISPATCH端口</div></div>
+            <div class="page_0_text_2">Grasscutter设置
+                <div class="page_0_text_2_flex">
+                    <div class="page_0_text_2_sub_0">IP / 域名</div>
+                    <div class="page_0_text_2_sub_1">游戏服务器端口</div>
+                    <div class="page_0_text_2_sub_2">DISPATCH端口</div>
+                </div>
+            </div>
             <input type="text" name="gc_ip" value="127.0.0.1">
             <input type="text" name="gc_game_port" value="22102">
             <input type="text" name="gc_dispatch_port" value="443">
-            <div class="page_0_text_3">SSL证书&nbsp;<a class="page_0_text_3 sub_0">keystore.p12</a>&nbsp;<button name="self-signed-keystore">使用自签名证书</button><button name="official-keystore">使用官方证书</button></div>
-            <div class="page_0_text_4">MongoDB设置</div>
-            <div class="page_0_text_4 sub_0">数据库端口<div class="page_0_text_4 sub_1">数据文件夹</div></div>
+            <div class="page_0_text_3">SSL证书&nbsp;
+                <a class="page_0_text_3_sub_0">keystore.p12</a>&nbsp;
+                <button name="self-signed-keystore">使用自签名证书</button>
+                <button name="official-keystore">使用官方证书</button>
+            </div>
+            <div class="page_0_text_4">MongoDB设置
+                <div class="page_0_text_4_flex">
+                    <div class="page_0_text_4_sub_0">数据库端口</div>
+                    <div class="page_0_text_4_sub_1">数据文件夹</div>
+                </div>
+            </div>
             <input type="text" name="mongo_port" value="27017" disabled="disabled">
             <input type="text" name="mongo_data_folder" value=".\data" disabled="disabled">
-            <div class="page_0_text_5">客户端代理</div>
-            <div class="page_0_text_4 sub_0">IP / 域名<div class="page_0_text_4 sub_1">DISPATCH端口</div></div>
+            <div class="page_0_text_5">客户端代理
+                <div class="page_0_text_5_flex">
+                    <div class="page_0_text_5_sub_0">IP / 域名</div>
+                    <div class="page_0_text_5_sub_1">DISPATCH端口</div>
+                </div>
+            </div>
             <input type="text" name="proxy_ip" value="127.0.0.1">
             <input type="text" name="proxy_port" value="443">
             <div class="operation_box">
-                <a class="operation_box_title">起爆器</a>
+                <div class="operation_box_title">起爆器</div>
                 <div class="operation_box_btn_0">启动全部服务</div>
-                <div class="operation_box_btn_1">停止服务</div>
-                <div class="operation_box_btn_2">启动游戏</div>
+                <div class="operation_box_flex">
+                    <div class="operation_box_btn_1">停止服务</div>
+                    <div class="operation_box_btn_2">启动游戏</div>
+                </div>
             </div>
             <button name="clear_data" class="clear_data">恢复出厂</button>
             <i class="gc_version" target="_blank">Latest Commit<br>Grasscutter Release N/A-N/A</i>
@@ -120,16 +142,18 @@
             <div class="page_tools_mods_list">
                 <div class="page_tools_mods_list_item">
                     <div class="page_tools_mods_name">模组名称将会在此处显示...</div>
-                    <div class="bottom-spacing"></div>
+                    
                 </div>
+                <div class="bottom-spacing"></div>
             </div>
             <div class="page_tools_text_3">Grasscutter插件管理</div>
             <div class="page_tools_plugs_drag_area">将JAR拖放至此处以添加插件</div>
             <div class="page_tools_plugs_list">
                 <div class="page_tools_plugs_list_item">
                     <div class="page_tools_plugs_name">插件名称将会在此处显示...</div>
-                    <div class="bottom-spacing"></div>
+                    
                 </div>
+                <div class="bottom-spacing"></div>
             </div>
         </div>
         <div class="page_2">
@@ -145,6 +169,7 @@
             <i class="page_subtitle">BTJGenshinPS</i>
             <div class="page_log_console">
                 <div class="page_log_text_0">点击“启动服务”后日志将会在这里显示...<br></div>
+                <div class="bottom-spacing"></div>
             </div>
         </div>
         <div class="page_settings">
@@ -155,7 +180,8 @@
             <div class="page_settings_text_1">查看日志</div>
             <button name="open_log_dir">打开日志目录</button>
             <button name="open_log_latest">打开最新日志</button>
-            <div class="page_settings_text_2">3DMigoto路径&nbsp;<button name="choose_3dmigoto_path">(WIP)选择3DMigoto路径</button><i class="page_settings_text_2_sub">请将exe命名为&nbsp;"3DMigoto Loader.exe"</i></div>
+            <div class="page_settings_text_2">3DMigoto路径&nbsp;<button name="choose_3dmigoto_path">选择3DMigoto路径</button></div>
+            <i class="page_settings_text_2_sub">请将exe命名为&nbsp;"3DMigoto Loader.exe"</i>
             <input type="text" name="3dmigoto_path" disabled="disabled">
         </div>
         <script type="text/javascript" src="./js/ipc.renderer.js"></script>

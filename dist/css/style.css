@@ -44,7 +44,6 @@ body {
 
 input[type="text"] {
     font-family: "SourceHanSans&SairaHybrid-Regular",Arial, sans-serif;
-    position: relative;
     height: 25px;
     border-radius: 5px;
     border: 2px solid #404040;
@@ -56,14 +55,13 @@ input[name="game_path"]{
     position: relative;
     font-size: 17px;
     top: 5px;
-    width: 325px;
+    width: 100%;
 }
 
 input[name="gc_ip"]{
     font-family: "SourceHanSans&SairaHybrid-Regular";
-    position: relative;
     font-size: 17px;
-    top: 15px;
+    margin-top: 5px;
     width: 120px;
     color: #e5e5e5;
     vertical-align: center;  
@@ -71,10 +69,9 @@ input[name="gc_ip"]{
 
 input[name="gc_game_port"]{
     font-family: "SourceHanSans&SairaHybrid-Regular";
-    position: relative;
     font-size: 17px;
-    left: 5px;
-    top: 15px;
+    margin-left: 5px;
+    margin-top: 5px;
     width: 120px;
     color: #e5e5e5;
     vertical-align: center;  
@@ -82,10 +79,9 @@ input[name="gc_game_port"]{
 
 input[name="gc_dispatch_port"]{
     font-family: "SourceHanSans&SairaHybrid-Regular";
-    position: relative;
     font-size: 17px;
-    left: 10px;
-    top: 15px;
+    margin-left: 5px;
+    margin-top: 5px;
     width: 120px;
     color: #e5e5e5;
     vertical-align: center;  
@@ -93,10 +89,9 @@ input[name="gc_dispatch_port"]{
 
 input[name="mongo_port"]{
     font-family: "SourceHanSans&SairaHybrid-Regular";
-    position: relative;
     font-size: 17px;
     left: 0px;
-    top: 50px;
+    margin-top: 5px;
     width: 120px;
     color: #a8a5a5;
     vertical-align: center;  
@@ -104,10 +99,9 @@ input[name="mongo_port"]{
 
 input[name="mongo_data_folder"]{
     font-family: "SourceHanSans&SairaHybrid-Regular";
-    position: relative;
     font-size: 17px;
-    left: 6px;
-    top: 50px;
+    margin-left: 6px;
+    margin-top: 5px;
     width: 120px;
     color: #a8a5a5;
     vertical-align: center;  
@@ -117,8 +111,7 @@ input[name="proxy_ip"]{
     font-family: "SourceHanSans&SairaHybrid-Regular";
     position: relative;
     font-size: 17px;
-    left: 0px;
-    top: 50px;
+    margin-top: 5px;
     width: 120px;
     color: #e5e5e5;
     vertical-align: center;  
@@ -128,25 +121,23 @@ input[name="proxy_port"]{
     font-family: "SourceHanSans&SairaHybrid-Regular";
     position: relative;
     font-size: 17px;
-    left: 6px;
-    top: 50px;
+    margin-left: 6px;
+    margin-top: 5px;
     width: 120px;
     color: #e5e5e5;
     vertical-align: center;  
 }
 
 input[name="java_path"]{
-    position: relative;
     font-size: 17px;
-    top: 14px;
-    width: 325px;
+    margin-top: 5px;
+    width: 100%;
 }
 
 input[name="3dmigoto_path"]{
-    position: relative;
     font-size: 17px;
-    top: 75px;
-    width: 325px;
+    margin-top: 5px;
+    width: 100%;
 }
 
 button[name="res_getway_0"] {
@@ -193,7 +184,6 @@ button[name="update"] {
 
 button {
     font-family: "SourceHanSans&SairaHybrid-Regular",Arial, sans-serif;
-    position: relative;
     width: auto;
     height: auto;
     border-radius: 5px;
@@ -204,51 +194,47 @@ button {
 }
 
 button[name="choose_game_path"]{
-    left: 5px;
+    margin-left: 5px;
 }
 
 button[name="restore_official"]{
-    left: 10px;
+    margin-left: 5px;
 }
 
 button[name="official-keystore"]{
-    left: 10px;
+    margin-left: 5px;
 }
 
 button[name="self-signed-keystore"]{
-    left: 5px;
+    margin-left: 5px;
 }
 
 button[name="choose_java_path"]{
-    left: 5px;
+    margin-left: 5px;
 }
 
 button[name="choose_3dmigoto_path"]{
-    left: 5px;
-    background-color: #555555;
-    color: #a0a0a0;
+    margin-left: 5px;
 }
 
 button[name="open_log_dir"]{
-    left: 5px;
-    top: 35px;
+    margin-top: 5px;
 }
 
 button[name="open_log_latest"]{
-    left: 5px;
-    top: 35px;
+    margin-top: 5px;
 }
 
 button[name="gctools_btn"]{
-    left: 5px;
+    margin-left: 5px;
 }
 
 button[name="handbook_txt"]{
-    left: 5px;
+    margin-left: 5px;
 }
 
 button[name="handbook_html"]{
-    left: 5px;
+    margin-left: 5px;
 }
 
 .iconfont {
@@ -879,15 +865,9 @@ button[name="handbook_html"]{
     display: none;
 }
 
-.page_0_text_0 {
-    display:block;
-    color: #c4c4c4;
-    position: relative;
-}
-
 .patch_state {
     position: fixed;
-    left: 440px;
+    left: 510px;
     top: 150px;
     color: #c4c4c4;
 }
@@ -905,89 +885,93 @@ button[name="handbook_html"]{
     }
 }
 
+.page_0_text_0 {
+    display: flex;
+    color: #c4c4c4;
+}
+
 .page_0_text_1 {
+    position: relative;
     right: 120px;
     top: 10px;
     color: #c4c4c4;
-    position: relative;
     animation: page_0_text_1_active_anime 0.66s cubic-bezier(0,1,.6,1)
 }
 
 .page_0_text_2 {
-    top: 10px;
+    justify-content: flex-start;
+    margin-top: 10px;
     color: #c4c4c4;
-    position: relative;
 }
 
-.page_0_text_2.sub_1 {
-    top: 0px;
-    right: 142px;
-    color: #c4c4c4;
-    position: absolute;
+.page_0_text_2_flex {
+    display: flex;
 }
-.page_0_text_2.sub_2 {
-    top: 0px;
-    right: 10px;
+
+.page_0_text_2_sub_0,
+.page_0_text_2_sub_1,
+.page_0_text_2_sub_2 {
     color: #c4c4c4;
-    position: absolute;
+}
+
+.page_0_text_2_sub_0 {
+    margin-right: 75px;
+}
+
+.page_0_text_2_sub_1 {
+    margin-right: 25px;
 }
 
 .page_0_text_3 {
-    top: 40px;
-    left: 0px;
+    margin-top: 25px;
     right: 20px;
     color: #c4c4c4;
-    position: relative;
+    display: flex;
 }
-.page_0_text_3.sub_0 {
-    position: relative;
-    top: 0px;
+
+.page_0_text_3_sub_0 {
+    margin-top: 5px;
     font-size: 12px;
     color: #999696;
 }
 
 .page_0_text_4 {
-    top: 60px;
+    margin-top: 20px;
     left: 0px;
     right: 20px;
     color: #c4c4c4;
-    position: relative;
 }
 
-.page_0_text_4.sub_0 {
-    top: 70px;
-    right: 142px;
-    color: #c4c4c4;
-    position: relative;
+.page_0_text_4_flex {
+    display: flex;
 }
 
-.page_0_text_4.sub_1 {
-    top: -24px;
-    left: 140px;
+.page_0_text_4_sub_0,
+.page_0_text_4_sub_1 {
     color: #c4c4c4;
-    position: relative;
+    margin-top: 10px;
+}
+
+.page_0_text_4_sub_0 {
+    margin-right: 60px;
+}
+
+.page_0_text_5_flex {
+    display: flex;
 }
 
 .page_0_text_5 {
-    top: 70px;
-    left: 0px;
-    right: 20px;
+    margin-top: 20px;
     color: #c4c4c4;
-    position: relative;
 }
 
-.page_0_text_5.sub_0 {
-    top: 65px;
-    right: 142px;
+.page_0_text_5_sub_0,
+.page_0_text_5_sub_1 {
     color: #c4c4c4;
-    position: relative;
 }
 
-.page_0_text_5.sub_1 {
-    top: -24px;
-    left: 140px;
-    color: #c4c4c4;
-    position: relative;
+.page_0_text_5_sub_0 {
+    margin-right: 80px;
 }
 
 .gc_version {
@@ -1014,9 +998,9 @@ button[name="handbook_html"]{
     width: 300px;
     height: 144px;
     background-color: #686b80ab;
-    position: relative;
+    position: absolute;
     left: 290px;
-    top: -96px;
+    bottom: 0px;
     font-size: 13px;
     border-radius: 10px;
     border: 2px solid #353740d3;
@@ -1028,27 +1012,27 @@ button[name="handbook_html"]{
 
 .operation_box_title {
     display: flex;
-    position: relative;
     color: #ebebeb;
     font-size: 16px;
-    top: 7px;
+    margin-top: 7px;
     justify-content: center;
 }
 
 .operation_box_btn_0 {
-    position: relative;
+    display: flex;
     -webkit-app-region: no-drag;
     color: #ebebeb;
     background-color: #828282;
-    position: absolute;
-    top: 60px;
-    left: 10px;
-    transform: translateY(-50%);
-    font-size: 14px;
+    justify-content: center;
+    align-items: center;
+    margin-left: 10px;
+    margin-top: 10px;
+    font-size: 13.5px;
     padding: 7.5px 95px;
     transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
     border: 2px solid #565656;
     border-radius: 10px;
+    width: 83px;
 }
 
 .operation_box_btn_0:hover {
@@ -1061,41 +1045,33 @@ button[name="handbook_html"]{
     color: #a0a0a0;
 }
 
-.operation_box_btn_1 {
-    position: relative;
+.operation_box_flex {
+    display: flex;
+}
+
+.operation_box_btn_1,
+.operation_box_btn_2 {
+    justify-content: center;
+    align-items: center;
     -webkit-app-region: no-drag;
     color: #ebebeb;
     background-color: #828282;
-    position: absolute;
-    top: 110px;
-    right: 12px;
-    transform: translateY(-50%);
     font-size: 14px;
     padding: 7.5px 38px;
     transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
     border: 2px solid #565656;
     border-radius: 10px;
+    margin-top: 6px;
+}
+
+.operation_box_btn_1 {
+    margin-left: 10px;
+    margin-right: 6px;
 }
 
 .operation_box_btn_1:hover {
     cursor: pointer;
     background-color: #6e6e6e;
-}
-
-.operation_box_btn_2 {
-    position: relative;
-    -webkit-app-region: no-drag;
-    color: #ebebeb;
-    background-color: #828282;
-    position: absolute;
-    top: 110px;
-    left: 12px;
-    transform: translateY(-50%);
-    font-size: 14px;
-    padding: 7.5px 38px;
-    transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
-    border: 2px solid #565656;
-    border-radius: 10px;
 }
 
 .operation_box_btn_2:hover {
@@ -1216,7 +1192,7 @@ button[name="handbook_html"]{
     position: relative;
     top: 1vh;
     width: 85vw;
-    height: 75vh;
+    min-height: 75vh;
     background-color: #363940;
 }
 
@@ -1224,39 +1200,20 @@ button[name="handbook_html"]{
     display:block;
     color: #c4c4c4;
     position: relative;
-    top: 10px;
+    top: 6px;
     left: 6px;
 }
 
-.page_settings_text_0 {
-    display:block;
-    color: #c4c4c4;
-    position: relative;
-    top: 10px;
-    left: 6px;
-}
-
-.page_settings_text_1 {
-    display:block;
-    color: #c4c4c4;
-    position: relative;
-    top: 30px;
-    left: 6px;
-}
-
+.page_settings_text_0,
+.page_settings_text_1,
 .page_settings_text_2 {
-    display:block;
     color: #c4c4c4;
-    position: relative;
-    top: 50px;
-    left: 6px;
+    margin-top: 10px;
 }
 
 .page_settings_text_2_sub {
-    position: absolute;
     color: #999696;
-    top: 27px;
-    left: 0px;
+    margin-top: 27px;
     font-size: 14px;
 }
 

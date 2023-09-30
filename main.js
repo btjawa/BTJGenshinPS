@@ -13,6 +13,7 @@ const express_app = express();
 const packageJson = require('./package.json');
 const currentVersion = packageJson.version;
 const moment = require('moment-timezone');
+const { contextIsolated } = require('process');
 const currentMoment = moment().tz("Asia/Shanghai").format('YYYY-MM-DD_HH-mm-ss');
 const currentMomentLog = moment().tz("Asia/Shanghai").format('YYYY-MM-DD HH:mm:ss');
 
@@ -41,6 +42,7 @@ let gamePath;
 let gamePathDir;
 let _3DMigotoPath;
 let _3DMigotoPathDir;
+let _3DMigotoModsPath;
 let patchExists = false;
 let action;
 let javaPath;
@@ -277,9 +279,9 @@ ipcMain.on('openLogLatestBtn_open-log-latest', () => {
 
 ipcMain.on('modsListOpenSelectBtn-open-select', async (event, mod) => {
   try {
-    await fs.promises.access(path.join(_3DMigotoPathDir, "Mods", mod));
+    await fs.promises.access(path.join(_3DMigotoPathDir, _3DMigotoModsPath, mod));
     if (process.platform !== 'darwin') {
-      exec(`explorer /select,"${path.join(_3DMigotoPathDir, "Mods", mod)}"`,{ encoding: 'binary' },(error,stdout,stderr) => {
+      exec(`explorer /select,"${path.join(_3DMigotoPathDir, _3DMigotoModsPath, mod)}"`,{ encoding: 'binary' },(error,stdout,stderr) => {
         if (error) {
           if (!error.message.includes("explorer")) {
             console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
@@ -297,14 +299,14 @@ ipcMain.on('modsListOpenSelectBtn-open-select', async (event, mod) => {
 
 ipcMain.on('modsListDeleteBtn-delete', async (event, mod) => {
   try {
-    await fs.promises.access(path.join(_3DMigotoPathDir, "Mods", mod));
-    const moveToTrash = shell.trashItem(path.join(_3DMigotoPathDir, "Mods", mod));
+    await fs.promises.access(path.join(_3DMigotoPathDir, _3DMigotoModsPath, mod));
+    const moveToTrash = shell.trashItem(path.join(_3DMigotoPathDir, _3DMigotoModsPath, mod));
     if (moveToTrash) {
       console.log(`Moved ${mod} to trash`);
       (async function() {
         while (true) {
           try {
-            await fs.promises.access(path.join(_3DMigotoPathDir, "Mods", mod));
+            await fs.promises.access(path.join(_3DMigotoPathDir, _3DMigotoModsPath, mod));
             await new Promise(resolve => setTimeout(resolve, 100));
           } catch(err) {
             await rwMods();
@@ -369,7 +371,7 @@ ipcMain.on('modsDragArea-add-file', async (event, filePaths) => {
     for (const filePath of filePaths) {
       await fs.promises.access(filePath);
       const fileName = path.basename(filePath);
-      const destinationPath = path.join(_3DMigotoPathDir, "Mods", fileName);
+      const destinationPath = path.join(_3DMigotoPathDir, _3DMigotoModsPath, fileName);
       exec(`xcopy "${filePath}" "${destinationPath}" /E /Y /I`, {encoding: "binary"}, async (error, stdout, stderr) => {
         if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
         if (stdout) {
@@ -457,9 +459,9 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', async (event) => {
           return;
         }
         if (stdout && stdout.includes('Java(TM) SE Runtime Environment')) {
-          win.webContents.send('chooseJavaPathButton_was-jdk', javaPath, "init");
           javaPath = result.filePaths[0];
           console.log(javaPath);
+          win.webContents.send('chooseJavaPathButton_was-jdk', javaPath, "init");
           try {
             await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"))
             const AppConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf8')
@@ -509,6 +511,12 @@ ipcMain.on('choose3DMigotoPathButton_open-file-dialog', async (event) => {
     try {
       _3DMigotoPath = result.filePaths[0];
       _3DMigotoPathDir = path.dirname(_3DMigotoPath);
+      const _3DMigotoConfigData = await fs.promises.readFile(path.join(_3DMigotoPathDir, "d3dx.ini"), 'utf-8');
+      const _3DMigotoConfig = ini.parse(_3DMigotoConfigData);
+      if (_3DMigotoConfig.Include.include_recursive) {
+        _3DMigotoModsPath = _3DMigotoConfig.Include.include_recursive;
+        console.log(path.join(_3DMigotoPathDir, _3DMigotoModsPath));
+      }
       console.log(_3DMigotoPath);
       const gamePathFileName = path.basename(_3DMigotoPath);
       if (gamePathFileName === '3DMigoto Loader.exe') {
@@ -1223,15 +1231,43 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
 
     } else {
       if (appConfig.game) {
-        gamePath = appConfig.game.path;
-        gamePathDir = path.dirname(gamePath);
-        await sendPatchGamePath(gamePath);
+        try {
+          await fs.promises.access(appConfig.game.path);
+          gamePath = appConfig.game.path;
+          gamePathDir = path.dirname(gamePath);
+        } catch(err) {
+          if (err.code = "ENOENT") {
+            gamePath = "";
+            gamePathDir = "";
+          } else {
+            console.error(err);
+          }
+        }
+        if (gamePath) { await sendPatchGamePath(gamePath) }
         if (appConfig.game) {
           if (appConfig.game._3dmigoto !== "") {
-            _3DMigotoPath = appConfig.game._3dmigoto;
-            _3DMigotoPathDir = path.dirname(_3DMigotoPath)
-            console.log(_3DMigotoPath);
-            win.webContents.send('choose3DMigotoPathButton_was', _3DMigotoPath)
+            try {
+              await fs.promises.access(appConfig.game._3dmigoto);
+              _3DMigotoPath = appConfig.game._3dmigoto;
+              _3DMigotoPathDir = path.dirname(_3DMigotoPath)
+            } catch(err) {
+              if (err.code = "ENOENT") {
+                _3DMigotoPath = path.join(global.packagedPaths.gateServerPath, "3DMigoto", "3DMigoto Loader.exe");
+                _3DMigotoPathDir = path.dirname(_3DMigotoPath);
+              } else {
+                console.error(err);
+              }
+            }
+            const _3DMigotoConfigData = await fs.promises.readFile(path.join(_3DMigotoPathDir, "d3dx.ini"), 'utf-8');
+            const _3DMigotoConfig = ini.parse(_3DMigotoConfigData);
+            if (_3DMigotoConfig.Include.include_recursive) {
+              _3DMigotoModsPath = _3DMigotoConfig.Include.include_recursive;
+              console.log(path.join(_3DMigotoPathDir, _3DMigotoModsPath));
+            }
+            if (_3DMigotoPath) {
+              console.log(_3DMigotoPath);
+              win.webContents.send('choose3DMigotoPathButton_was', _3DMigotoPath);
+            }
           }
         }
       }
@@ -1272,6 +1308,12 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
       javaPath = "java";
       _3DMigotoPath = path.join(global.packagedPaths.gateServerPath, "3DMigoto", "3DMigoto Loader.exe");
       _3DMigotoPathDir = path.dirname(_3DMigotoPath);
+      const _3DMigotoConfigData = await fs.promises.readFile(path.join(_3DMigotoPathDir, "d3dx.ini"), 'utf-8');
+      const _3DMigotoConfig = ini.parse(_3DMigotoConfigData);
+      if (_3DMigotoConfig.Include.include_recursive) {
+        _3DMigotoModsPath = _3DMigotoConfig.Include.include_recursive;
+        console.log(path.join(_3DMigotoPathDir, _3DMigotoModsPath));
+      }
       console.log(javaPath);
       await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(defaultAppConfig, null, 2), 'utf8');
       await resSetProxy();
@@ -1432,14 +1474,14 @@ async function downloadJDK() {
     }
     await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, 'app.config.json'), JSON.stringify(appConfig, null, 2), 'utf8');
     console.log('app.config.json Updated Successfully');
-    await fs.promises.unlink(appZipPath, (err) => {
+    await fs.promises.unlink(jdkZipPath, (err) => {
       if (err) {
         console.error(err);
         reject(err);
         return;
       }
       console.log('JDK ZIP file deleted successfully.');
-      console.log(appZipPath);
+      console.log(jdkZipPath);
     });
     
   } catch (error) {
@@ -1484,9 +1526,9 @@ async function getSystemProxy() {
 
 async function rwMods() {
   try {
-    await fs.promises.access(path.join(_3DMigotoPathDir, "Mods"));
+    await fs.promises.access(path.join(_3DMigotoPathDir, _3DMigotoModsPath));
     modsList = [];
-    const modsPath = path.join(_3DMigotoPathDir, "Mods");
+    const modsPath = path.join(_3DMigotoPathDir, _3DMigotoModsPath);
     const allMods = await fs.promises.readdir(modsPath);
     for (const file of allMods) {
       if (fs.statSync(path.join(modsPath, file)).isDirectory()) {

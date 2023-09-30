@@ -188,11 +188,9 @@ chooseJavaPathButton.addEventListener('click', () => {
     ipcRenderer.send('chooseJavaPathButton_open-file-dialog')
 });
 
-/*
- choose3DMigotoPathButton.addEventListener('click', () => {
+choose3DMigotoPathButton.addEventListener('click', () => {
      ipcRenderer.send('choose3DMigotoPathButton_open-file-dialog')
     });
-*/
 
 openLogDirBtn.addEventListener('click', () => {
     ipcRenderer.send('openLogDirBtn_open-log-dir');
@@ -352,7 +350,7 @@ ipcRenderer.on('chooseJavaPathButton_was-jre', (event) => {
 });
 
 ipcRenderer.on('chooseJavaPathButton_was-jdk', (event, path, action) => {
-    javaPathInput.value = path;    
+    javaPathInput.value = path;
     if (action == "init") {
         iziToast.info({
             icon: 'fa-solid fa-circle-info',
