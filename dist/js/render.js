@@ -21,7 +21,7 @@ document.body.oncopy = function () {
         layout: '2',
         title: '复制成功',
         onOpening: function() {
-            izi_notify.play();
+            izi_notify()
         }
     });
 };

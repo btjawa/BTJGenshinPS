@@ -47,13 +47,13 @@ let gcDispatchPort = document.querySelector('input[name=gc_dispatch_port]');
 let proxyIP = document.querySelector('input[name=proxy_ip]');
 let proxyPort = document.querySelector('input[name=proxy_port]');
 
-const izi_notify_wav = new Audio("sounds/izi_notify.mp3");
+const izi_notify_mp3 = new Audio("sounds/izi_notify.mp3");
 
 function izi_notify() {
-    izi_notify_wav.pause();
-    izi_notify_wav.currentTime = 0;
+    izi_notify_mp3.pause();
+    izi_notify_mp3.currentTime = 0;
     setTimeout(() => {
-        izi_notify_wav.play();
+        izi_notify_mp3.play();
     }, 100);
 }
 

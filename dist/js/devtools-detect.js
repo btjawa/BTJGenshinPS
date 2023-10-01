@@ -19,7 +19,7 @@ const devtools = {
 };
 
 const threshold = 170;
-const interval = 500;
+const interval = 100;
 
 const emitEvent = (isOpen, orientation) => {
 	globalThis.dispatchEvent(new globalThis.CustomEvent('devtoolschange', {

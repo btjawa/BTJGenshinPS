@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog} = require('electron');
+const { app, globalShortcut, BrowserWindow, ipcMain, shell, dialog} = require('electron');
 const path = require('path');
 const fs = require('fs');
 const yauzl = require("yauzl");
@@ -128,6 +128,13 @@ express_app.listen(EXPRESS_PORT, () => {
 
 
 app.whenReady().then(async (event) => {
+  globalShortcut.register('CommandOrControl+Shift+=', () => {});
+  globalShortcut.register('CommandOrControl+Shift+-', () => {});
+  globalShortcut.register('CommandOrControl+0', () => {});
+  globalShortcut.register('F5', () => {});
+  globalShortcut.register('CommandOrControl+R', () => {});
+  globalShortcut.register('CommandOrControl+W', () => {});
+  globalShortcut.register('CommandOrControl+M', () => {});
   await createWindow();
 });
 
@@ -185,8 +192,8 @@ ipcMain.on('update_latest', (event, gc_org_url) => {
 });
 
 ipcMain.on('handelClose', async (event, gcInputRender, proxyInputRender) => {
-  app.quit();
   await rwAppConfig("simple-save", gcInputRender, proxyInputRender, "simple-save");
+  app.quit();
 })
 
 ipcMain.on('handelMinimize', () => {
@@ -772,6 +779,7 @@ async function createWindow() {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true,
+      devTools: !app.isPackaged
     },
   });
 
@@ -1322,7 +1330,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
           console.error('Err when writing config to file:', err);
           return;
         }
-        console.log('app.config.json Created successfully');
+        console.log('app.config.json Updated successfully');
       }); 
       await writeAcConfig("main-service-save", gcInputRender, proxyInputRender);
 
