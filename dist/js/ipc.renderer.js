@@ -1,7 +1,4 @@
 const { ipcRenderer } = require('electron');
-const iziToast = require("izitoast");
-const path = require('path');
-const fs = require('fs');
 
 let dragbar_close = document.getElementById('dragbar_close');
 let dragbar_minimize = document.getElementById('dragbar_min');
@@ -37,6 +34,9 @@ let openLogLatestBtn = document.querySelector('button[name="open_log_latest"]');
 let openGcToolsBtn = document.querySelector('button[name="gctools_btn"]')
 let openHandbookTXTBtn = document.querySelector('button[name="handbook_txt"]')
 let openHandbookHTMLBtn = document.querySelector('button[name="handbook_html"]')
+let editAppConfigBtn = document.querySelector('button[name="edit_config"]');
+let exportAppConfigBtn = document.querySelector('button[name="export_config"]');
+let importAppConfigBtn = document.querySelector('button[name="import_config"]');
 
 let modsDragArea = document.querySelector('.page_tools_mods_drag_area');
 let plugsDragArea = document.querySelector('.page_tools_plugs_drag_area');
@@ -47,7 +47,7 @@ let gcDispatchPort = document.querySelector('input[name=gc_dispatch_port]');
 let proxyIP = document.querySelector('input[name=proxy_ip]');
 let proxyPort = document.querySelector('input[name=proxy_port]');
 
-const izi_notify_wav = new Audio("sounds/izi_notify.wav");
+const izi_notify_wav = new Audio("sounds/izi_notify.mp3");
 
 function izi_notify() {
     izi_notify_wav.pause();
@@ -57,12 +57,38 @@ function izi_notify() {
     }, 100);
 }
 
+function save_settings() {
+    gcInputRender = [gcIp.value, gcGamePort.value, gcDispatchPort.value];
+    if (gcIp.value!=="127.0.0.1" && gcIp.value!=="localhost" && gcIp.value!=="0.0.0.0") {
+        gcInputRender[3] = "dispatchcnglobal.yuanshen.com";
+    } else {
+        gcInputRender[3] = "127.0.0.1";
+    }
+    proxyInputRender = [proxyIP.value, proxyPort.value];
+}
+
 let gc_latestCommitSha;
 let gc_latestReleaseTagName;
 let res_latestCommitSha;
 
+window.addEventListener('devtoolschange', event => {
+    if(event.detail.isOpen) {
+        ipcRenderer.send('devtools-opened');
+        iziToast.error({
+            icon: 'fa-solid fa-circle-exclamation',
+            title: 'Error',
+            layout: '2',
+            message: `Developer tools are not allowed here.`,
+            onOpening: function() {
+                izi_notify()
+            }
+        });
+    }
+});
+
 document.addEventListener('DOMContentLoaded', (event) => {
     ipcRenderer.send('render-ready');
+    getLatestCommitID();
 });
 
 ipcRenderer.on('gc_text', (event, input) => {
@@ -92,7 +118,7 @@ function getLatestCommitID (){
     .then(response => response.json())
     .then(data => {
         gc_latestReleaseTagName = data.tag_name;
-        gcVersion.innerHTML = `Latest Commit<br>Grasscutter Release ${gc_latestReleaseTagName}-${gc_latestCommitSha}`;
+        gcVersion.innerHTML = `Grasscutter Release ${gc_latestReleaseTagName}-${gc_latestCommitSha}`;
     })
     .catch(error => {
         console.error(error);
@@ -112,46 +138,11 @@ function getLatestCommitID (){
     });
 }
 
-function page_log_active (){
-
-    menuSelectorsLog.forEach(selector => {
-        menuSelectorLogIcon.style.color = '#c4c4c4';
-        document.querySelector(".menu_selector_log_text").style.color = '#c4c4c4';
-
-        menuSelector_0_Background.classList.remove('active');
-        menuSelector_1_Background.classList.remove('active');
-        menuSelectorSettings_Background.classList.remove('active');
-        menuSelectorLog_Background.classList.add('active');
-
-        menuSelector_0_Icon.className = "fa-light fa-house";
-        menuSelector_1_Icon.className = "fa-light fa-screwdriver-wrench";
-        menuSelectorSettingsIcon.className = "fa-light fa-gear";
-        menuSelectorLogIcon.classList = "fa-solid fa-memo-circle-info"
-
-        menuUnderline_0.classList.remove("active");
-        menuUnderline_1.classList.remove("active");
-        menuUnderlineSettings.classList.remove("active");
-        menuUnderlineLog.classList.add("active");
-
-        page_0.style.display = 'none';
-        page_0.classList.remove("active");
-        page_1.style.display = 'none';
-        page_1.classList.remove("active");
-        page_log.style.display = 'block';
-        page_log.classList.add("active");
-        page_settings.style.display = 'none';
-        page_settings.classList.remove("active");
-        operationBox.classList.remove("active");
-
-        menuSelectorLogActive ();
-        
-    });
-}
-
 patchState.style.display = 'none';
 
 dragbar_close.addEventListener('click', () => {
-    ipcRenderer.send('handelClose');
+    save_settings();
+    ipcRenderer.send('handelClose', gcInputRender, proxyInputRender);
 });
 
 dragbar_minimize.addEventListener('click', () => {
@@ -225,7 +216,7 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
 })
 
 ipcRenderer.on('openHandbookHTMLBtn_not-found', (event) => {
-    iziToast.info({
+    iziToast.error({
         icon: 'fa-solid fa-circle-exclamation',
         layout: '2',
         title: 'Handbook TXT',
@@ -279,7 +270,7 @@ ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, 
         
     }
     if (action == "patch_not_exst") {
-        iziToast.info({
+        iziToast.error({
             icon: 'fa-solid fa-circle-exclamation',
             title: '警告',
             layout: '2',
@@ -301,7 +292,7 @@ ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, 
         });
     }
     if (action == "game_patch_undf") {
-        iziToast.info({
+        iziToast.error({
             icon: 'fa-solid fa-circle-exclamation',
             title: '警告',
             layout: '2',
@@ -314,7 +305,7 @@ ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, 
 });
 
 ipcRenderer.on('chooseGamePathButton_file-not-valid', (event) => {
-    iziToast.info({
+    iziToast.error({
         icon: 'fa-solid fa-circle-exclamation',
         layout: '4',
         title: '警告',
@@ -326,7 +317,7 @@ ipcRenderer.on('chooseGamePathButton_file-not-valid', (event) => {
 })
 
 ipcRenderer.on('choose3DMigotoPathButton_file-not-valid', (event) => {
-    iziToast.info({
+    iziToast.error({
         icon: 'fa-solid fa-circle-exclamation',
         layout: '4',
         title: '警告',
@@ -338,7 +329,7 @@ ipcRenderer.on('choose3DMigotoPathButton_file-not-valid', (event) => {
 })
 
 ipcRenderer.on('chooseJavaPathButton_was-jre', (event) => {
-    iziToast.info({
+    iziToast.error({
         icon: 'fa-solid fa-circle-exclamation',
         layout: '3',
         title: 'javaPath',
@@ -380,7 +371,7 @@ ipcRenderer.on('choose3DMigotoPathButton_was', (event, path, action) => {
 });
 
 ipcRenderer.on('chooseJavaPathButton_not-valid', (event) => {
-    iziToast.info({
+    iziToast.error({
         icon: 'fa-solid fa-circle-exclamation',
         layout: '2',
         title: 'javaPath',
@@ -449,15 +440,9 @@ selfSignedKeystoreButton.addEventListener('click', () => {
 
 function operationBoxBtn_0_ClickHandler() {
     operationBoxBtn_0.addEventListener('click', () => {
-        gcInputRender = [gcIp.value, gcGamePort.value, gcDispatchPort.value];
-        if (gcIp.value!=="127.0.0.1" && gcIp.value!=="localhost" && gcIp.value!=="0.0.0.0") {
-            gcInputRender[3] = "dispatchcnglobal.yuanshen.com";
-        } else {
-            gcInputRender[3] = "127.0.0.1";
-        }
+        save_settings();
         proxyInputRender = [proxyIP.value, proxyPort.value];
         ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender);
-        toggleMenuState('menu_selector_log', 'make-active');
         iziToast.info({
             icon: 'fa-solid fa-circle-info',
             layout: '2',
@@ -557,7 +542,7 @@ updateBtn.addEventListener('click' , () => {
             
         })
         .catch(error => {
-        iziToast.info({
+        iziToast.error({
             icon: 'fa-solid fa-circle-exclamation',
             layout: '2',
             title: 'Github API 已超限！请等待一分钟！',
@@ -846,34 +831,33 @@ modsDragArea.addEventListener('drop', (e) => {
     modsDragArea.style.backgroundColor = '';
     const files = e.dataTransfer.files;
     const filePaths = Array.from(files).map(file => file.path);
-    const fileNames = filePaths.map(filePaths => path.basename(filePaths));
-    for (let filePath of filePaths) {
-        if (!fs.statSync(filePath).isDirectory()) {
-            iziToast.error({
-                icon: 'fa-solid fa-circle-exclamation',
-                title: '错误',
-                layout: '2',
-                message: `${fileNames}&nbsp;不是文件夹!请拖入文件夹!`,
-                onOpening: function() {
-                    izi_notify()
-                }
-            });
-            return;
-        }
-    }
     ipcRenderer.send('modsDragArea-add-file', filePaths);
+});
+
+ipcRenderer.on('modsDragArea-success', (event, fileName) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: '添加模组',
         timeout: 3500,
-        message: `已添加模组：${fileNames}`,
+        message: `已添加模组：${fileName}`,
         onOpening: function() {
             izi_notify()
         }
     });
-    console.log('modsDragArea add files', filePaths);
-});
+})
+
+ipcRenderer.on('modsDragArea-not-folder', (event, fileName) => {
+    iziToast.error({
+        icon: 'fa-solid fa-circle-exclamation',
+        title: '错误',
+        layout: '2',
+        message: `${fileName}&nbsp;不是文件夹!请拖入文件夹!`,
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+})
 
 plugsDragArea.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -889,32 +873,65 @@ plugsDragArea.addEventListener('drop', (e) => {
     plugsDragArea.style.backgroundColor = '';
     const files = e.dataTransfer.files;
     const filePaths = Array.from(files).map(file => file.path);
-    const fileNames = filePaths.map(filePaths => path.basename(filePaths));
-    for (let filePath of filePaths) {
-        const extension = path.extname(filePath);
-        if (extension !== '.jar') {
-            iziToast.error({
-                icon: 'fa-solid fa-circle-exclamation',
-                title: '错误',
-                layout: '2',
-                message: `${fileNames}&nbsp;不是JAR!请拖入JAR!`,
-                onOpening: function() {
-                    izi_notify()
-                }
-            });
-            return;
-        }
-    }
     ipcRenderer.send('plugsDragArea-add-file', filePaths);
+});
+
+ipcRenderer.on('plugsDragArea-success', (event, fileName) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: '添加插件',
         timeout: 3500,
-        message: `已添加插件：${fileNames}`,
+        message: `已添加插件：${fileName}`,
         onOpening: function() {
             izi_notify()
         }
     });
-    console.log('plugsDragArea add files', filePaths);
+})
+
+ipcRenderer.on('plugsDragArea-not-jar', (event, fileName) => {
+    iziToast.error({
+        icon: 'fa-solid fa-circle-exclamation',
+        title: '错误',
+        layout: '2',
+        message: `${fileName}&nbsp;不是JAR!请拖入JAR!`,
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+})
+
+editAppConfigBtn.addEventListener('click', () => {
+    ipcRenderer.send('editAppConfigBtn-edit');
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '编辑应用配置',
+        timeout: 5000,
+        message: `请在弹出的窗口中选择用记事本打开或其他编辑器！<br>编辑后需重启以完成更改!`,
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+});
+
+exportAppConfigBtn.addEventListener('click', () => {
+    ipcRenderer.send('exportAppConfigBtn-export', gcInputRender, proxyInputRender);
+});
+
+ipcRenderer.on('exportAppConfigBtn-export-success', (event, path) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '导出应用配置',
+        timeout: 3500,
+        message: `已将配置文件导出至${path}！`,
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+})
+
+importAppConfigBtn.addEventListener('click', () => {
+    ipcRenderer.send('importAppConfigBtn-import');
 });

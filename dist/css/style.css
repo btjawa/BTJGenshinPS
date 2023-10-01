@@ -1,20 +1,8 @@
 @font-face{
-    font-family: "Comfortaa-Regular";
-    src:
-    url('../font/Comfortaa-Regular.ttf') format('TrueType');
-    
-}
-
-@font-face{
     font-family: "SourceHanSans&SairaHybrid-Regular";
     src: 
     url('../font/Source-Han-Sans-&-Saira-Hybrid-Regular.ttf') format('TrueType');
-}
-
-@font-face{
-    font-family: "SourceHanSansCN-Regular";
-    src: 
-    url('../font/SourceHanSansCN-Regular.otf') format('OpenType');
+    font-display: fallback;
 }
 
 ::-webkit-scrollbar {
@@ -187,54 +175,18 @@ button {
     width: auto;
     height: auto;
     border-radius: 5px;
+    margin-left: 5px;
     border: 2px solid #404040;
     background-color: #808080;
     color: #e4e4e4;
     cursor: pointer;
 }
 
-button[name="choose_game_path"]{
-    margin-left: 5px;
-}
-
-button[name="restore_official"]{
-    margin-left: 5px;
-}
-
-button[name="official-keystore"]{
-    margin-left: 5px;
-}
-
-button[name="self-signed-keystore"]{
-    margin-left: 5px;
-}
-
-button[name="choose_java_path"]{
-    margin-left: 5px;
-}
-
-button[name="choose_3dmigoto_path"]{
-    margin-left: 5px;
-}
-
-button[name="open_log_dir"]{
-    margin-top: 5px;
-}
-
-button[name="open_log_latest"]{
-    margin-top: 5px;
-}
-
-button[name="gctools_btn"]{
-    margin-left: 5px;
-}
-
-button[name="handbook_txt"]{
-    margin-left: 5px;
-}
-
-button[name="handbook_html"]{
-    margin-left: 5px;
+button[name="res_getway_1"],
+button[name="update"],
+button[name="open_log_dir"],
+button[name="edit_config"] {
+    margin-left: 0px;
 }
 
 .iconfont {
@@ -886,7 +838,6 @@ button[name="handbook_html"]{
 }
 
 .page_0_text_0 {
-    display: flex;
     color: #c4c4c4;
 }
 
@@ -904,14 +855,11 @@ button[name="handbook_html"]{
     color: #c4c4c4;
 }
 
-.page_0_text_2_flex {
-    display: flex;
-}
-
 .page_0_text_2_sub_0,
 .page_0_text_2_sub_1,
 .page_0_text_2_sub_2 {
     color: #c4c4c4;
+    margin-top: 5px;
 }
 
 .page_0_text_2_sub_0 {
@@ -926,7 +874,6 @@ button[name="handbook_html"]{
     margin-top: 25px;
     right: 20px;
     color: #c4c4c4;
-    display: flex;
 }
 
 .page_0_text_3_sub_0 {
@@ -942,22 +889,22 @@ button[name="handbook_html"]{
     color: #c4c4c4;
 }
 
-.page_0_text_4_flex {
+.page_0_text_0,
+.page_0_text_2_flex,
+.page_0_text_3,
+.page_0_text_4_flex,
+.page_0_text_5_flex {
     display: flex;
 }
 
 .page_0_text_4_sub_0,
 .page_0_text_4_sub_1 {
     color: #c4c4c4;
-    margin-top: 10px;
+    margin-top: 5px;
 }
 
 .page_0_text_4_sub_0 {
     margin-right: 60px;
-}
-
-.page_0_text_5_flex {
-    display: flex;
 }
 
 .page_0_text_5 {
@@ -968,10 +915,19 @@ button[name="handbook_html"]{
 .page_0_text_5_sub_0,
 .page_0_text_5_sub_1 {
     color: #c4c4c4;
+    margin-top: 5px;
 }
 
 .page_0_text_5_sub_0 {
     margin-right: 80px;
+}
+
+.page_0_version_title {
+    position: fixed;
+    bottom: 45px;
+    color: #c4c4c4;
+    font-size: 13px;
+    left: 100px;
 }
 
 .gc_version {
@@ -1010,8 +966,13 @@ button[name="handbook_html"]{
     display: block;
 }
 
-.operation_box_title {
+.operation_box_title,
+.operation_box_btn_0,
+.operation_box_flex {
     display: flex;
+}
+
+.operation_box_title {
     color: #ebebeb;
     font-size: 16px;
     margin-top: 7px;
@@ -1019,7 +980,6 @@ button[name="handbook_html"]{
 }
 
 .operation_box_btn_0 {
-    display: flex;
     -webkit-app-region: no-drag;
     color: #ebebeb;
     background-color: #828282;
@@ -1043,10 +1003,6 @@ button[name="handbook_html"]{
 .operation_box_btn_0.disabled {
     background-color: #555555;
     color: #a0a0a0;
-}
-
-.operation_box_flex {
-    display: flex;
 }
 
 .operation_box_btn_1,
@@ -1206,15 +1162,27 @@ button[name="handbook_html"]{
 
 .page_settings_text_0,
 .page_settings_text_1,
-.page_settings_text_2 {
+.page_settings_text_2,
+.page_settings_text_3 {
     color: #c4c4c4;
     margin-top: 10px;
+}
+
+.page_settings_text_1,
+.page_settings_text_3 {
+    margin-bottom: 5px;
 }
 
 .page_settings_text_2_sub {
     color: #999696;
     margin-top: 27px;
     font-size: 14px;
+}
+
+.page_settings_text_1_flex,
+.page_settings_text_2_flex,
+.page_settings_text_3_flex {
+    display: flex;
 }
 
 .page_tools_text_0,

@@ -26,8 +26,6 @@ document.body.oncopy = function () {
     });
 };
 
-getLatestCommitID();
-
 refreshIframeBtn.addEventListener('click', function() {
     DocsIframe.contentWindow.location.reload();
 });

@@ -6,5 +6,5 @@ setTimeout(() => {
 
   setTimeout(() => {
     loadingBox.style.display = "none";
-  }, 300); // 0.3s
-}, 1000); // 1s
+  }, 300);
+}, 1000);

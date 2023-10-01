@@ -13,7 +13,6 @@ const express_app = express();
 const packageJson = require('./package.json');
 const currentVersion = packageJson.version;
 const moment = require('moment-timezone');
-const { contextIsolated } = require('process');
 const currentMoment = moment().tz("Asia/Shanghai").format('YYYY-MM-DD_HH-mm-ss');
 const currentMomentLog = moment().tz("Asia/Shanghai").format('YYYY-MM-DD HH:mm:ss');
 
@@ -118,9 +117,6 @@ express_app.use((req, res, next) => {
 });
 express_app.use('/BGP-docs', express.static(path.join(__dirname, './dist/docs')));
 express_app.use('/app-main', express.static(path.join(__dirname, './dist')));
-express_app.get('/', (req, res) => {
-  res.sendFile(path.join(global.packagedPaths.gateServerPath, 'Grasscutter', 'workdir', 'data', 'documentation', 'handbook.html'));
-});
 express_app.listen(EXPRESS_PORT, () => {
   console.log(`Doc server is running on http://localhost:${EXPRESS_PORT}`);
 });
@@ -131,7 +127,7 @@ express_app.listen(EXPRESS_PORT, () => {
 
 
 
-app.whenReady().then(async () => {
+app.whenReady().then(async (event) => {
   await createWindow();
 });
 
@@ -141,8 +137,8 @@ app.on('window-all-closed', (event) => {
   }
 });
 
-app.on('before-quit', () => {
-  console.log('App is quitting...');
+app.on('before-quit', async (event) => {
+  console.log('App is quitting...\nSaving config...');
   exec(`taskkill /f /im curl.exe`);
   exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
   exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
@@ -167,6 +163,9 @@ app.on('before-quit', () => {
 
 
 ipcMain.on('render-ready', async (event) => {
+  if (!app.isPackaged) {
+    win.webContents.openDevTools();
+  }
   await rwAppConfig();
   await rwMods();
   await rwPlugs();
@@ -174,13 +173,20 @@ ipcMain.on('render-ready', async (event) => {
   await checkGateServer();
 });
 
+ipcMain.on('devtools-opened', () => {
+  if (app.isPackaged) {
+    win.webContents.closeDevTools();
+  }
+})
+
 ipcMain.on('update_latest', (event, gc_org_url) => {
   console.log(`fetched from github api: ${gc_org_url}`);
   update(gc_org_url);
 });
 
-ipcMain.on('handelClose', () => {
+ipcMain.on('handelClose', async (event, gcInputRender, proxyInputRender) => {
   app.quit();
+  await rwAppConfig("simple-save", gcInputRender, proxyInputRender, "simple-save");
 })
 
 ipcMain.on('handelMinimize', () => {
@@ -369,14 +375,20 @@ ipcMain.on('plugsListOpenSelectBtn-open-select', async (event, plug) => {
 ipcMain.on('modsDragArea-add-file', async (event, filePaths) => {
   try {
     for (const filePath of filePaths) {
-      await fs.promises.access(filePath);
       const fileName = path.basename(filePath);
+      if (!fs.statSync(filePath).isDirectory()) {
+        console.error(`${filePath} is not a dir`);
+        win.webContents.send('modsDragArea-not-folder', fileName);
+        continue;
+      }
+      await fs.promises.access(filePath);
       const destinationPath = path.join(_3DMigotoPathDir, _3DMigotoModsPath, fileName);
       exec(`xcopy "${filePath}" "${destinationPath}" /E /Y /I`, {encoding: "binary"}, async (error, stdout, stderr) => {
         if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
         if (stdout) {
           console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
           console.log(`Copied ${fileName} to Mods`);
+          win.webContents.send('modsDragArea-success', fileName);
           await rwMods();
         };
         if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
@@ -390,17 +402,107 @@ ipcMain.on('modsDragArea-add-file', async (event, filePaths) => {
 ipcMain.on('plugsDragArea-add-file', async (event, filePaths) => {
   try {
     for (const filePath of filePaths) {
-      await fs.promises.access(filePath);
+      const extension = path.extname(filePath);
       const fileName = path.basename(filePath);
+      if (extension !== '.jar') {
+        console.error(`${filePath} is not a jar`);
+        win.webContents.send('plugsDragArea-not-jar', fileName);
+        continue;
+      }
+      await fs.promises.access(filePath);
       const destinationPath = path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins", fileName);
       await fs.promises.copyFile(filePath, destinationPath);
       console.log(`Copied ${fileName} to Plugs`);
       await rwPlugs();
+      win.webContents.send('plugsDragArea-success', fileName)
     }
   } catch(err) {
     console.error(err);
   }
 });
+
+ipcMain.on('editAppConfigBtn-edit', async (event) => {
+  try {
+     await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
+     console.log("edit app.config.json");
+     shell.openPath(path.join(global.packagedPaths.entryPath, "app.config.json"));
+  } catch(err) {
+    console.error(err);
+  }
+})
+
+ipcMain.on('exportAppConfigBtn-export', async (event, gcInputRender, proxyInputRender) => {
+  try {
+    await rwAppConfig("simple-save", gcInputRender, proxyInputRender, "simple-save");
+    await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
+    const result = await dialog.showOpenDialog({
+      title: '请选择配置文件将要导出至的文件夹',
+      properties: ['openDirectory']
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      try {
+        const exportPath = result.filePaths[0];
+        exec(`copy "${path.join(global.packagedPaths.entryPath, "app.config.json")}" "${path.join(exportPath, `app.config_${currentMoment}.json`)}"`, {encoding: "binary"}, (error, stdout, stderr) => {
+          if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+          if (stdout) {
+            console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+            console.log("Copied app.config.json to", exportPath);
+            win.webContents.send('exportAppConfigBtn-export-success', exportPath);
+          };
+          if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };    
+        })
+      } catch(err) {
+        console.error(err);
+      }
+    }
+ } catch(err) {
+   console.error(err);
+ }
+})
+
+ipcMain.on('importAppConfigBtn-import', async (event) => {
+  try {
+    await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
+    const result = await dialog.showOpenDialog({
+      title: '请选择后缀为JSON的配置文件',
+      filters: [
+        { name: 'JSON 源文件', extensions: ['json'] }
+      ],
+      properties: ['openFile',]
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      try {
+        const configPath = result.filePaths[0];
+        exec(`copy "${configPath}" "${path.join(global.packagedPaths.entryPath, "app.config.json")}"`, {encoding: "binary"}, async (error, stdout, stderr) => {
+          if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+          if (stdout) {
+            console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+            console.log("Imported", configPath);
+            const resp0 = await dialog.showMessageBox(win, {
+              type: 'info',
+              title: '导入应用配置',
+              message: '导入成功！将重启应用以应用更改',
+            });
+            app.relaunch();
+            app.exit(0);
+          };
+          if (stderr) {
+            console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'))
+            const resp1 = await dialog.showMessageBox(win, {
+              type: 'warning',
+              title: '导入应用配置',
+              message: '导入失败！',
+            });
+          };    
+        })
+      } catch(err) {
+        console.error(err);
+      }
+    }
+ } catch(err) {
+   console.error(err);
+ }
+})
 
 ipcMain.on('openGcToolsBtn_try-open', () => {
   if (fs.existsSync(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"))) {
@@ -439,7 +541,7 @@ ipcMain.on('openHandbookTXTBtn_try-open', () => {
 ipcMain.on('openHandbookHTMLBtn_try-open', () => {
   if (fs.existsSync(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "data", "documentation"))) {
     console.log("open handbook html");
-    shell.openExternal(`http://localhost:${EXPRESS_PORT}`);
+    shell.openExternal(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "data", "documentation", "handbook.html"));
   } else {
     console.error("Handbook html not found");
     win.webContents.send("openHandbookHTMLBtn_not-found");
@@ -681,12 +783,6 @@ async function createWindow() {
   win.on('unmaximize', function () {
     win.webContents.send('main-window-unmax');
   })
-
-  if (!app.isPackaged) {
-    setTimeout(() => {
-      win.webContents.openDevTools();
-    }, 500);
-  }
 }
 
 async function packageNec() {
@@ -966,6 +1062,7 @@ del ${global.packagedPaths.entryPath}\\update_app.bat\r`;
             detached: true,
             stdio: 'ignore'
           }).unref();
+          await rwAppConfig("simple-save", gcInputRender, proxyInputRender, "simple-save");
           app.quit();
         }
       } else {
@@ -1201,7 +1298,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
       resSetDirect();
     }
 
-    if (action === "main-service-save") {
+    if (action === "main-service-save" || action === "simple-save") {
       if (appConfig.grasscutter) {
         appConfig.grasscutter.host = gcInputRender[0];
         appConfig.grasscutter.port = gcInputRender[1];
@@ -1297,7 +1394,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
         proxyInput = [appConfig.proxy.host, appConfig.proxy.port];
         win.webContents.send('proxy_text', proxyInput);
       }
-      writeAcConfig();
+      await writeAcConfig();
     }
   } catch (err) {
     if (err.code === "ENOENT") {
@@ -1349,7 +1446,7 @@ async function writeAcConfig (action, gcInputRender, proxyInputRender) {
     const mitmConfigData = await fs.promises.readFile(`${global.packagedPaths.gateServerPath}\\Proxy\\proxy_config.py`);
     let mitmConfig = mitmConfigData.toString('utf-8');
 
-    if (action == "main-service-save") {
+    if (action === "main-service-save" || action === "simple-save") {
       if (gcConfig.server.http) {
         gcConfig.server.http.accessAddress = gcInputRender[3];
         console.log("http.accessAddress " + gcConfig.server.http.accessAddress);

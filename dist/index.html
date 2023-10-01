@@ -125,7 +125,8 @@
                 </div>
             </div>
             <button name="clear_data" class="clear_data">恢复出厂</button>
-            <i class="gc_version" target="_blank">Latest Commit<br>Grasscutter Release N/A-N/A</i>
+            <i class="page_0_version_title">Latest Commit</i>
+            <i class="gc_version" target="_blank">Grasscutter Release N/A-N/A</i>
             <i class="res_version" target="_blank">Yuuki GC-Resources N/A</i>
         </div>
         <div class="page_1">
@@ -178,12 +179,21 @@
             <div class="page_settings_text_0">Java路径&nbsp;<button name="choose_java_path">选择Java路径</button></div>
             <input type="text" name="java_path" disabled="disabled" text="自动检测">
             <div class="page_settings_text_1">查看日志</div>
-            <button name="open_log_dir">打开日志目录</button>
-            <button name="open_log_latest">打开最新日志</button>
+            <div class="page_settings_text_1_flex">
+                    <button name="open_log_dir">打开日志目录</button>
+                    <button name="open_log_latest">打开最新日志</button>
+                </div>
             <div class="page_settings_text_2">3DMigoto路径&nbsp;<button name="choose_3dmigoto_path">选择3DMigoto路径</button></div>
             <i class="page_settings_text_2_sub">请将exe命名为&nbsp;"3DMigoto Loader.exe"</i>
             <input type="text" name="3dmigoto_path" disabled="disabled">
+            <div class="page_settings_text_3">应用配置</div>
+            <div class="page_settings_text_3_flex">
+                <button name="edit_config">编辑应用配置</button>
+                <button name="export_config">导出应用配置</button>
+                <button name="import_config">导入应用配置</button>
+            </div>
         </div>
+        <script type="text/javascript" src="./js/devtools-detect.js"></script>
         <script type="text/javascript" src="./js/ipc.renderer.js"></script>
         <script type="text/javascript" src="./js/render.js"></script>
         <script type="text/javascript" src="./js/menu.js"></script>
