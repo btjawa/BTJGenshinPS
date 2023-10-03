@@ -128,13 +128,6 @@ express_app.listen(EXPRESS_PORT, () => {
 
 
 app.whenReady().then(async (event) => {
-  globalShortcut.register('CommandOrControl+Shift+=', () => {});
-  globalShortcut.register('CommandOrControl+Shift+-', () => {});
-  globalShortcut.register('CommandOrControl+0', () => {});
-  globalShortcut.register('F5', () => {});
-  globalShortcut.register('CommandOrControl+R', () => {});
-  globalShortcut.register('CommandOrControl+W', () => {});
-  globalShortcut.register('CommandOrControl+M', () => {});
   await createWindow();
 });
 
@@ -685,15 +678,12 @@ ipcMain.on('operationBoxBtn_0-run-main-service', async (event, gcInputRender, pr
 });
 
 ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
-  exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe & taskkill /f /im mitmdump.exe & taskkill /f /im cmd.exe & reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f & reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f`, { encoding: 'binary' }, (error, stdout, stderr) => {
-    if (error) {
-      console.error(error);
-      return;
-    }
-    if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-    if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-    event.sender.send('operationBoxBtn_1-success');
-  });
+  const processes = ['java.exe', 'mongod.exe', 'mitmdump.exe'];
+  const addition = [
+    'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f',
+    'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f'
+  ];
+  killProcesses(processes, addition);
 });
 
 ipcMain.on('operationBoxBtn_2-run-game', (event) => {
@@ -791,6 +781,19 @@ async function createWindow() {
   win.on('unmaximize', function () {
     win.webContents.send('main-window-unmax');
   })
+
+  win.on('focus', () => {
+    globalShortcut.register('CommandOrControl+Shift+=', () => {});
+    globalShortcut.register('CommandOrControl+Shift+-', () => {});
+    globalShortcut.register('CommandOrControl+0', () => {});
+    globalShortcut.register('F5', () => {});
+    globalShortcut.register('CommandOrControl+R', () => {});
+    globalShortcut.register('CommandOrControl+W', () => {});
+    globalShortcut.register('CommandOrControl+M', () => {});
+  });
+  win.on('blur', () => {
+    globalShortcut.unregisterAll();
+  });
 }
 
 async function packageNec() {
@@ -1276,6 +1279,41 @@ async function resSetProxy () {
 }
 
 
+async function killProcesses(processes, addition = []) {
+  return new Promise((resolve, reject) => {
+    exec('tasklist', { encoding: 'binary' }, (error, stdout, stderr) => {
+      if (error) {
+        console.error(error);
+        reject(error);
+        return;
+      }
+      const tasks = iconv.decode(Buffer.from(stdout, 'binary'), 'GBK');
+      const tasksToExecute = processes.filter(process => tasks.includes(process)).map(process => `taskkill /f /im ${process}`);
+    
+      tasksToExecute.push(...addition);
+      if (tasksToExecute.length === 0) {
+        resolve();
+        return;
+      }
+      exec(tasksToExecute.join(' & '), { encoding: 'binary' }, (error, stdout, stderr) => {
+        if (error) {
+          console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
+          reject(error);
+          return;
+        }
+        if (stdout) {
+          console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+        }
+        if (stderr) {
+          console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+        }
+        resolve();
+      });
+    });
+  });
+}
+
+
 async function resSetDirect () {
   resURL = ["https://github.com", "https://gitlab.com", "https://api.github.com"];
   console.log("direct");
@@ -1714,14 +1752,8 @@ async function downloadFile(url, outputPath, action) {
 
 async function run_main_service (gcInputRender, proxyInputRender) {
   await rwAppConfig("main-service-save", gcInputRender, proxyInputRender)
-  exec(`taskkill /f /im java.exe & taskkill /f /im mongod.exe`, { encoding: 'binary' }, (error, stdout, stderr) => {
-    if (error) {
-      console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
-      return;
-    }
-    if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-    if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-  });
+  const processes = ['java.exe', 'mongod.exe', 'mitmdump.exe'];
+  killProcesses(processes);
   const add_root_crt_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\add_root_crt.bat`], {
     stdio: 'ignore'
   });

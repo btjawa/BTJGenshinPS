@@ -5,6 +5,8 @@
         <meta name="color-scheme" content="dark light">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>BTJGenshinPS</title>
+        <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+        <script type="text/javascript" src="./js/jquery-3.6.0.min.js"></script>   
         <link rel="stylesheet" href="./css/font-awesome/all.css">
         <link rel="stylesheet" href="./css/iziToast.min.css">
         <script type="text/javascript" src="./js/iziToast.min.js"></script>
@@ -134,6 +136,12 @@
             <i class="page_subtitle">BTJGenshinPS</i>
             <div class="page_tools_text_0">GcTools&nbsp;v1.12.2&nbsp;<button name="gctools_btn">下载/打开</button></div>
             <div class="page_tools_text_1">Handbook手册&nbsp;(官方)&nbsp;<button name="handbook_txt">TXT</button><button name="handbook_html">可视化网页</button></div>
+            <div class="page_tools_text_compass">
+                <div class="page_tools_text_compass_flex">
+                    MongoDB&nbsp;Compass<br>数据库管理工具
+                    <button name="compass_btn">下载/打开</button>
+                </div>    
+            </div>
             <div class="page_tools_text_2">模组管理</div>
             <i class="page_tools_text_2_sub">若想使用模组,&nbsp;请在启动服务后下方点击&nbsp;"注入3DMigoto",&nbsp;不用再额外启动游戏！<br>可在设置中指定3DMigoto路径,&nbsp;默认使用自带版本</i>
             <div class="page_tools_mods_actions">
@@ -198,5 +206,6 @@
         <script type="text/javascript" src="./js/render.js"></script>
         <script type="text/javascript" src="./js/menu.js"></script>
         <script type="text/javascript" src="./js/loading-box.js"></script>
+        <script>if (window.module) module = window.module;</script>
     </body>
 </html>

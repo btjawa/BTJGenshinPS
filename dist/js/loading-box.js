@@ -1,10 +1,9 @@
-document.querySelector(".loading-box").style.display = "flex";
+$(".loading-box").css("display", "flex");
 
 setTimeout(() => {
-  const loadingBox = document.querySelector(".loading-box");
-  loadingBox.style.opacity = "0";
+  $(".loading-box").css("opacity", "0");
 
   setTimeout(() => {
-    loadingBox.style.display = "none";
+    $(".loading-box").css("display", "none");
   }, 300);
 }, 1000);

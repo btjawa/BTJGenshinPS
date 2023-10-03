@@ -1,53 +1,60 @@
 const { ipcRenderer } = require('electron');
 
-let dragbar_close = document.getElementById('dragbar_close');
-let dragbar_minimize = document.getElementById('dragbar_min');
-let dragbar_window = document.getElementById('dragbar_window');
-let dragbar_maximize = document.getElementById('dragbar_maximize');
-let dragbar_question = document.getElementById('dragbar_question');
-let chooseGamePathButton = document.querySelector('button[name="choose_game_path"]');
-let chooseJavaPathButton = document.querySelector('button[name=choose_java_path]');
-let choose3DMigotoPathButton = document.querySelector('button[name=choose_3dmigoto_path]');
-let gamePathInput = document.querySelector('input[name="game_path"]');
-let javaPathInput = document.querySelector('input[name="java_path"]')
-let _3DMigotoPathPathInput = document.querySelector('input[name="3dmigoto_path"]')
-let restoreOfficialButton = document.querySelector('button[name="restore_official"]');
-let resGetWayButton_0 = document.querySelector('.res_getway_0');
-let resGetWayButton_1 = document.querySelector('.res_getway_1');
-let gcVersionLink = document.querySelector('.gc_version');
-let resVersionLink = document.querySelector('.res_version');
-let officialKeystoreButton = document.querySelector('button[name="official-keystore"]');
-let selfSignedKeystoreButton = document.querySelector('button[name="self-signed-keystore"]');
-let patchState = document.querySelector('.patch_state');
-let operationBoxBtn_0 = document.querySelector('.operation_box_btn_0');
-let operationBoxBtn_1 = document.querySelector('.operation_box_btn_1');
-let operationBoxBtn_2 = document.querySelector('.operation_box_btn_2');
-let operationBoxBtn_3 = document.querySelector('.operation_box_btn_3');
-let updateBtn = document.querySelector('.update')
-let updateProgress = document.querySelector('.update_progress');
-let resVersion = document.querySelector('.res_version');
-let gcVersion = document.querySelector('.gc_version');
-let pageLogText0 = document.querySelector('.page_log_text_0');
-let clearData = document.querySelector('.clear_data');
-let openLogDirBtn = document.querySelector('button[name="open_log_dir"]');
-let openLogLatestBtn = document.querySelector('button[name="open_log_latest"]');
-let openGcToolsBtn = document.querySelector('button[name="gctools_btn"]')
-let openHandbookTXTBtn = document.querySelector('button[name="handbook_txt"]')
-let openHandbookHTMLBtn = document.querySelector('button[name="handbook_html"]')
-let editAppConfigBtn = document.querySelector('button[name="edit_config"]');
-let exportAppConfigBtn = document.querySelector('button[name="export_config"]');
-let importAppConfigBtn = document.querySelector('button[name="import_config"]');
-
-let modsDragArea = document.querySelector('.page_tools_mods_drag_area');
-let plugsDragArea = document.querySelector('.page_tools_plugs_drag_area');
-
-let gcIp = document.querySelector('input[name=gc_ip]');
-let gcGamePort = document.querySelector('input[name=gc_game_port]');
-let gcDispatchPort = document.querySelector('input[name=gc_dispatch_port]');
-let proxyIP = document.querySelector('input[name=proxy_ip]');
-let proxyPort = document.querySelector('input[name=proxy_port]');
+const elems = {
+    dragbar_close: $('#dragbar_close'),
+    dragbar_minimize: $('#dragbar_min'),
+    dragbar_window: $('#dragbar_window'),
+    dragbar_maximize: $('#dragbar_maximize'),
+    dragbar_question: $('#dragbar_question'),
+    chooseGamePathButton: $('button[name="choose_game_path"]'),
+    chooseJavaPathButton: $('button[name=choose_java_path]'),
+    choose3DMigotoPathButton: $('button[name=choose_3dmigoto_path]'),
+    gamePathInput: $('input[name="game_path"]'),
+    javaPathInput: $('input[name="java_path"]'),
+    _3DMigotoPathPathInput: $('input[name="3dmigoto_path"]'),
+    restoreOfficialButton: $('button[name="restore_official"]'),
+    resGetWayButton_0: $('.res_getway_0'),
+    resGetWayButton_1: $('.res_getway_1'),
+    gcVersionLink: $('.gc_version'),
+    resVersionLink: $('.res_version'),
+    officialKeystoreButton: $('button[name="official-keystore"]'),
+    selfSignedKeystoreButton: $('button[name="self-signed-keystore"]'),
+    patchState: $('.patch_state'),
+    operationBoxBtn_0: $('.operation_box_btn_0'),
+    operationBoxBtn_1: $('.operation_box_btn_1'),
+    operationBoxBtn_2: $('.operation_box_btn_2'),
+    operationBoxBtn_3: $('.operation_box_btn_3'),
+    updateBtn: $('.update'),
+    updateProgress: $('.update_progress'),
+    resVersion: $('.res_version'),
+    gcVersion: $('.gc_version'),
+    pageLogText0: $('.page_log_text_0'),
+    clearData: $('.clear_data'),
+    openLogDirBtn: $('button[name="open_log_dir"]'),
+    openLogLatestBtn: $('button[name="open_log_latest"]'),
+    openGcToolsBtn: $('button[name="gctools_btn"]'),
+    openHandbookTXTBtn: $('button[name="handbook_txt"]'),
+    openHandbookHTMLBtn: $('button[name="handbook_html"]'),
+    editAppConfigBtn: $('button[name="edit_config"]'),
+    exportAppConfigBtn: $('button[name="export_config"]'),
+    importAppConfigBtn: $('button[name="import_config"]'),
+    openCompassBtn: $('button[name="compass_btn"]'),
+    modsDragArea: $('.page_tools_mods_drag_area'),
+    plugsDragArea: $('.page_tools_plugs_drag_area'),
+    gcIp: $('input[name=gc_ip]'),
+    gcGamePort: $('input[name=gc_game_port]'),
+    gcDispatchPort: $('input[name=gc_dispatch_port]'),
+    proxyIP: $('input[name=proxy_ip]'),
+    proxyPort: $('input[name=proxy_port]')
+};
 
 const izi_notify_mp3 = new Audio("sounds/izi_notify.mp3");
+
+let gcInputRender = new Array(4);
+let proxyInputRender = new Array(2);
+let gc_latestCommitSha;
+let gc_latestReleaseTagName;
+let res_latestCommitSha;
 
 function izi_notify() {
     izi_notify_mp3.pause();
@@ -58,20 +65,16 @@ function izi_notify() {
 }
 
 function save_settings() {
-    gcInputRender = [gcIp.value, gcGamePort.value, gcDispatchPort.value];
-    if (gcIp.value!=="127.0.0.1" && gcIp.value!=="localhost" && gcIp.value!=="0.0.0.0") {
+    gcInputRender = [elems.gcIp.val(), elems.gcGamePort.val(), elems.gcDispatchPort.val()];
+    if (elems.gcIp.val() !== "127.0.0.1" && elems.gcIp.val() !== "localhost" && elems.gcIp.val() !== "0.0.0.0") {
         gcInputRender[3] = "dispatchcnglobal.yuanshen.com";
     } else {
         gcInputRender[3] = "127.0.0.1";
     }
-    proxyInputRender = [proxyIP.value, proxyPort.value];
+    proxyInputRender = [elems.proxyIP.val(), elems.proxyPort.val()];
 }
 
-let gc_latestCommitSha;
-let gc_latestReleaseTagName;
-let res_latestCommitSha;
-
-window.addEventListener('devtoolschange', event => {
+$(window).on('devtoolschange', event => {
     if(event.detail.isOpen) {
         ipcRenderer.send('devtools-opened');
         iziToast.error({
@@ -86,122 +89,294 @@ window.addEventListener('devtoolschange', event => {
     }
 });
 
-document.addEventListener('DOMContentLoaded', (event) => {
+$(document).ready(function() {
     ipcRenderer.send('render-ready');
     getLatestCommitID();
+})
+
+.on('gc_text', (event, input) => {
+    elems.gcIp.val(input[0]);
+    elems.gcGamePort.val(input[1]);
+    elems.gcDispatchPort.val(input[2]);
+})
+
+.on('proxy_text', (event, input) => {
+    elems.proxyIP.val(input[0]);
+    elems.proxyPort.val(input[1]);
 });
 
-ipcRenderer.on('gc_text', (event, input) => {
-    gcIp.value = input[0];
-    gcGamePort.value = input[1];
-    gcDispatchPort.value = input[2];
-})
-
-ipcRenderer.on('proxy_text', (event, input) => {
-    proxyIP.value = input[0];
-    proxyPort.value = input[1];
-})
-
-let gcInputRender = new Array(4);
-let proxyInputRender = new Array(2);
-
-function getLatestCommitID (){
-    fetch('https://api-gh-proxy.btl-cdn.top/repos/Grasscutters/Grasscutter/commits')
-    .then(response => response.json())
-    .then(commits => {
-        gc_latestCommitSha = commits[0].sha.slice(0, 9);
-        gcVersionLink.addEventListener('click', () => {
-            ipcRenderer.send('open-url', `https://github.com/Grasscutters/Grasscutter/commit/${gc_latestCommitSha}`);
+function getLatestCommitID() {
+    $.getJSON('https://api-gh-proxy.btl-cdn.top/repos/Grasscutters/Grasscutter/commits')
+        .then(commits => {
+            gc_latestCommitSha = commits[0].sha.slice(0, 9);
+            elems.gcVersionLink.on('click', () => {
+                ipcRenderer.send('open-url', `https://github.com/Grasscutters/Grasscutter/commit/${gc_latestCommitSha}`);
+            });
+            return $.getJSON('https://api-gh-proxy.btl-cdn.top/repos/Grasscutters/Grasscutter/releases/latest');
+        })
+        .then(data => {
+            gc_latestReleaseTagName = data.tag_name;
+            elems.gcVersion.html(`Grasscutter Release ${gc_latestReleaseTagName}-${gc_latestCommitSha}`);
+        })
+        .fail(error => {
+            console.error(error);
         });
-        return fetch('https://api-gh-proxy.btl-cdn.top/repos/Grasscutters/Grasscutter/releases/latest');
-    })
-    .then(response => response.json())
-    .then(data => {
-        gc_latestReleaseTagName = data.tag_name;
-        gcVersion.innerHTML = `Grasscutter Release ${gc_latestReleaseTagName}-${gc_latestCommitSha}`;
-    })
-    .catch(error => {
-        console.error(error);
-    });
 
-    fetch('https://gitlab.com/api/v4/projects/YuukiPS%2FGC-Resources/repository/commits')
-    .then(response => response.json())
-    .then(commits => {
-        res_latestCommitSha = commits[0].id;
-        resVersionLink.addEventListener('click', () => {
-            ipcRenderer.send('open-url', `https://gitlab.com/YuukiPS/GC-Resources/-/commit/${res_latestCommitSha}`);
+    $.getJSON('https://gitlab.com/api/v4/projects/YuukiPS%2FGC-Resources/repository/commits')
+        .then(commits => {
+            res_latestCommitSha = commits[0].id;
+            elems.resVersionLink.on('click', () => {
+                ipcRenderer.send('open-url', `https://gitlab.com/YuukiPS/GC-Resources/-/commit/${res_latestCommitSha}`);
+            });
+            elems.resVersion.html(`Yuuki GC-Resources ${res_latestCommitSha}`);
+        })
+        .fail(error => {
+            console.error(error);
         });
-        resVersion.innerHTML = `Yuuki GC-Resources ${res_latestCommitSha}`;
-    })
-    .catch(error => {
-        console.error(error);
-    });
 }
 
-patchState.style.display = 'none';
+elems.patchState.css('display', 'none');
 
-dragbar_close.addEventListener('click', () => {
+elems.dragbar_close.on('click', () => {
     save_settings();
     ipcRenderer.send('handelClose', gcInputRender, proxyInputRender);
 });
 
-dragbar_minimize.addEventListener('click', () => {
+elems.dragbar_minimize.on('click', () => {
     ipcRenderer.send('handelMinimize');
 });
 
-dragbar_maximize.addEventListener('click', () => {
+elems.dragbar_maximize.on('click', () => {
     ipcRenderer.send('handelMaximize');
 });
 
-dragbar_window.addEventListener('click', () => {
+elems.dragbar_window.on('click', () => {
     ipcRenderer.send('handelWindow');
 });
 
-dragbar_question.addEventListener('click', () => {
+elems.dragbar_question.on('click', () => {
     ipcRenderer.send('handelQuestion');
     ipcRenderer.send('open-url', 'https://github.com/btjawa/BTJGenshinPS');
-});
+})
 
-ipcRenderer.on('main-window-max', () => {
-    document.getElementById('dragbar_window').style.display = 'block';
-    document.getElementById('dragbar_maximize').style.display = 'none';
-});
-ipcRenderer.on('main-window-unmax', () => {
-    document.getElementById('dragbar_window').style.display = 'none';
-    document.getElementById('dragbar_maximize').style.display = 'block';
-});
-
-chooseGamePathButton.addEventListener('click', () => {
+elems.chooseGamePathButton.on('click', () => {
     ipcRenderer.send('chooseGamePathButton_open-file-dialog');
 });
 
-chooseJavaPathButton.addEventListener('click', () => {
-    ipcRenderer.send('chooseJavaPathButton_open-file-dialog')
+elems.chooseJavaPathButton.on('click', () => {
+    ipcRenderer.send('chooseJavaPathButton_open-file-dialog');
 });
 
-choose3DMigotoPathButton.addEventListener('click', () => {
-     ipcRenderer.send('choose3DMigotoPathButton_open-file-dialog')
-    });
+elems.choose3DMigotoPathButton.on('click', () => {
+    ipcRenderer.send('choose3DMigotoPathButton_open-file-dialog');
+});
 
-openLogDirBtn.addEventListener('click', () => {
+elems.openLogDirBtn.on('click', () => {
     ipcRenderer.send('openLogDirBtn_open-log-dir');
+});
+
+elems.openLogLatestBtn.on('click', () => {
+    ipcRenderer.send('openLogLatestBtn_open-log-latest');
+});
+
+elems.openGcToolsBtn.on('click', () => {
+    ipcRenderer.send('openGcToolsBtn_try-open');
+});
+
+elems.openCompassBtn.on('click', () => {
+    ipcRenderer.send('openCompassBtn_try-open');
 })
 
-openLogLatestBtn.addEventListener('click', () => {
-    ipcRenderer.send('openLogLatestBtn_open-log-latest')
+elems.openHandbookTXTBtn.on('click', () => {
+    ipcRenderer.send('openHandbookTXTBtn_try-open');
 });
 
-openGcToolsBtn.addEventListener('click', () => {
-    ipcRenderer.send('openGcToolsBtn_try-open')
+elems.openHandbookHTMLBtn.on('click', () => {
+    ipcRenderer.send('openHandbookHTMLBtn_try-open');
+})
+
+elems.restoreOfficialButton.on('click', () => {
+    ipcRenderer.send('restoreOfficialButton_delete-path');
 });
 
-openHandbookTXTBtn.addEventListener('click', () => {
-    ipcRenderer.send('openHandbookTXTBtn_try-open')
+elems.resGetWayButton_0.on('click', () => {
+    ipcRenderer.send('resGetWayButton_0-set');
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '代理',
+        message: '获取资源方式已更改为 代理!',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
 });
 
-openHandbookHTMLBtn.addEventListener('click', () => {
-    ipcRenderer.send('openHandbookHTMLBtn_try-open')
+elems.resGetWayButton_1.on('click', () => {
+    ipcRenderer.send('resGetWayButton_1-set');
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '直连',
+        message: '获取资源方式已更改为 直连!',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
 });
+
+elems.officialKeystoreButton.on('click', () => {
+    ipcRenderer.send('officialKeystoreButton-set');
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: 'Keystore',
+        message: '正在使用 官方Keystore！',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+});
+
+elems.selfSignedKeystoreButton.on('click', () => {
+    ipcRenderer.send('selfSignedKeystoreButton-set');
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: 'Keystore',
+        message: '正在使用 自签名Keystore！',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+});
+
+function operationBoxBtn_0_ClickHandler() {
+    elems.operationBoxBtn_0.on('click', () => {
+        save_settings();
+        proxyInputRender = [elems.proxyIP.val(), elems.proxyPort.val()];
+        ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender);
+        iziToast.info({
+            icon: 'fa-solid fa-circle-info',
+            layout: '2',
+            title: '启动服务',
+            message: '正在启动服务...',
+            onOpening: function() {
+                izi_notify()
+            }
+        });
+        elems.pageLogText0.append(`请不要关闭稍后弹出来的任何一个窗口！<br>正在启动服务...<br>`);
+        toggleMenuState('menu_selector_log');
+    });
+}
+
+operationBoxBtn_0_ClickHandler();
+
+elems.operationBoxBtn_1.on('click', () => {
+    ipcRenderer.send('operationBoxBtn_1-stop-service');
+});
+
+elems.operationBoxBtn_2.on('click', () => {
+    ipcRenderer.send('operationBoxBtn_2-run-game');
+});
+
+elems.operationBoxBtn_3.on('click', () => {
+    ipcRenderer.send('operationBoxBtn_3-run-3dmigoto');
+});
+
+elems.updateBtn.on('click', () => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '3',
+        title: '更新',
+        message: '正在尝试更新...<br>注意插件等需要手动更新！',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+    fetch('https://api.github.com/repos/Grasscutters/Grasscutter/releases/latest')
+        .then(response => response.json())
+        .then(data => {
+            const latestReleaseUrl = data.assets[0].browser_download_url;
+            ipcRenderer.send('update_latest', latestReleaseUrl);
+        })
+        .catch(error => {
+            iziToast.error({
+                icon: 'fa-solid fa-circle-exclamation',
+                layout: '2',
+                title: 'Github API 已超限！请等待一分钟！',
+                onOpening: function() {
+                    izi_notify()
+                }
+            });
+        });
+});
+
+elems.clearData.on('click', () => {
+    ipcRenderer.send('clear_data');
+});
+
+elems.modsDragArea.on('dragover', (e) => {
+    e.preventDefault();
+    elems.modsDragArea.css("backgroundColor", "#353740");
+});
+
+elems.modsDragArea.on('dragleave', () => {
+    elems.modsDragArea.css("backgroundColor", "");
+});
+
+elems.modsDragArea.on('drop', (e) => {
+    e.preventDefault();
+    elems.modsDragArea.css("backgroundColor", "");
+    const files = e.originalEvent.dataTransfer.files;
+    const filePaths = Array.from(files).map(file => file.path);
+    ipcRenderer.send('modsDragArea-add-file', filePaths);
+});
+
+elems.plugsDragArea.on('dragover', (e) => {
+    e.preventDefault();
+    elems.plugsDragArea.css("backgroundColor", "#353740");
+});
+
+elems.plugsDragArea.on('dragleave', () => {
+    elems.plugsDragArea.css("backgroundColor", "");
+});
+
+elems.plugsDragArea.on('drop', (e) => {
+    e.preventDefault();
+    elems.plugsDragArea.css("backgroundColor", "");
+    const files = e.originalEvent.dataTransfer.files;
+    const filePaths = Array.from(files).map(file => file.path);
+    ipcRenderer.send('plugsDragArea-add-file', filePaths);
+});
+
+elems.editAppConfigBtn.on('click', () => {
+    ipcRenderer.send('editAppConfigBtn-edit');
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '编辑应用配置',
+        timeout: 5000,
+        message: `请在弹出的窗口中选择用记事本打开或其他编辑器！<br>编辑后需重启以完成更改!`,
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+});
+
+elems.exportAppConfigBtn.on('click', () => {
+    ipcRenderer.send('exportAppConfigBtn-export', gcInputRender, proxyInputRender);
+});
+
+elems.importAppConfigBtn.on('click', () => {
+    ipcRenderer.send('importAppConfigBtn-import');
+});
+
+
+
+// IPC PROCESS
+
+
 
 ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
     iziToast.info({
@@ -215,7 +390,17 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
     });
 })
 
-ipcRenderer.on('openHandbookHTMLBtn_not-found', (event) => {
+.on('main-window-max', () => {
+    elems.dragbar_window.css('display', 'block');
+    elems.dragbar_maximize.css('display', 'none');
+})
+
+.on('main-window-unmax', () => {
+    elems.dragbar_window.css('display', 'none');
+    elems.dragbar_maximize.css('display', 'block');
+})
+
+.on('openHandbookHTMLBtn_not-found', (event) => {
     iziToast.error({
         icon: 'fa-solid fa-circle-exclamation',
         layout: '2',
@@ -227,7 +412,7 @@ ipcRenderer.on('openHandbookHTMLBtn_not-found', (event) => {
     });
 })
 
-ipcRenderer.on('openGcToolsBtn_starting-download', (event) => {
+.on('openGcToolsBtn_starting-download', (event) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -237,10 +422,10 @@ ipcRenderer.on('openGcToolsBtn_starting-download', (event) => {
             izi_notify()
         }
     });
-});
+})
 
-ipcRenderer.on('openGcToolsBtn_download-complete', (event) => {
-    updateProgress.innerHTML = "下载进度将会显示在这里";
+.on('openGcToolsBtn_download-complete', (event) => {
+    elems.updateProgress.html("下载进度将会显示在这里");
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -250,12 +435,37 @@ ipcRenderer.on('openGcToolsBtn_download-complete', (event) => {
             izi_notify()
         }
     });
-});
+})
 
-ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, action) => {
+.on('openCompassBtn_starting-download', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: 'MongoDB&nbsp;Compass',
+        message: '开始下载MongoDB&nbsp;Compass...',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+})
+
+.on('openCompassBtn_download-complete', (event) => {
+    elems.updateProgress.html("下载进度将会显示在这里");
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: 'MongoDB&nbsp;Compass',
+        message: 'MongoDB&nbsp;Compass下载成功！尝试打开...',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+})
+
+.on('chooseGamePathButton_selected-file', (event, path, patchExists, action) => {
     if (patchExists) {
-        gamePathInput.value = path;
-        patchState.style.display = 'block';
+        elems.gamePathInput.val(path);
+        elems.patchState.css('display', 'block');
         iziToast.info({
             icon: 'fa-solid fa-circle-info',
             title: '添加补丁',
@@ -266,8 +476,7 @@ ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, 
             }
         });
     } else {
-        patchState.style.display = 'none';
-        
+        elems.patchState.css('display', 'none'); 
     }
     if (action == "patch_not_exst") {
         iziToast.error({
@@ -302,9 +511,9 @@ ipcRenderer.on('chooseGamePathButton_selected-file', (event, path, patchExists, 
             }
         });
     }
-});
+})
 
-ipcRenderer.on('chooseGamePathButton_file-not-valid', (event) => {
+.on('chooseGamePathButton_file-not-valid', (event) => {
     iziToast.error({
         icon: 'fa-solid fa-circle-exclamation',
         layout: '4',
@@ -316,7 +525,7 @@ ipcRenderer.on('chooseGamePathButton_file-not-valid', (event) => {
     });
 })
 
-ipcRenderer.on('choose3DMigotoPathButton_file-not-valid', (event) => {
+.on('choose3DMigotoPathButton_file-not-valid', (event) => {
     iziToast.error({
         icon: 'fa-solid fa-circle-exclamation',
         layout: '4',
@@ -328,7 +537,7 @@ ipcRenderer.on('choose3DMigotoPathButton_file-not-valid', (event) => {
     });
 })
 
-ipcRenderer.on('chooseJavaPathButton_was-jre', (event) => {
+.on('chooseJavaPathButton_was-jre', (event) => {
     iziToast.error({
         icon: 'fa-solid fa-circle-exclamation',
         layout: '3',
@@ -338,10 +547,10 @@ ipcRenderer.on('chooseJavaPathButton_was-jre', (event) => {
             izi_notify()
         }
     });
-});
+})
 
-ipcRenderer.on('chooseJavaPathButton_was-jdk', (event, path, action) => {
-    javaPathInput.value = path;
+.on('chooseJavaPathButton_was-jdk', (event, path, action) => {
+    elems.javaPathInput.val(path);
     if (action == "init") {
         iziToast.info({
             icon: 'fa-solid fa-circle-info',
@@ -353,10 +562,10 @@ ipcRenderer.on('chooseJavaPathButton_was-jdk', (event, path, action) => {
             }
         });
     }
-});
+})
 
-ipcRenderer.on('choose3DMigotoPathButton_was', (event, path, action) => {
-    _3DMigotoPathPathInput.value = path;
+.on('choose3DMigotoPathButton_was', (event, path, action) => {
+    elems._3DMigotoPathPathInput.val(path);
     if (action == "init") {
         iziToast.info({
             icon: 'fa-solid fa-circle-info',
@@ -368,9 +577,9 @@ ipcRenderer.on('choose3DMigotoPathButton_was', (event, path, action) => {
             }
         });
     }
-});
+})
 
-ipcRenderer.on('chooseJavaPathButton_not-valid', (event) => {
+.on('chooseJavaPathButton_not-valid', (event) => {
     iziToast.error({
         icon: 'fa-solid fa-circle-exclamation',
         layout: '2',
@@ -380,106 +589,26 @@ ipcRenderer.on('chooseJavaPathButton_not-valid', (event) => {
             izi_notify()
         }
     });
-});
+})
 
-restoreOfficialButton.addEventListener('click', () => {
-    ipcRenderer.send('restoreOfficialButton_delete-path');
-});
-
-resGetWayButton_0.addEventListener('click', () => {
-    ipcRenderer.send('resGetWayButton_0-set');
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '2',
-        title: '代理',
-        message: '获取资源方式已更改为 代理!',
-        onOpening: function() {
-            izi_notify()
-        }
-    });
-});
-
-resGetWayButton_1.addEventListener('click', () => {
-    ipcRenderer.send('resGetWayButton_1-set');
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '2',
-        title: '直连',
-        message: '获取资源方式已更改为 直连!',
-        onOpening: function() {
-            izi_notify()
-        }
-    });
-});
-
-officialKeystoreButton.addEventListener('click', () => {
-    ipcRenderer.send('officialKeystoreButton-set');
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '2',
-        title: 'Keystore',
-        message: '正在使用 官方Keystore！',
-        onOpening: function() {
-            izi_notify()
-        }
-    });
-});
-
-selfSignedKeystoreButton.addEventListener('click', () => {
-    ipcRenderer.send('selfSignedKeystoreButton-set');
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '2',
-        title: 'Keystore',
-        message: '正在使用 自签名Keystore！',
-        onOpening: function() {
-            izi_notify()
-        }
-    });
-});
-
-function operationBoxBtn_0_ClickHandler() {
-    operationBoxBtn_0.addEventListener('click', () => {
-        save_settings();
-        proxyInputRender = [proxyIP.value, proxyPort.value];
-        ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender);
-        iziToast.info({
-            icon: 'fa-solid fa-circle-info',
-            layout: '2',
-            title: '启动服务',
-            message: '正在启动服务...',
-            onOpening: function() {
-                izi_notify()
-            }
-        });
-        pageLogText0.innerHTML += `请不要关闭稍后弹出来的任何一个窗口！<br>正在启动服务...<br>`; 
-    });
-}
-
-operationBoxBtn_0_ClickHandler();
-
-operationBoxBtn_1.addEventListener('click', () => {
-    ipcRenderer.send('operationBoxBtn_1-stop-service');
-});
-
-ipcRenderer.on('download-jdk', (event, message) => {
-    updateProgress.innerHTML = "下载进度将会显示在这里";
+.on('download-jdk', (event, message) => {
+    elems.updateProgress.html = "下载进度将会显示在这里";
     if (message == "jdk-false") {
-        pageLogText0.innerHTML += `未检测到JDK！正在下载JDK...<br>`;
+        pageLogText0.append(`未检测到JDK！正在下载JDK...<br>`);
     } else if (message == "jdk-true") {
-        pageLogText0.innerHTML += `JDK下载完毕！准备启动服务...<br>`;
+        pageLogText0.append(`JDK下载完毕！准备启动服务...<br>`);
     }
-});
+})
 
-ipcRenderer.on('jdk-already-installed', (event) => {
-    pageLogText0.innerHTML += `已检测到JDK！<br>`;   
-});
+.on('jdk-already-installed', (event) => {
+    elems.pageLogText0.append(`已检测到JDK！<br>`);   
+})
 
-ipcRenderer.on('jre-already-installed', (event) => {
-    pageLogText0.innerHTML += `已检测到JRE，但未检测到JDK<br>`;   
-});
+.on('jre-already-installed', (event) => {
+    elems.pageLogText0.append(`已检测到JRE，但未检测到JDK<br>`);   
+})
 
-ipcRenderer.on('operationBoxBtn_1-success', (event) => {
+.on('operationBoxBtn_1-success', (event) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -489,14 +618,10 @@ ipcRenderer.on('operationBoxBtn_1-success', (event) => {
             izi_notify()
         }
     });
-    pageLogText0.innerHTML += `成功停止服务！<br>`; 
-});
+    elems.pageLogText0.append(`成功停止服务！<br>`); 
+})
 
-operationBoxBtn_2.addEventListener('click', () => {
-    ipcRenderer.send('operationBoxBtn_2-run-game');
-});
-
-ipcRenderer.on('operationBoxBtn_2-success', (event) => {
+.on('operationBoxBtn_2-success', (event) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -506,13 +631,9 @@ ipcRenderer.on('operationBoxBtn_2-success', (event) => {
             izi_notify()
         }
     });
-});
+})
 
-operationBoxBtn_3.addEventListener('click', () => {
-    ipcRenderer.send('operationBoxBtn_3-run-3dmigoto');
-});
-
-ipcRenderer.on('operationBoxBtn_3-success', (event) => {
+.on('operationBoxBtn_3-success', (event) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '3',
@@ -522,58 +643,31 @@ ipcRenderer.on('operationBoxBtn_3-success', (event) => {
             izi_notify()
         }
     });
-});
+})
 
-updateBtn.addEventListener('click' , () => {
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '3',
-        title: '更新',
-        message: '正在尝试更新...<br>注意插件等需要手动更新！',
-        onOpening: function() {
-            izi_notify()
-        }
-    });
-    fetch('https://api.github.com/repos/Grasscutters/Grasscutter/releases/latest')
-        .then(response => response.json())
-        .then(data => {
-            const latestReleaseUrl = data.assets[0].browser_download_url;
-            ipcRenderer.send('update_latest', latestReleaseUrl);
-            
-        })
-        .catch(error => {
-        iziToast.error({
-            icon: 'fa-solid fa-circle-exclamation',
-            layout: '2',
-            title: 'Github API 已超限！请等待一分钟！',
-            onOpening: function() {
-                izi_notify()
-            }
-        });
-    });
-});
-
-ipcRenderer.on('update_progress', (event, progressText, action) => {
+.on('update_progress', (event, progressText, action) => {
     const allMatches = progressText.match(/([0-9.]+[kMG]|[0-9:]+:[0-9:]+|--:--:--)/g);
-    if (progressText.trim() === "0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0" || progressText.includes("% Total    % Received % Xferd  Average Speed   Time    Time     Time  Current")) {
-        updateProgress.innerHTML = `下载进度<br>正在向服务器请求...`;
-    };
-
-    if (allMatches && allMatches.length >= 4) {
+    const defaultText = "下载进度<br>正在向服务器请求...";
+    
+    if (progressText.trim() === "0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0" || 
+        progressText.includes("% Total    % Received % Xferd  Average Speed   Time    Time     Time  Current")) {
+        elems.updateProgress.html(defaultText);
+    } else if (allMatches && allMatches.length >= 4) {
         const received = allMatches[1];
         const speed = allMatches[allMatches.length - 1];
         const timeLeft = allMatches[allMatches.length - 2] === '--:--:--' ? '未知' : allMatches[allMatches.length - 2];
         
-        updateProgress.innerHTML = `下载进度<br>
-        当前下载：${action}<br>
-        已下载: ${received}<br>
-        速度: ${speed}/s<br>
-        剩余时间: ${timeLeft}`;
-
+        elems.updateProgress.html(`
+            下载进度<br>
+            当前下载：${action}<br>
+            已下载: ${received}<br>
+            速度: ${speed}/s<br>
+            剩余时间: ${timeLeft}
+        `);
     }
-});
+})    
 
-ipcRenderer.on('using_proxy', (event, proxyServer) => {
+.on('using_proxy', (event, proxyServer) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -583,11 +677,11 @@ ipcRenderer.on('using_proxy', (event, proxyServer) => {
             izi_notify()
         }
     });
-});
+})
 
 
-ipcRenderer.on('update_complete', (event) => {
-    updateProgress.innerHTML = "下载进度将会显示在这里";
+.on('update_complete', (event) => {
+    elems.updateProgress.html = "下载进度将会显示在这里";
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -597,9 +691,9 @@ ipcRenderer.on('update_complete', (event) => {
             izi_notify()
         }
     });
-});
+})
 
-ipcRenderer.on('app_update', (event) => {
+.on('app_update', (event) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -609,9 +703,9 @@ ipcRenderer.on('app_update', (event) => {
             izi_notify()
         }
     });
-});
+})
 
-ipcRenderer.on('gateserver_install', (event) => {
+.on('gateserver_install', (event) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -621,17 +715,17 @@ ipcRenderer.on('gateserver_install', (event) => {
             izi_notify()
         }
     });
-    operationBoxBtn_0.classList.add("disabled");
-    operationBoxBtn_0.removeEventListener('click', operationBoxBtn_0_ClickHandler);
-});
-
-ipcRenderer.on('gateserver_cancel-install', (event) => {
-    operationBoxBtn_0.classList.add("disabled");
-    operationBoxBtn_0.removeEventListener('click', operationBoxBtn_0_ClickHandler);
+    elems.operationBoxBtn_0.addClass("disabled");
+    elems.operationBoxBtn_0.off('click', operationBoxBtn_0_ClickHandler);
 })
 
-ipcRenderer.on('app_update_download_complete', (event) => {
-    updateProgress.innerHTML = "下载进度将会显示在这里";
+.on('gateserver_cancel-install', (event) => {
+    elems.operationBoxBtn_0.addClass("disabled");
+    elems.operationBoxBtn_0.off('click', operationBoxBtn_0_ClickHandler);
+})
+
+.on('app_update_download_complete', (event) => {
+    elems.updateProgress.html = "下载进度将会显示在这里";
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -641,10 +735,10 @@ ipcRenderer.on('app_update_download_complete', (event) => {
             izi_notify()
         }
     });
-});
+})
 
-ipcRenderer.on('gateserver_install_download_complete', (event) => {
-    updateProgress.innerHTML = "下载进度将会显示在这里";
+.on('gateserver_install_download_complete', (event) => {
+    elems.updateProgress.html = "下载进度将会显示在这里";
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -654,14 +748,9 @@ ipcRenderer.on('gateserver_install_download_complete', (event) => {
             izi_notify()
         }
     });
-});
+})
 
-
-clearData.addEventListener('click', () => {
-    ipcRenderer.send('clear_data');
-});
-
-ipcRenderer.on('clearing_data', (event) => {
+.on('clearing_data', (event) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -671,9 +760,9 @@ ipcRenderer.on('clearing_data', (event) => {
             izi_notify()
         }
     });
-});
+})
 
-ipcRenderer.on('vc_redist_init', (event, path) => {
+.on('vc_redist_init', (event, path) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -684,44 +773,28 @@ ipcRenderer.on('vc_redist_init', (event, path) => {
             izi_notify()
         }
     });
-});
+})
 
-ipcRenderer.on('mods-list', (event, modsList) => {
-    const container = document.querySelector('.page_tools_mods_list');
-    while (container.firstChild) {
-        container.removeChild(container.firstChild);
-    }
+.on('mods-list', (event, modsList) => {
+    const $container = $('.page_tools_mods_list');
+    $container.empty();
     if (modsList == "empty") {
-        let modElement = document.createElement('div');
-            modElement.className = 'page_tools_mods_list_item';
-            let modNameElement = document.createElement('div');
-            modNameElement.className = 'page_tools_mods_name';
-            modNameElement.innerText = "Mod 文件夹为空！";
-            modElement.appendChild(modNameElement);
-            container.appendChild(modElement);
+        $('<div>')
+            .addClass('page_tools_mods_list_item')
+            .append(
+                $('<div>')
+                    .addClass('page_tools_mods_name')
+                    .text("Mod 文件夹为空！")
+            )
+            .appendTo($container);
     } else {
         for (let mod of modsList) {
-            let modElement = document.createElement('div');
-            modElement.className = 'page_tools_mods_list_item';
-            let modNameElement = document.createElement('div');
-            modNameElement.className = 'page_tools_mods_name';
-            modNameElement.innerText = mod;
-            let deleteButton = document.createElement('div');
-            deleteButton.className = 'page_tools_mods_list_delete fa-solid fa-trash';
-            let openSelectButton = document.createElement('div');
-            openSelectButton.className = 'page_tools_mods_list_open_select fa-solid fa-folder-open';
-            modElement.appendChild(modNameElement);
-            modElement.appendChild(deleteButton);
-            modElement.appendChild(openSelectButton);
-            container.appendChild(modElement);
-        }
-        const deleteButtons = document.querySelectorAll('.page_tools_mods_list_delete');
-        const openSelectButtons = document.querySelectorAll('.page_tools_mods_list_open_select')
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                let parent = this.parentNode;
-                let modNameElement = parent.querySelector('.page_tools_mods_name');
-                let modName = modNameElement ? modNameElement.textContent : null;
+            const $modElement = $('<div>').addClass('page_tools_mods_list_item');
+            const $modNameElement = $('<div>').addClass('page_tools_mods_name').text(mod);
+            const $deleteButton = $('<div>').addClass('page_tools_mods_list_delete fa-solid fa-trash');
+            const $openSelectButton = $('<div>').addClass('page_tools_mods_list_open_select fa-solid fa-folder-open');
+            $deleteButton.on('click', function() {
+                const modName = $(this).siblings('.page_tools_mods_name').text();
                 if (modName) {
                     ipcRenderer.send('modsListDeleteBtn-delete', modName);
                     iziToast.info({
@@ -736,56 +809,37 @@ ipcRenderer.on('mods-list', (event, modsList) => {
                     });
                 }
             });
-        });
-        openSelectButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                let parent = this.parentNode;
-                let modNameElement = parent.querySelector('.page_tools_mods_name');
-                let modName = modNameElement ? modNameElement.textContent : null;
+            $openSelectButton.on('click', function() {
+                const modName = $(this).siblings('.page_tools_mods_name').text();
                 if (modName) {
                     ipcRenderer.send('modsListOpenSelectBtn-open-select', modName);
                 }
             });
-        });
+            $modElement.append($modNameElement, $deleteButton, $openSelectButton).appendTo($container);
+        }
     }
-});
+})    
 
-ipcRenderer.on('plugs-list', (event, plugsList) => {
-    const container = document.querySelector('.page_tools_plugs_list');
-    while (container.firstChild) {
-        container.removeChild(container.firstChild);
-    }
+.on('plugs-list', (event, plugsList) => {
+    const $container = $('.page_tools_plugs_list');
+    $container.empty();
     if (plugsList == "empty") {
-        let plugElement = document.createElement('div');
-            plugElement.className = 'page_tools_plugs_list_item';
-            let plugNameElement = document.createElement('div');
-            plugNameElement.className = 'page_tools_plugs_name';
-            plugNameElement.innerText = "插件文件夹为空！";
-            plugElement.appendChild(plugNameElement);
-            container.appendChild(plugElement);
+        $('<div>')
+            .addClass('page_tools_plugs_list_item')
+            .append(
+                $('<div>')
+                    .addClass('page_tools_plugs_name')
+                    .text("插件文件夹为空！")
+            )
+            .appendTo($container);
     } else {
         for (let plug of plugsList) {
-            let plugElement = document.createElement('div');
-            plugElement.className = 'page_tools_plugs_list_item';
-            let plugNameElement = document.createElement('div');
-            plugNameElement.className = 'page_tools_plugs_name';
-            plugNameElement.innerText = plug;
-            let deleteButton = document.createElement('div');
-            deleteButton.className = 'page_tools_plugs_list_delete fa-solid fa-trash';
-            let openSelectButton = document.createElement('div');
-            openSelectButton.className = 'page_tools_plugs_list_open_select fa-solid fa-folder-open';
-            plugElement.appendChild(plugNameElement);
-            plugElement.appendChild(deleteButton);
-            plugElement.appendChild(openSelectButton);
-            container.appendChild(plugElement);
-        }
-        const deleteButtons = document.querySelectorAll('.page_tools_plugs_list_delete');
-        const openSelectButtons = document.querySelectorAll('.page_tools_plugs_list_open_select')
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                let parent = this.parentNode;
-                let plugNameElement = parent.querySelector('.page_tools_plugs_name');
-                let plugName = plugNameElement ? plugNameElement.textContent : null;
+            const $plugElement = $('<div>').addClass('page_tools_plugs_list_item');
+            const $plugNameElement = $('<div>').addClass('page_tools_plugs_name').text(plug);
+            const $deleteButton = $('<div>').addClass('page_tools_plugs_list_delete fa-solid fa-trash');
+            const $openSelectButton = $('<div>').addClass('page_tools_plugs_list_open_select fa-solid fa-folder-open');
+            $deleteButton.on('click', function() {
+                const plugName = $(this).siblings('.page_tools_plugs_name').text();
                 if (plugName) {
                     ipcRenderer.send('plugsListDeleteBtn-delete', plugName);
                     iziToast.info({
@@ -800,41 +854,19 @@ ipcRenderer.on('plugs-list', (event, plugsList) => {
                     });
                 }
             });
-        });
-        openSelectButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                let parent = this.parentNode;
-                let plugNameElement = parent.querySelector('.page_tools_plugs_name');
-                let plugName = plugNameElement ? plugNameElement.textContent : null;
+            $openSelectButton.on('click', function() {
+                const plugName = $(this).siblings('.page_tools_plugs_name').text();
                 if (plugName) {
                     ipcRenderer.send('plugsListOpenSelectBtn-open-select', plugName);
                 }
             });
-        });
+            $plugElement.append($plugNameElement, $deleteButton, $openSelectButton).appendTo($container);
+        }
     }
-    const spacer = document.createElement('div');
-    spacer.className = 'bottom-spacing';
-    container.appendChild(spacer);
-});
+    $('<div>').addClass('bottom-spacing').appendTo($container);
+})
 
-modsDragArea.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    modsDragArea.style.backgroundColor = '#353740';
-});
-
-modsDragArea.addEventListener('dragleave', () => {
-    modsDragArea.style.backgroundColor = '';
-});
-
-modsDragArea.addEventListener('drop', (e) => {
-    e.preventDefault();
-    modsDragArea.style.backgroundColor = '';
-    const files = e.dataTransfer.files;
-    const filePaths = Array.from(files).map(file => file.path);
-    ipcRenderer.send('modsDragArea-add-file', filePaths);
-});
-
-ipcRenderer.on('modsDragArea-success', (event, fileName) => {
+.on('modsDragArea-success', (event, fileName) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -847,7 +879,7 @@ ipcRenderer.on('modsDragArea-success', (event, fileName) => {
     });
 })
 
-ipcRenderer.on('modsDragArea-not-folder', (event, fileName) => {
+.on('modsDragArea-not-folder', (event, fileName) => {
     iziToast.error({
         icon: 'fa-solid fa-circle-exclamation',
         title: '错误',
@@ -859,24 +891,7 @@ ipcRenderer.on('modsDragArea-not-folder', (event, fileName) => {
     });
 })
 
-plugsDragArea.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    plugsDragArea.style.backgroundColor = '#353740';
-});
-
-plugsDragArea.addEventListener('dragleave', () => {
-    plugsDragArea.style.backgroundColor = '';
-});
-
-plugsDragArea.addEventListener('drop', (e) => {
-    e.preventDefault();
-    plugsDragArea.style.backgroundColor = '';
-    const files = e.dataTransfer.files;
-    const filePaths = Array.from(files).map(file => file.path);
-    ipcRenderer.send('plugsDragArea-add-file', filePaths);
-});
-
-ipcRenderer.on('plugsDragArea-success', (event, fileName) => {
+.on('plugsDragArea-success', (event, fileName) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -889,7 +904,7 @@ ipcRenderer.on('plugsDragArea-success', (event, fileName) => {
     });
 })
 
-ipcRenderer.on('plugsDragArea-not-jar', (event, fileName) => {
+.on('plugsDragArea-not-jar', (event, fileName) => {
     iziToast.error({
         icon: 'fa-solid fa-circle-exclamation',
         title: '错误',
@@ -901,25 +916,7 @@ ipcRenderer.on('plugsDragArea-not-jar', (event, fileName) => {
     });
 })
 
-editAppConfigBtn.addEventListener('click', () => {
-    ipcRenderer.send('editAppConfigBtn-edit');
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '2',
-        title: '编辑应用配置',
-        timeout: 5000,
-        message: `请在弹出的窗口中选择用记事本打开或其他编辑器！<br>编辑后需重启以完成更改!`,
-        onOpening: function() {
-            izi_notify()
-        }
-    });
-});
-
-exportAppConfigBtn.addEventListener('click', () => {
-    ipcRenderer.send('exportAppConfigBtn-export', gcInputRender, proxyInputRender);
-});
-
-ipcRenderer.on('exportAppConfigBtn-export-success', (event, path) => {
+.on('exportAppConfigBtn-export-success', (event, path) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -931,7 +928,3 @@ ipcRenderer.on('exportAppConfigBtn-export-success', (event, path) => {
         }
     });
 })
-
-importAppConfigBtn.addEventListener('click', () => {
-    ipcRenderer.send('importAppConfigBtn-import');
-});

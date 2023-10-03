@@ -189,6 +189,11 @@ button[name="edit_config"] {
     margin-left: 0px;
 }
 
+button[name="compass_btn"] {
+    height: 25.2px;
+    align-self: center;
+}
+
 .iconfont {
     font-family: "iconfont" !important;
     font-style: normal;
@@ -1181,13 +1186,15 @@ button[name="edit_config"] {
 
 .page_settings_text_1_flex,
 .page_settings_text_2_flex,
-.page_settings_text_3_flex {
+.page_settings_text_3_flex,
+.page_tools_text_compass_flex {
     display: flex;
 }
 
 .page_tools_text_0,
 .page_tools_text_1,
-.page_tools_text_2 {
+.page_tools_text_2,
+.page_tools_text_compass {
     color: #c4c4c4;
     margin-top: 10px;
 }
