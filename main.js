@@ -45,7 +45,6 @@ let _3DMigotoModsPath;
 let patchExists = false;
 let action;
 let javaPath;
-let finalJavaPath;
 let resURL = new Array(3);
 let gcInput = new Array(3);
 let proxyInput = new Array(2);
@@ -166,11 +165,12 @@ ipcMain.on('render-ready', async (event) => {
   if (!app.isPackaged) {
     win.webContents.openDevTools();
   }
-  await rwAppConfig();
-  await rwMods();
-  await rwPlugs();
-  await updateAPP();
-  await checkGateServer();
+  if (await checkGateServer()) {
+    await rwAppConfig();
+    await rwMods();
+    await rwPlugs();
+    await updateAPP();
+  }
 });
 
 ipcMain.on('devtools-opened', () => {
@@ -561,7 +561,7 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', async (event) => {
           return;
         }
         if (stdout && stdout.includes('Java(TM) SE Runtime Environment')) {
-          javaPath = result.filePaths[0];
+          javaPath = path.join(result.filePaths[0], "bin", "java.exe");
           console.log(javaPath);
           win.webContents.send('chooseJavaPathButton_was-jdk', javaPath, "init");
           try {
@@ -683,7 +683,8 @@ ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
     'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f',
     'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f'
   ];
-  killProcesses(processes, addition);
+  await killProcesses(processes, addition);
+  win.webContents.send('operationBoxBtn_1-success');
 });
 
 ipcMain.on('operationBoxBtn_2-run-game', (event) => {
@@ -1095,77 +1096,25 @@ del ${global.packagedPaths.entryPath}\\update_app.bat\r`;
 async function checkGateServer() {
   try {
     await fs.promises.access(global.packagedPaths.gateServerPath);
+    return true;
   } catch(err) {
     if (err.code === "ENOENT") {
       console.log("GateServer not found");
-      if (!app.isPackaged) {
-        const resp0 = await dialog.showMessageBox(win, {
+      if (app.isPackaged) {
+        await dialog.showMessageBox(win, {
           type: 'info',
           title: 'GateServer',
-          message: 'GateServer不存在！是否自动下载？',
-          buttons: ['确定', '取消'],
-          defaultId: 1,
-          cancelId: 1
+          message: 'GateServer不存在！请从Github下载最新GateServer\n并解压至 resources\\GateServer ！\n应用已进入沙盒模式...',
         });
-        if (resp0.response === 0) {
-          const { latestTagVersion, latestTagType } = await fetchRelease(resURL);
-          win.webContents.send('gateserver_install');
-          const downloadGateServerURL = `${resURL[0]}/btjawa/BTJGenshinPS/releases/download/v${latestTagVersion}-${latestTagType}/BTJGenshinPS-${latestTagVersion}-win32-ia32-${latestTagType}.zip`;
-          console.log("FULL URL:", downloadGateServerURL);
-          await downloadFile(downloadGateServerURL, path.join(global.packagedPaths.entryPath, `BTJGenshinPS-win32-ia32.zip`), "GateServer");
-          win.webContents.send('gateserver_install_download_complete');
-          console.log("Download GateServer Completed");
-
-          const appExtractPath = path.join(global.packagedPaths.entryPath, "temp_gateserver");
-          const appZipPath = path.join(global.packagedPaths.entryPath, "BTJGenshinPS-win32-ia32.zip");
-
-          await unzipFile(appZipPath, appExtractPath);
-
-          await fs.promises.unlink(appZipPath, (err) => {
-            if (err) {
-              console.error('Error deleting APP ZIP file:', err);
-              reject(err);
-              return;
-            }
-            console.log('APP ZIP file deleted successfully.');
-            console.log(appZipPath);
-          });
-
-          try {
-            execSync(`xcopy "${path.join(appExtractPath, "resources", "GateServer")}\\" "${path.join(global.packagedPaths.entryPath, "GateServer")}\\" /E /Y`,{ encoding: 'binary' },(error,stdout,stderr) => {
-              if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-              if (stdout) { console.log(iconv.decode(Buffer.from(out, 'binary'), 'GBK')) };
-              if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-            });
-            execSync(`rmdir /s /q ${path.join(global.packagedPaths.entryPath, "temp_gateserver")}`,{ encoding: 'binary' },(error,stdout,stderr) => {
-              if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-              console.log('Temp GateServer deleted successfully.');
-              if (stdout) { console.log(iconv.decode(Buffer.from(out, 'binary'), 'GBK')) };
-              if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-            });
-          } catch (err) {
-              console.error('Error deleting Temp GateServer:', err);
-          }
-          
-          const resp1 = await dialog.showMessageBox(win, {
-            type: 'info',
-            title: 'GateServer',
-            message: '将重启应用以应用更改',
-            buttons: ['确定']
-          });
-          app.relaunch();
-          app.exit(0);
-        } else {
-          win.webContents.send("gateserver_cancel-install");
-        }
       } else {
-        console.log("GateServer not found");
-        const resp1 = await dialog.showMessageBox(win, {
+        await dialog.showMessageBox(win, {
           type: 'warning',
           title: 'GateServer',
-          message: 'GateServer不存在！',
+          message: 'GateServer不存在！请补全以便能正常package！',
         });
       }
+      win.webContents.send('gateserver_not-exists');
+      return false;
     } else {
       console.error(err);
     }
@@ -1550,10 +1499,11 @@ async function checkJava() {
     const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf8');
     const appConfig = JSON.parse(appConfigData);
     if (appConfig.java && appConfig.java.exec !== "") {
+      console.log(appConfig.java.exec)
       javaPath = appConfig.java.exec;
       try {
         const { stdout } = await exec(`"${javaPath}" --version`, { encoding: 'binary' });
-        if (stdout.includes('Java(TM) SE Runtime Environment')) {
+        if (stdout.includes('Runtime Environment')) {
           win.webContents.send('jdk-already-installed');
           console.log('JDK from config is valid.');
           return;
@@ -1563,7 +1513,7 @@ async function checkJava() {
       }
     }
     const { stdout, stderr } = await exec('java --version', { encoding: 'binary' });
-    if (stdout.includes('Java(TM) SE Runtime Environment')) {
+    if (stdout.includes('Runtime Environment')) {
       win.webContents.send('jdk-already-installed');
       console.log('Global JDK is valid.');
       javaPath = 'java';
@@ -1575,7 +1525,7 @@ async function checkJava() {
   } catch (error) {
     try {
       const { stdout } = await exec('java -version', { encoding: 'binary' });
-      if (stdout.includes('Java(TM) SE Runtime Environment')) {
+      if (stdout.includes('Runtime Environment')) {
         win.webContents.send('jre-already-installed');
         await downloadJDK();
         return;
@@ -1592,11 +1542,6 @@ async function downloadJDK() {
   const jdkZipPath = path.join(global.packagedPaths.entryPath, 'jdk-17.0.2.zip');
   
   try {
-    try {
-      await fs.promises.access(path.join(global.packagedPaths.entryPath, 'jdk-17.0.2'));
-      await fs.promises.rmdir(path.join(global.packagedPaths.entryPath, 'jdk-17.0.2'), { recursive: true });
-    } catch(err) {}
-    
     await downloadFile(jdkURL, jdkZipPath, 'Java Development Kit');
     win.webContents.send('download-jdk', 'jdk-true');
     console.log('JDK downloaded successfully.');
@@ -1606,7 +1551,7 @@ async function downloadJDK() {
 
     await unzipFile(jdkZipPath, jdkExtractPath);
 
-    javaPath = jdkPath;
+    javaPath = path.join(jdkPath, "bin", "java.exe");
     const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, 'app.config.json'), 'utf8');
     const appConfig = JSON.parse(appConfigData);
 
@@ -1718,8 +1663,8 @@ async function update(gc_org_url) {
       if (stderr) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
       if (stdout) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
     })
-    win.webContents.send('update_complete');
     console.log("Update Completed");
+    win.webContents.send('update_complete');
   } catch (error) {
     console.log(error);
   }
@@ -1753,7 +1698,13 @@ async function downloadFile(url, outputPath, action) {
 async function run_main_service (gcInputRender, proxyInputRender) {
   await rwAppConfig("main-service-save", gcInputRender, proxyInputRender)
   const processes = ['java.exe', 'mongod.exe', 'mitmdump.exe'];
-  killProcesses(processes);
+  await killProcesses(processes);
+  if (!await checkGateServer()) {
+    console.log("Prevent runnning service\ngateserver_not-exists");
+    win.webContents.send('gateserver_not-exists');
+    return;
+  }
+  win.webContents.send('operationBoxBtn_0-success');
   const add_root_crt_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\add_root_crt.bat`], {
     stdio: 'ignore'
   });
@@ -1763,9 +1714,7 @@ async function run_main_service (gcInputRender, proxyInputRender) {
   const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`], {
     stdio: 'ignore'
   });
-  javaPath == "java" ? finalJavaPath = "java" : finalJavaPath = `${path.join(javaPath, "bin", "java")}`;
-  console.log(finalJavaPath)
-  const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat  ${finalJavaPath}`], {
+  const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat  ${javaPath}`], {
     stdio: 'ignore'
   });
 }

@@ -167,9 +167,11 @@ elems.chooseJavaPathButton.on('click', () => {
     ipcRenderer.send('chooseJavaPathButton_open-file-dialog');
 });
 
-elems.choose3DMigotoPathButton.on('click', () => {
+function choose3DMigotoPathButton_ClickHandler() {
     ipcRenderer.send('choose3DMigotoPathButton_open-file-dialog');
-});
+}
+
+elems.choose3DMigotoPathButton.on('click', choose3DMigotoPathButton_ClickHandler);
 
 elems.openLogDirBtn.on('click', () => {
     ipcRenderer.send('openLogDirBtn_open-log-dir');
@@ -225,7 +227,7 @@ elems.resGetWayButton_1.on('click', () => {
     });
 });
 
-elems.officialKeystoreButton.on('click', () => {
+function officialKeystoreButton_ClickHandler() {
     ipcRenderer.send('officialKeystoreButton-set');
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
@@ -236,9 +238,11 @@ elems.officialKeystoreButton.on('click', () => {
             izi_notify()
         }
     });
-});
+}
 
-elems.selfSignedKeystoreButton.on('click', () => {
+elems.officialKeystoreButton.on('click', officialKeystoreButton_ClickHandler);
+
+function selfSignedKeystoreButton_ClickHandler() {
     ipcRenderer.send('selfSignedKeystoreButton-set');
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
@@ -249,28 +253,28 @@ elems.selfSignedKeystoreButton.on('click', () => {
             izi_notify()
         }
     });
-});
-
-function operationBoxBtn_0_ClickHandler() {
-    elems.operationBoxBtn_0.on('click', () => {
-        save_settings();
-        proxyInputRender = [elems.proxyIP.val(), elems.proxyPort.val()];
-        ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender);
-        iziToast.info({
-            icon: 'fa-solid fa-circle-info',
-            layout: '2',
-            title: '启动服务',
-            message: '正在启动服务...',
-            onOpening: function() {
-                izi_notify()
-            }
-        });
-        elems.pageLogText0.append(`请不要关闭稍后弹出来的任何一个窗口！<br>正在启动服务...<br>`);
-        toggleMenuState('menu_selector_log');
-    });
 }
 
-operationBoxBtn_0_ClickHandler();
+elems.selfSignedKeystoreButton.on('click', selfSignedKeystoreButton_ClickHandler);
+
+function operationBoxBtn_0_ClickHandler() {
+    save_settings();
+    proxyInputRender = [elems.proxyIP.val(), elems.proxyPort.val()];
+    ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender);
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '启动服务',
+        message: '正在启动服务...',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+    elems.pageLogText0.append(`请不要关闭稍后弹出来的任何一个窗口！<br>正在启动服务...<br>`);
+    toggleMenuState('menu_selector_log');
+}
+
+elems.operationBoxBtn_0.on('click', operationBoxBtn_0_ClickHandler);
 
 elems.operationBoxBtn_1.on('click', () => {
     ipcRenderer.send('operationBoxBtn_1-stop-service');
@@ -280,9 +284,11 @@ elems.operationBoxBtn_2.on('click', () => {
     ipcRenderer.send('operationBoxBtn_2-run-game');
 });
 
-elems.operationBoxBtn_3.on('click', () => {
+function operationBoxBtn_3_ClickHandler() {
     ipcRenderer.send('operationBoxBtn_3-run-3dmigoto');
-});
+}
+
+elems.operationBoxBtn_3.on('click', operationBoxBtn_3_ClickHandler);
 
 elems.updateBtn.on('click', () => {
     iziToast.info({
@@ -592,11 +598,30 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
 })
 
 .on('download-jdk', (event, message) => {
-    elems.updateProgress.html = "下载进度将会显示在这里";
+    elems.updateProgress.html("下载进度将会显示在这里");
     if (message == "jdk-false") {
-        pageLogText0.append(`未检测到JDK！正在下载JDK...<br>`);
+        elems.pageLogText0.append(`未检测到JDK/JDK已损坏！正在下载JDK...<br>`);
+        iziToast.info({
+            icon: 'fa-solid fa-circle-info',
+            layout: '2',
+            title: 'JDK',
+            message: '未检测到JDK！正在下载JDK...',
+            onOpening: function() {
+                izi_notify()
+            }
+        });
     } else if (message == "jdk-true") {
-        pageLogText0.append(`JDK下载完毕！准备启动服务...<br>`);
+        elems.pageLogText0.append(`JDK下载完毕！准备启动服务...<br>`);
+        elems.updateProgress.html("下载进度将会显示在这里");
+        iziToast.info({
+            icon: 'fa-solid fa-circle-info',
+            layout: '2',
+            title: 'JDK',
+            message: 'JDK下载完毕！准备启动服务...',
+            onOpening: function() {
+                izi_notify()
+            }
+        });
     }
 })
 
@@ -606,6 +631,19 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
 
 .on('jre-already-installed', (event) => {
     elems.pageLogText0.append(`已检测到JRE，但未检测到JDK<br>`);   
+})
+
+.on('operationBoxBtn_0-success', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '启动服务',
+        message: '成功启动服务！',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+    elems.pageLogText0.append(`成功启动服务！<br>`); 
 })
 
 .on('operationBoxBtn_1-success', (event) => {
@@ -647,25 +685,23 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
 
 .on('update_progress', (event, progressText, action) => {
     const allMatches = progressText.match(/([0-9.]+[kMG]|[0-9:]+:[0-9:]+|--:--:--)/g);
-    const defaultText = "下载进度<br>正在向服务器请求...";
-    
-    if (progressText.trim() === "0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0" || 
-        progressText.includes("% Total    % Received % Xferd  Average Speed   Time    Time     Time  Current")) {
-        elems.updateProgress.html(defaultText);
-    } else if (allMatches && allMatches.length >= 4) {
+    if (progressText.trim() === "0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0" || progressText.includes("% Total    % Received % Xferd  Average Speed   Time    Time     Time  Current")) {
+        elems.updateProgress.html(`下载进度<br>正在向服务器请求...`);
+    };
+
+    if (allMatches && allMatches.length >= 4) {
         const received = allMatches[1];
         const speed = allMatches[allMatches.length - 1];
         const timeLeft = allMatches[allMatches.length - 2] === '--:--:--' ? '未知' : allMatches[allMatches.length - 2];
         
-        elems.updateProgress.html(`
-            下载进度<br>
-            当前下载：${action}<br>
-            已下载: ${received}<br>
-            速度: ${speed}/s<br>
-            剩余时间: ${timeLeft}
-        `);
+        elems.updateProgress.html(`下载进度<br>
+        当前下载：${action}<br>
+        已下载: ${received}<br>
+        速度: ${speed}/s<br>
+        剩余时间: ${timeLeft}`);
+
     }
-})    
+})
 
 .on('using_proxy', (event, proxyServer) => {
     iziToast.info({
@@ -681,7 +717,7 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
 
 
 .on('update_complete', (event) => {
-    elems.updateProgress.html = "下载进度将会显示在这里";
+    elems.updateProgress.html("下载进度将会显示在这里");
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -705,27 +741,30 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
     });
 })
 
-.on('gateserver_install', (event) => {
+.on('gateserver_not-exists', (event) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: 'GateServer',
-        message: '开始下载GateServer...在此期间请勿运行服务',
+        message: 'GateServer不存在！请勿运行服务！<br>应用已进入沙盒模式...',
         onOpening: function() {
             izi_notify()
         }
     });
     elems.operationBoxBtn_0.addClass("disabled");
+    elems.operationBoxBtn_3.addClass("disabled");
+    elems.choose3DMigotoPathButton.addClass("disabled");
+    elems.selfSignedKeystoreButton.addClass("disabled");
+    elems.officialKeystoreButton.addClass("disabled");
     elems.operationBoxBtn_0.off('click', operationBoxBtn_0_ClickHandler);
-})
-
-.on('gateserver_cancel-install', (event) => {
-    elems.operationBoxBtn_0.addClass("disabled");
-    elems.operationBoxBtn_0.off('click', operationBoxBtn_0_ClickHandler);
+    elems.operationBoxBtn_3.off('click', operationBoxBtn_3_ClickHandler);
+    elems.choose3DMigotoPathButton.off('click', choose3DMigotoPathButton_ClickHandler);
+    elems.selfSignedKeystoreButton.off('click', selfSignedKeystoreButton_ClickHandler);
+    elems.officialKeystoreButton.off('click', officialKeystoreButton_ClickHandler);
 })
 
 .on('app_update_download_complete', (event) => {
-    elems.updateProgress.html = "下载进度将会显示在这里";
+    elems.updateProgress.html("下载进度将会显示在这里");
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -738,7 +777,7 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
 })
 
 .on('gateserver_install_download_complete', (event) => {
-    elems.updateProgress.html = "下载进度将会显示在这里";
+    elems.updateProgress.html("下载进度将会显示在这里");
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
