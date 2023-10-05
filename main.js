@@ -32,7 +32,7 @@ const defaultAppConfig = {
   getRes: "proxy",
   game: { path: "", "_3dmigoto": path.join(global.packagedPaths.gateServerPath, "3DMigoto", "3DMigoto Loader.exe") },
   grasscutter: { port: "22102", host: "127.0.0.1", dispatch: { port: "443", host: "127.0.0.1", ssl: "selfsigned" } },
-  proxy: { port: "443", host: "127.0.0.1" },
+  proxy: { port: "443", host: "127.0.0.1", ssl: "true" },
   mongodb: { port: "27017" },
   java: { exec: "java" }
 }
@@ -49,6 +49,7 @@ let javaPath;
 let resURL = new Array(3);
 let gcInput = new Array(3);
 let proxyInput = new Array(2);
+let SSLStatus = true;
 let modsList = [];
 let proxyPort = 54321;
 
@@ -211,7 +212,7 @@ ipcMain.on('update_latest', (event, gc_org_url) => {
 });
 
 ipcMain.on('handelClose', async (event, gcInputRender, proxyInputRender) => {
-  await rwAppConfig("simple-save", gcInputRender, proxyInputRender, "simple-save");
+  await rwAppConfig("simple-save", gcInputRender, proxyInputRender);
   app.quit();
 })
 
@@ -239,12 +240,22 @@ ipcMain.on('resGetWayButton_1-set', () => {
   resSetDirect();
 });
 
-ipcMain.on('officialKeystoreButton-set', () => {
+ipcMain.on('officialKeystoreBox-set', () => {
   officialKeystore();
 });
 
-ipcMain.on('selfSignedKeystoreButton-set', () => {
+ipcMain.on('selfSignedKeystoreBox-set', () => {
   selfSignedKeystore();
+});
+
+ipcMain.on('proxyUsingSSLCheckbox_ClickHandler-set-on', () => {
+  SSLStatus = true;
+  rwAppConfig("ssl-set");
+});
+
+ipcMain.on('proxyUsingSSLCheckbox_ClickHandler-set-off', () => {
+  SSLStatus = false;
+  rwAppConfig("ssl-set");
 });
 
 ipcMain.on('restoreOfficialButton_delete-path', (event) => {
@@ -459,7 +470,7 @@ ipcMain.on('editAppConfigBtn-edit', async (event) => {
 
 ipcMain.on('exportAppConfigBtn-export', async (event, gcInputRender, proxyInputRender) => {
   try {
-    await rwAppConfig("simple-save", gcInputRender, proxyInputRender, "simple-save");
+    await rwAppConfig("simple-save", gcInputRender, proxyInputRender);
     await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
     const result = await dialog.showOpenDialog({
       title: '请选择配置文件将要导出至的文件夹',
@@ -588,7 +599,7 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', async (event) => {
         }
         if (stdout && stdout.includes('Java(TM) SE Runtime Environment')) {
           javaPath = path.join(result.filePaths[0], "bin", "java.exe");
-          console.log(javaPath);
+          console.log(javaPath, "\n");
           win.webContents.send('chooseJavaPathButton_was-jdk', javaPath, "init");
           try {
             await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"))
@@ -1123,7 +1134,7 @@ del ${global.packagedPaths.entryPath}\\update_app.bat\r`;
             detached: true,
             stdio: 'ignore'
           }).unref();
-          await rwAppConfig("simple-save", gcInputRender, proxyInputRender, "simple-save");
+          await rwAppConfig("simple-save", gcInputRender, proxyInputRender);
           app.quit();
         }
       } else {
@@ -1266,8 +1277,8 @@ async function resSetProxy () {
     await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
     const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
     const appConfig = JSON.parse(appConfigData);
-    if (appConfig.grasscutter.getRes) {
-      appConfig.grasscutter.getRes = "proxy";
+    if (appConfig.getRes) {
+      appConfig.getRes = "proxy";
     }
     await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
     console.log('app.config.json Updated successfully');
@@ -1319,8 +1330,8 @@ async function resSetDirect () {
     await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
     const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
     const appConfig = JSON.parse(appConfigData);
-    if (appConfig.grasscutter.getRes) {
-      appConfig.grasscutter.getRes = "direct";
+    if (appConfig.getRes) {
+      appConfig.getRes = "direct";
     }
     await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
     console.log('app.config.json Updated successfully');
@@ -1338,8 +1349,10 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
     
     if (appConfig.getRes === "proxy") {
       resSetProxy();
+      win.webContents.send('res_getway', "proxy");
     } else if (appConfig.getRes === "direct") {
       resSetDirect();
+      win.webContents.send('res_getway', "direct");
     }
 
     if (action === "main-service-save" || action === "simple-save" || action === "proxy-service-save") {
@@ -1361,16 +1374,15 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
         appConfig.proxy.host = proxyInputRender[0];
         appConfig.proxy.port = proxyInputRender[1];
       }
-      await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8', async (err) => {
-        if (err) {
-          console.error('Err when writing config to file:', err);
-          return;
-        }
-        console.log('app.config.json Updated successfully');
-      }); 
       await writeAcConfig("main-service-save", gcInputRender, proxyInputRender);
+    }
 
-    } else {
+    else if (action === "ssl-set") {
+      appConfig.proxy.ssl = SSLStatus;
+      await writeAcConfig("ssl-set");
+    }
+    
+    else {
       if (appConfig.game) {
         try {
           await fs.promises.access(appConfig.game.path);
@@ -1384,7 +1396,9 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
             console.error(err);
           }
         }
+
         if (gamePath) { await sendPatchGamePath(gamePath) }
+
         if (appConfig.game) {
           if (appConfig.game._3dmigoto !== "") {
             try {
@@ -1412,18 +1426,22 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
           }
         }
       }
+
       if (appConfig.java !== "") {
         javaPath = appConfig.java.exec;
-        console.log(javaPath)
+        console.log(javaPath, "\n")
         win.webContents.send('chooseJavaPathButton_was-jdk', javaPath);
       }
+
       if (appConfig.grasscutter) {
         if (appConfig.grasscutter.dispatch) {
           if (appConfig.grasscutter.dispatch.ssl == "selfsigned") {
             selfSignedKeystore();
+            win.webContents.send('ssl_ver', "selfSignedKeystore");
           }
           else if (appConfig.grasscutter.dispatch.ssl == "official") {
             officialKeystore();
+            win.webContents.send('ssl_ver', "officialKeystore");
           }
           if (appConfig.grasscutter.host!=="127.0.0.1" && appConfig.grasscutter.host!=="localhost" && appConfig.grasscutter.host!=="0.0.0.0"){
             appConfig.grasscutter.dispatch.host = "dispatchcnglobal.yuanshen.com";
@@ -1434,16 +1452,28 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
         gcInput = [appConfig.grasscutter.host, appConfig.grasscutter.port, appConfig.grasscutter.dispatch.port, appConfig.grasscutter.dispatch.host];
         win.webContents.send('gc_text', gcInput);
       }
+
       if (appConfig.proxy) {
         proxyInput = [appConfig.proxy.host, appConfig.proxy.port];
+        SSLStatus = appConfig.proxy.ssl;
         win.webContents.send('proxy_text', proxyInput);
+        win.webContents.send('ssl_status', SSLStatus);
       }
       await writeAcConfig();
     }
+    
+    await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8', async (err) => {
+      if (err) {
+        console.error('Err when writing config to file:', err);
+        return;
+      }
+      console.log('app.config.json Updated successfully');
+    });
   } catch (err) {
     if (err.code === "ENOENT") {
       gcInput = ["127.0.0.1", "22102", "443", "127.0.0.1"]
       proxyInput = ["127.0.0.1", "443"];
+      SSLStatus = true;
       gamePath = "";
       gamePathDir = path.dirname(gamePath);
       javaPath = "java";
@@ -1455,7 +1485,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
         _3DMigotoModsPath = _3DMigotoConfig.Include.include_recursive;
         console.log(path.join(_3DMigotoPathDir, _3DMigotoModsPath));
       }
-      console.log(javaPath);
+      console.log(javaPath, "\n");
       await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(defaultAppConfig, null, 2), 'utf8');
       await resSetProxy();
       await selfSignedKeystore();
@@ -1493,50 +1523,63 @@ async function writeAcConfig (action, gcInputRender, proxyInputRender) {
     if (action === "main-service-save" || action === "simple-save" || action === "proxy-service-save") {
       if (gcConfig.server.http) {
         gcConfig.server.http.accessAddress = gcInputRender[3];
-        console.log("http.accessAddress " + gcConfig.server.http.accessAddress);
+        console.log("\nhttp.accessAddress " + gcConfig.server.http.accessAddress);
         gcConfig.server.http.bindPort = gcInputRender[2];
         console.log("http.bindPort " + gcConfig.server.http.bindPort);
       }
       if (gcConfig.server.game) {
         gcConfig.server.game.accessAddress = gcInputRender[0];
-        console.log("game.accessAddress " + gcConfig.server.game.accessAddress);
+        console.log("\ngame.accessAddress " + gcConfig.server.game.accessAddress);
         gcConfig.server.game.bindPort = gcInputRender[1];
         console.log("game.bindPort " + gcConfig.server.game.bindPort);
       }
       mitmConfig = mitmConfig.replace(/(REMOTE_HOST\s*=\s*)"([^"]+)"/g, (_, p2) => {
-        console.log(`${p2}"${proxyInputRender[0]}"`);
+        console.log(`\n${p2}"${proxyInputRender[0]}"`);
         return `${p2}"${proxyInputRender[0]}"`;
       });
       mitmConfig = mitmConfig.replace(/(REMOTE_PORT\s*=\s*)([^"]+)/g, (_, p2) => {
-        console.log(`${p2}${proxyInputRender[1]}`);
+        console.log(`${p2}${proxyInputRender[1]}\n`);
         return `${p2}${proxyInputRender[1]}`;
       });
-    } else {
+    }
+    
+    else if (action === "ssl-set") {
+      mitmConfig = mitmConfig.replace(/(USE_SSL\s*=\s*)(True|False)/g, (_, p1) => {
+        console.log(`\n${p1}${SSLStatus ? 'True' : 'False'}`);
+        return `${p1}${SSLStatus ? 'True' : 'False'}`;
+      });
+    }
+    
+    else {
       if (gcConfig.server.http) {
         gcConfig.server.http.accessAddress = gcInput[3];
-        console.log("http.accessAddress " + gcConfig.server.http.accessAddress);
+        console.log("\nhttp.accessAddress " + gcConfig.server.http.accessAddress);
         gcConfig.server.http.bindPort = gcInput[2];
         console.log("http.bindPort " + gcConfig.server.http.bindPort);
       }
       if (gcConfig.server.game) {
         gcConfig.server.game.accessAddress = gcInput[0];
-        console.log("game.accessAddress " + gcConfig.server.game.accessAddress);
+        console.log("\ngame.accessAddress " + gcConfig.server.game.accessAddress);
         gcConfig.server.game.bindPort = gcInput[1];
         console.log("game.bindPort " + gcConfig.server.game.bindPort);
       }
       mitmConfig = mitmConfig.replace(/(REMOTE_HOST\s*=\s*)"([^"]+)"/g, (_, p2) => {
-        console.log(`${p2}"${proxyInput[0]}"`);
+        console.log(`\n${p2}"${proxyInput[0]}"`);
         return `${p2}"${proxyInput[0]}"`;
       });
       mitmConfig = mitmConfig.replace(/(REMOTE_PORT\s*=\s*)([^"]+)/g, (_, p2) => {
-        console.log(`${p2}${proxyInput[1]}`);
+        console.log(`${p2}${proxyInput[1]}\n`);
         return `${p2}${proxyInput[1]}`;
       });
     }
-    await fs.promises.writeFile(`${global.packagedPaths.gateServerPath}\\Grasscutter\\config.json`, JSON.stringify(gcConfig, null, 2), 'utf8');
-    console.log('moded gc config');
-    await fs.promises.writeFile(`${global.packagedPaths.gateServerPath}\\Proxy\\proxy_config.py`, mitmConfig, 'utf8');
-    console.log('moded mitm config');
+
+    if (JSON.stringify(gcConfig, null, 2) !== gcConfigData) {
+      await fs.promises.writeFile(`${global.packagedPaths.gateServerPath}\\Grasscutter\\config.json`, JSON.stringify(gcConfig, null, 2), 'utf8');
+      console.log('moded gc config');
+    } if (mitmConfig !== mitmConfigData) {
+      await fs.promises.writeFile(`${global.packagedPaths.gateServerPath}\\Proxy\\proxy_config.py`, mitmConfig, 'utf8');
+      console.log('moded mitm config');
+    }
   } catch (err) {
     console.error(err)
   }

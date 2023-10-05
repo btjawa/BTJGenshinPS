@@ -13,19 +13,19 @@ const elems = {
     javaPathInput: $('input[name="java_path"]'),
     _3DMigotoPathPathInput: $('input[name="3dmigoto_path"]'),
     restoreOfficialButton: $('button[name="restore_official"]'),
-    resGetWayButton_0: $('.res_getway_0'),
-    resGetWayButton_1: $('.res_getway_1'),
+    resGetWayButton_0: $(".res_getway_0 input[type='checkbox']"),
+    resGetWayButton_1: $(".res_getway_1 input[type='checkbox']"),
     gcVersionLink: $('.gc_version'),
     resVersionLink: $('.res_version'),
-    officialKeystoreButton: $('button[name="official-keystore"]'),
-    selfSignedKeystoreButton: $('button[name="self-signed-keystore"]'),
+    officialKeystoreBox: $(".ssl_ver_0 input[type='checkbox']"),
+    selfSignedKeystoreBox: $(".ssl_ver_1 input[type='checkbox']"),
     patchState: $('.patch_state'),
     operationBoxBtn_0: $('.operation_box_btn_0'),
     operationBoxBtn_1: $('.operation_box_btn_1'),
     operationBoxBtn_proxy: $('.operation_box_btn_proxy'),
     operationBoxBtn_2: $('.operation_box_btn_2'),
     operationBoxBtn_3: $('.operation_box_btn_3'),
-    updateBtn: $('.update'),
+    updateBtn: $('.page_0_text_1_update_btn'),
     updateProgress: $('.update_progress'),
     resVersion: $('.res_version'),
     gcVersion: $('.gc_version'),
@@ -46,7 +46,8 @@ const elems = {
     gcGamePort: $('input[name=gc_game_port]'),
     gcDispatchPort: $('input[name=gc_dispatch_port]'),
     proxyIP: $('input[name=proxy_ip]'),
-    proxyPort: $('input[name=proxy_port]')
+    proxyPort: $('input[name=proxy_port]'),
+    proxyUsingSSLCheckbox: $(".proxy_using_ssl input[type='checkbox']")
 };
 
 const izi_notify_mp3 = new Audio("sounds/izi_notify.mp3");
@@ -93,18 +94,38 @@ $(window).on('devtoolschange', event => {
 $(document).ready(function() {
     ipcRenderer.send('render-ready');
     getLatestCommitID();
-})
+    $(elems.officialKeystoreBox).on('change', function() {
+        if ($(this).prop('checked')) {
+            $(elems.selfSignedKeystoreBox).prop('checked', false);
+        } else {
+            $(this).prop('checked', true);
+        }
+    });
+    
+    $(elems.selfSignedKeystoreBox).on('change', function() {
+        if ($(this).prop('checked')) {
+            $(elems.officialKeystoreBox).prop('checked', false);
+        } else {
+            $(this).prop('checked', true);
+        }
+    });
 
-.on('gc_text', (event, input) => {
-    elems.gcIp.val(input[0]);
-    elems.gcGamePort.val(input[1]);
-    elems.gcDispatchPort.val(input[2]);
+    $(elems.resGetWayButton_0).on('change', function() {
+        if ($(this).prop('checked')) {
+            $(elems.resGetWayButton_1).prop('checked', false);
+        } else {
+            $(this).prop('checked', true);
+        }
+    });
+    
+    $(elems.resGetWayButton_1).on('change', function() {
+        if ($(this).prop('checked')) {
+            $(elems.resGetWayButton_0).prop('checked', false);
+        } else {
+            $(this).prop('checked', true);
+        }
+    });
 })
-
-.on('proxy_text', (event, input) => {
-    elems.proxyIP.val(input[0]);
-    elems.proxyPort.val(input[1]);
-});
 
 function getLatestCommitID() {
     $.getJSON('https://api-gh-proxy.btl-cdn.top/repos/Grasscutters/Grasscutter/commits')
@@ -202,7 +223,13 @@ elems.restoreOfficialButton.on('click', () => {
     ipcRenderer.send('restoreOfficialButton_delete-path');
 });
 
-elems.resGetWayButton_0.on('click', () => {
+function resGetWayButton_0_ClickHandler() {
+    if (!$(elems.resGetWayButton_0).prop('checked')) {
+        elems.resGetWayButton_0.off('click', resGetWayButton_0_ClickHandler);
+        $(elems.resGetWayButton_0).prop('checked', true);
+        elems.resGetWayButton_0.on('click', resGetWayButton_0_ClickHandler);
+        return;
+    }
     ipcRenderer.send('resGetWayButton_0-set');
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
@@ -213,9 +240,17 @@ elems.resGetWayButton_0.on('click', () => {
             izi_notify()
         }
     });
-});
+}
 
-elems.resGetWayButton_1.on('click', () => {
+elems.resGetWayButton_0.on('click', resGetWayButton_0_ClickHandler);
+
+function resGetWayButton_1_ClickHandler() {
+    if (!$(elems.resGetWayButton_1).prop('checked')) {
+        elems.resGetWayButton_1.off('click', resGetWayButton_1_ClickHandler);
+        $(elems.resGetWayButton_1).prop('checked', true);
+        elems.resGetWayButton_1.on('click', resGetWayButton_1_ClickHandler);
+        return;
+    }
     ipcRenderer.send('resGetWayButton_1-set');
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
@@ -226,10 +261,18 @@ elems.resGetWayButton_1.on('click', () => {
             izi_notify()
         }
     });
-});
+}
 
-function officialKeystoreButton_ClickHandler() {
-    ipcRenderer.send('officialKeystoreButton-set');
+elems.resGetWayButton_1.on('click', resGetWayButton_1_ClickHandler);
+
+function officialKeystoreBox_ClickHandler() {
+    if (!$(elems.officialKeystoreBox).prop('checked')) {
+        elems.officialKeystoreBox.off('click', officialKeystoreBox_ClickHandler);
+        $(elems.officialKeystoreBox).prop('checked', true);
+        elems.officialKeystoreBox.on('click', officialKeystoreBox_ClickHandler);
+        return;
+    }
+    ipcRenderer.send('officialKeystoreBox-set');
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -241,10 +284,16 @@ function officialKeystoreButton_ClickHandler() {
     });
 }
 
-elems.officialKeystoreButton.on('click', officialKeystoreButton_ClickHandler);
+elems.officialKeystoreBox.on('click', officialKeystoreBox_ClickHandler);
 
-function selfSignedKeystoreButton_ClickHandler() {
-    ipcRenderer.send('selfSignedKeystoreButton-set');
+function selfSignedKeystoreBox_ClickHandler() {
+    if (!$(elems.selfSignedKeystoreBox).prop('checked')) {
+        elems.selfSignedKeystoreBox.off('click', selfSignedKeystoreBox_ClickHandler);
+        $(elems.selfSignedKeystoreBox).prop('checked', true);
+        elems.selfSignedKeystoreBox.on('click', selfSignedKeystoreBox_ClickHandler);
+        return;
+    }
+    ipcRenderer.send('selfSignedKeystoreBox-set');
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -256,7 +305,35 @@ function selfSignedKeystoreButton_ClickHandler() {
     });
 }
 
-elems.selfSignedKeystoreButton.on('click', selfSignedKeystoreButton_ClickHandler);
+elems.selfSignedKeystoreBox.on('click', selfSignedKeystoreBox_ClickHandler);
+
+function proxyUsingSSLCheckbox_ClickHandler() {
+    if ($(elems.proxyUsingSSLCheckbox).prop('checked')) {
+        ipcRenderer.send('proxyUsingSSLCheckbox_ClickHandler-set-on');
+        iziToast.info({
+            icon: 'fa-solid fa-circle-info',
+            layout: '2',
+            title: 'Keystore',
+            message: '代理已启用SSL!',
+            onOpening: function() {
+                izi_notify();
+            }
+        });
+    } else {
+        ipcRenderer.send('proxyUsingSSLCheckbox_ClickHandler-set-off');
+        iziToast.info({
+            icon: 'fa-solid fa-circle-info',
+            layout: '2',
+            title: 'Keystore',
+            message: '代理已禁用SSL!',
+            onOpening: function() {
+                izi_notify();
+            }
+        });
+    }
+}
+
+elems.proxyUsingSSLCheckbox.on('click', proxyUsingSSLCheckbox_ClickHandler);
 
 function operationBoxBtn_0_ClickHandler() {
     save_settings();
@@ -412,6 +489,45 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
             izi_notify()
         }
     });
+})
+
+.on('res_getway', (event, way) => {
+    if (way === "proxy") {
+        elems.resGetWayButton_0.prop('checked', true);
+        elems.resGetWayButton_1.prop('checked', false);
+    } else if (way === "direct") {
+        elems.resGetWayButton_0.prop('checked', false);
+        elems.resGetWayButton_1.prop('checked', true);
+    }
+})
+
+.on('ssl_ver', (event, ver) => {
+    if (ver === "selfSignedKeystore") {
+        elems.selfSignedKeystoreBox.prop('checked', true);
+        elems.officialKeystoreBox.prop('checked', false);
+    } else if (ver === "officialKeystore") {
+        elems.selfSignedKeystoreBox.prop('checked', false);
+        elems.officialKeystoreBox.prop('checked', true);
+    }
+})
+
+.on('ssl_status', (event, status) => {
+    if (status) {
+        elems.proxyUsingSSLCheckbox.prop('checked', true);
+    } else {
+        elems.proxyUsingSSLCheckbox.prop('checked', false);
+    }
+})
+
+.on('gc_text', (event, input) => {
+    elems.gcIp.val(input[0]);
+    elems.gcGamePort.val(input[1]);
+    elems.gcDispatchPort.val(input[2]);
+})
+
+.on('proxy_text', (event, input, status) => {
+    elems.proxyIP.val(input[0]);
+    elems.proxyPort.val(input[1]);
 })
 
 .on('main-window-max', () => {
@@ -773,14 +889,14 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
     elems.operationBoxBtn_proxy.addClass("disabled");
     elems.operationBoxBtn_3.addClass("disabled");
     elems.choose3DMigotoPathButton.addClass("disabled");
-    elems.selfSignedKeystoreButton.addClass("disabled");
-    elems.officialKeystoreButton.addClass("disabled");
+    elems.selfSignedKeystoreBox.addClass("disabled");
+    elems.officialKeystoreBox.addClass("disabled");
     elems.operationBoxBtn_0.off('click', operationBoxBtn_0_ClickHandler);
     elems.operationBoxBtn_proxy.off('click', operationBoxBtn_proxy_ClickHandler);
     elems.operationBoxBtn_3.off('click', operationBoxBtn_3_ClickHandler);
     elems.choose3DMigotoPathButton.off('click', choose3DMigotoPathButton_ClickHandler);
-    elems.selfSignedKeystoreButton.off('click', selfSignedKeystoreButton_ClickHandler);
-    elems.officialKeystoreButton.off('click', officialKeystoreButton_ClickHandler);
+    elems.selfSignedKeystoreBox.off('click', selfSignedKeystoreBox_ClickHandler);
+    elems.officialKeystoreBox.off('click', officialKeystoreBox_ClickHandler);
 })
 
 .on('app_update_download_complete', (event) => {

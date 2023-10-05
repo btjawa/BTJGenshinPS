@@ -72,12 +72,26 @@
                 <button name="choose_game_path">选择路径</button>
                 <button name="restore_official">恢复官服 (去除补丁)</button>
             </div>
-            <input type="text" name="game_path" disabled="disabled">
-            <div class="patch_state">已检测到补丁&nbsp;(version.dll)</div>
-            <div class="page_0_right_banner"><div class="page_0_text_1">获取资源方式</div>
-                <button name="res_getway_0" class="res_getway_0">代理</button>
-                <button name="res_getway_1" class="res_getway_1">直连</button>
-                <button name="update" class="update">更新资源</button>
+            <div class="page_0_text_patch_flex">
+                <input type="text" name="game_path" disabled="disabled">
+                <div class="patch_state">已检测到补丁&nbsp;(version.dll)</div>
+            </div>
+            <div class="page_0_right_banner">
+                <div class="page_0_text_1_flex">
+                    <div class="page_0_text_1_update_btn">更新资源</div>
+                    <div class="page_0_text_1">获取资源方式
+                        <label class="res_getway_0">
+                            <input type="checkbox" checked>
+                            <span class="res_getway_0_checkbox"></span>
+                            <span class="label-text">代理</span>
+                        </label>
+                        <label class="res_getway_1">
+                            <input type="checkbox">
+                            <span class="res_getway_1_checkbox"></span>
+                            <span class="label-text">直连</span>
+                        </label>
+                    </div>
+                </div>
                 <a class="page_0_right_banner_title">须知</a>
                 <a class="page_0_right_banner_text"><p>
                     若在启动服务后更改了设置，请重启应用<br>
@@ -99,8 +113,16 @@
             <input type="text" name="gc_dispatch_port" value="443">
             <div class="page_0_text_3">SSL证书&nbsp;
                 <a class="page_0_text_3_sub_0">keystore.p12</a>&nbsp;
-                <button name="self-signed-keystore">使用自签名证书</button>
-                <button name="official-keystore">使用官方证书</button>
+                <label class="ssl_ver_0">
+                    <input type="checkbox" checked>
+                    <span class="self-signed-keystore"></span>
+                    <span class="label-text">自签名证书</span>
+                </label>
+                <label class="ssl_ver_1">
+                    <input type="checkbox">
+                    <span class="official-keystore"></span>
+                    <span class="label-text">官方证书(不推荐)</span>
+                </label>
             </div>
             <div class="page_0_text_4">MongoDB设置
                 <div class="page_0_text_4_flex">
@@ -110,8 +132,17 @@
             </div>
             <input type="text" name="mongo_port" value="27017" disabled="disabled">
             <input type="text" name="mongo_data_folder" value=".\data" disabled="disabled">
-            <div class="page_0_text_5">客户端代理
-                <div class="page_0_text_5_flex">
+            <div class="page_0_text_5">
+                <div class="page_0_text_5_flex_0">客户端代理
+                    <div class="page_0_text_5_flex_sub_0">
+                        <label class="proxy_using_ssl">
+                            <input type="checkbox" checked>
+                            <span class="proxy_using_ssl_checkbox"></span>
+                            <span class="label-text">使用SSL</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="page_0_text_5_flex_1">
                     <div class="page_0_text_5_sub_0">IP / 域名</div>
                     <div class="page_0_text_5_sub_1">DISPATCH端口</div>
                 </div>
