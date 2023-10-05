@@ -33,6 +33,7 @@
     "iconv-lite": "^0.6.3",
     "ini": "^4.1.1",
     "moment-timezone": "^0.5.43",
+    "net": "^1.0.2",
     "rage-edit": "^1.2.0",
     "winreg": "^1.2.4",
     "yauzl": "^2.10.0"

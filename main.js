@@ -5,6 +5,7 @@ const yauzl = require("yauzl");
 const { spawn, execSync } = require('child_process');
 const ini = require('ini');
 const util = require('util');
+const net = require('net');
 const exec = util.promisify(require('child_process').exec);
 const Winreg = require('winreg');
 const iconv = require('iconv-lite');
@@ -76,59 +77,84 @@ process.stderr.write = (function(write) {
 
 
 
-// PROCESS
+// MAIN PROCESS
 
 
 
 console.log("Start Logging...")
 
+app.whenReady().then(async () => {
+  try {
+    const port = await checkPort(EXPRESS_PORT);
+    await expressServer(port);
+    createWindow(port);
+  } catch (err) {
+    console.error(err);
+  }
+});
 
+const checkPort = (port) => {
+  return new Promise((resolve, reject) => {
+      const tester = net.createServer()
+          .once('error', async (err) => {
+              if (err.code === 'EADDRINUSE') {
+                  await dialog.showMessageBox(win, {
+                      type: 'warning',
+                      title: '端口已被占用',
+                      message: `${port}端口已被占用！请检查是否启动了多个APP！`,
+                  });
+                  app.quit();
+                  reject(new Error(`Port ${port} is in use`));
+              } else {
+                  reject(err);
+              }
+          })
+          .once('listening', () => {
+              tester.once('close', () => resolve(port)).close();
+          })
+          .listen(port);
+  });
+};
 
-// EXPRESS PROCESS
-
-
-
-express_app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  const BLACKLIST = [
-    /^\/app-main\//,
-    /^\/BGP-docs\//
-  ]
-  const isBlacklisted = BLACKLIST.some(pattern => pattern.test(req.path));
-  if (isBlacklisted) {
-    if (!req.headers['user-agent'] || !req.headers['user-agent'].includes('Electron')) {
-        return res.status(403).send(`<body>
-        <center><h1>403 Forbidden</h1></center>
+const expressServer = (port) => {
+  return new Promise((resolve, reject) => {
+    express_app.use((req, res, next) => {
+      res.header("Access-Control-Allow-Origin", "*");
+      res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+      const BLACKLIST = [
+        /^\/app-main\//,
+        /^\/BGP-docs\//
+      ]
+      const isBlacklisted = BLACKLIST.some(pattern => pattern.test(req.path));
+      if (isBlacklisted) {
+        if (!req.headers['user-agent'].includes(`${packageJson.name}/${currentVersion}`)) {
+            return res.status(403).send(`<body>
+            <center><h1>403 Forbidden</h1></center>
+            <hr><center>btjawa</center>
+            </body>`);
+        }
+      }
+      express_app.get('*', (req, res) => {
+        return res.status(404).send(`<body>
+        <center><h1>404 Not Found</h1>
+        <h2>尝试访问<a href="http://localhost:${port}">根目录</a>以重新路由</2>
+        </center>
         <hr><center>btjawa</center>
         </body>`);
-    }
-  }
-  express_app.get('*', (req, res) => {
-    return res.status(404).send(`<body>
-    <center><h1>404 Not Found</h1>
-    <h2>尝试访问<a href="http://localhost:${EXPRESS_PORT}">根目录</a>以重新路由</2>
-    </center>
-    <hr><center>btjawa</center>
-    </body>`);
+      });
+      next();
+    });
+    express_app.use('/BGP-docs', express.static(path.join(__dirname, './dist/docs')));
+    express_app.use('/app-main', express.static(path.join(__dirname, './dist')));
+    express_app.listen(port, () => {
+        console.log(`Server is running on http://localhost:${port}`);
+        resolve(port);
+    });
+    express_app.on('error', (error) => {
+      reject(error);
+    });
   });
-  next();
-});
-express_app.use('/BGP-docs', express.static(path.join(__dirname, './dist/docs')));
-express_app.use('/app-main', express.static(path.join(__dirname, './dist')));
-express_app.listen(EXPRESS_PORT, () => {
-  console.log(`Doc server is running on http://localhost:${EXPRESS_PORT}`);
-});
-
-
-
-// MAIN PROCESS
-
-
-
-app.whenReady().then(async (event) => {
-  await createWindow();
-});
+};
 
 app.on('window-all-closed', (event) => {
   if (process.platform !== 'darwin') {
@@ -677,6 +703,11 @@ ipcMain.on('operationBoxBtn_0-run-main-service', async (event, gcInputRender, pr
   run_main_service(gcInputRender, proxyInputRender);
 });
 
+ipcMain.on('operationBoxBtn_proxy-run-proxy-service', async (event, gcInputRender, proxyInputRender) => {
+  await packageNec("proxy-only");
+  run_proxy_service(gcInputRender, proxyInputRender);
+});
+
 ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
   const processes = ['java.exe', 'mongod.exe', 'mitmdump.exe'];
   const addition = [
@@ -684,6 +715,11 @@ ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
     'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f'
   ];
   await killProcesses(processes, addition);
+  exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
+  exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
+  exec(`del ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`);
+  exec(`del ${global.packagedPaths.dataPath}\\add_root_crt.bat`);
+  exec(`del ${global.packagedPaths.dataPath}\\run_3dmigoto.bat`);
   win.webContents.send('operationBoxBtn_1-success');
 });
 
@@ -758,7 +794,7 @@ function writeToLog(message, type = "log") {
   fs.appendFileSync(path.join(logDirPath, `${currentMoment}.log`), `[${type} ${currentMomentLog}] ${message}\n`);
 }
 
-async function createWindow() {
+async function createWindow(port) {
   win = new BrowserWindow({
     width: 1030,
     height: 635,
@@ -774,7 +810,7 @@ async function createWindow() {
     },
   });
 
-  win.loadURL(`http://localhost:${EXPRESS_PORT}/app-main`);
+  win.loadURL(`http://localhost:${port}/app-main`);
 
   win.on('maximize', function () {
     win.webContents.send('main-window-max');
@@ -797,7 +833,7 @@ async function createWindow() {
   });
 }
 
-async function packageNec() {
+async function packageNec(action) {
   const gc_batch = `@echo off\r
 chcp 65001>nul\r
 title Grasscutter - 不要关闭这个窗口\r
@@ -856,6 +892,15 @@ reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" 
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f\r
 exit.\r`;
 
+/*
+  const mitm_proxy_batch_already_in_use = `@echo off\r
+chcp 65001>nul\r
+echo ${proxyPort} 已被占用！请kill占用此端口的进程并重新启动服务！
+echo 按任意键退出...
+pause>nul\r
+exit\r`
+*/
+
   const add_root_crt_batch =`@echo off\r
 chcp 65001>nul\r
 %1 start "" mshta vbscript:createobject("shell.application").shellexecute("""%~0""","::",,"runas",1)(window.close)&exit\r
@@ -864,19 +909,23 @@ certutil -addstore -f "Root" "${global.packagedPaths.dataPath}\\root.crt"\r
 certutil -addstore -f "Root" "%USERPROFILE%\\.mitmproxy\\mitmproxy-ca-cert.cer"\r
 exit\r`;
 
+  let files = [
+    {name: 'run_mitm_proxy.bat', content: mitm_proxy_batch},
+    {name: 'add_root_crt.bat', content: add_root_crt_batch}
+  ];
+
+  if (action !== "proxy-only") {
+    files.push(
+      {name: 'run_gc.bat', content: gc_batch},
+      {name: 'run_mongo.bat', content: mongo_batch}
+    );
+  }
+
   try {
-    await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_gc.bat'), gc_batch);
-    console.log('Created run_gc.bat');
-
-    await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_mongo.bat'), mongo_batch);
-    console.log('Created run_mongo.bat');
-
-    await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_mitm_proxy.bat'), mitm_proxy_batch);
-    console.log('Created run_mitm_proxy.bat');
-
-    await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'add_root_crt.bat'), add_root_crt_batch);
-    console.log('Created add_root_crt.bat');
-
+    for (let file of files) {
+      await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, file.name), file.content);
+      console.log(`Created ${file.name}`);
+    }
   } catch (err) {
     console.error(err);
   }
@@ -884,7 +933,7 @@ exit\r`;
 
 async function createMitmCA () {
   if (fs.existsSync(path.join(process.env.USERPROFILE, '.mitmproxy'))) {
-    console.log(path.join(process.env.USERPROFILE, '.mitmproxy') + " exist.")
+    console.log(path.join(process.env.USERPROFILE, '.mitmproxy'), "exist.")
   } else {
     exec(`start /B ${global.packagedPaths.gateServerPath}\\Proxy\\mitmdump.exe`, { encoding: 'binary' }, (stdout, error,stderr) => {
       if (error) {
@@ -899,7 +948,7 @@ async function createMitmCA () {
         clearInterval(checkMitm);
         exec('taskkill /f /im mitmdump.exe', { encoding: 'binary' }, (error, stdout, stderr) => {
           if (error) {
-            console.log('Error killing mitmdump:', error);
+            console.log(error);
           } else {
             console.log('Successfully killed mitmdump:', stdout);
           }
@@ -1293,7 +1342,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
       resSetDirect();
     }
 
-    if (action === "main-service-save" || action === "simple-save") {
+    if (action === "main-service-save" || action === "simple-save" || action === "proxy-service-save") {
       if (appConfig.grasscutter) {
         appConfig.grasscutter.host = gcInputRender[0];
         appConfig.grasscutter.port = gcInputRender[1];
@@ -1441,7 +1490,7 @@ async function writeAcConfig (action, gcInputRender, proxyInputRender) {
     const mitmConfigData = await fs.promises.readFile(`${global.packagedPaths.gateServerPath}\\Proxy\\proxy_config.py`);
     let mitmConfig = mitmConfigData.toString('utf-8');
 
-    if (action === "main-service-save" || action === "simple-save") {
+    if (action === "main-service-save" || action === "simple-save" || action === "proxy-service-save") {
       if (gcConfig.server.http) {
         gcConfig.server.http.accessAddress = gcInputRender[3];
         console.log("http.accessAddress " + gcConfig.server.http.accessAddress);
@@ -1719,6 +1768,23 @@ async function run_main_service (gcInputRender, proxyInputRender) {
   });
 }
 
+async function run_proxy_service (gcInputRender, proxyInputRender) {
+  await rwAppConfig("proxy-service-save", gcInputRender, proxyInputRender)
+  const processes = ['mitmdump.exe'];
+  await killProcesses(processes);
+  if (!await checkGateServer()) {
+    console.log("Prevent runnning service\ngateserver_not-exists");
+    win.webContents.send('gateserver_not-exists');
+    return;
+  }
+  win.webContents.send('operationBoxBtn_proxy-success');
+  const add_root_crt_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\add_root_crt.bat`], {
+    stdio: 'ignore'
+  });
+  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`], {
+    stdio: 'ignore'
+  });
+}
 
 async function run_game() {
   if (fs.existsSync(`${gamePath}`)) {

@@ -609,6 +609,7 @@ button[name="clear_data"] {
 
 .operation_box_btn_0:hover,
 .operation_box_btn_1:hover,
+.operation_box_btn_proxy:hover,
 .operation_box_btn_2:hover,
 .operation_box_btn_3:hover {
     background-color: #6e6e6e;
@@ -616,6 +617,7 @@ button[name="clear_data"] {
 }
 
 .operation_box_btn_0.disabled,
+.operation_box_btn_proxy.disabled,
 .operation_box_btn_3.disabled {
     background-color: #80808860;
     color: #e4e4e456;
@@ -623,6 +625,7 @@ button[name="clear_data"] {
 
 .operation_box_btn_0,
 .operation_box_btn_1,
+.operation_box_btn_proxy,
 .operation_box_btn_2 {
     justify-content: center;
     align-items: center;
@@ -630,7 +633,7 @@ button[name="clear_data"] {
     color: #ebebeb;
     background-color: #828282;
     font-size: 14px;
-    padding: 7.5px 38px;
+    padding: 7.5px 16px;
     transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
     border: 2px solid #565656;
     border-radius: 10px;
@@ -645,9 +648,13 @@ button[name="clear_data"] {
     width: 83px;
 }
 
+.operation_box_btn_1,
+.operation_box_btn_proxy {
+    margin-right: 2px;
+}
+
 .operation_box_btn_1 {
     margin-left: 10px;
-    margin-right: 6px;
 }
 
 .operation_box_btn_3 {
@@ -731,15 +738,23 @@ button[name="clear_data"] {
     margin-top: 10px;
 }
 
-.page_settings_text_1,
-.page_settings_text_3 {
+.page_settings_text_1 {
     margin-bottom: 5px;
 }
 
-.page_settings_text_2_sub {
+.page_settings_text_2_sub,
+.page_settings_text_3_sub {
     color: #999696;
-    margin-top: 27px;
     font-size: 14px;
+}
+
+.page_settings_text_3_flex {
+    margin-top: 5px;
+}
+
+.page_settings_text_2_sub,
+.page_settings_text_3_sub {
+    margin-top: 27px;
 }
 
 .page_tools_text_0,

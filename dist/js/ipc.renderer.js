@@ -22,6 +22,7 @@ const elems = {
     patchState: $('.patch_state'),
     operationBoxBtn_0: $('.operation_box_btn_0'),
     operationBoxBtn_1: $('.operation_box_btn_1'),
+    operationBoxBtn_proxy: $('.operation_box_btn_proxy'),
     operationBoxBtn_2: $('.operation_box_btn_2'),
     operationBoxBtn_3: $('.operation_box_btn_3'),
     updateBtn: $('.update'),
@@ -259,7 +260,6 @@ elems.selfSignedKeystoreButton.on('click', selfSignedKeystoreButton_ClickHandler
 
 function operationBoxBtn_0_ClickHandler() {
     save_settings();
-    proxyInputRender = [elems.proxyIP.val(), elems.proxyPort.val()];
     ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender);
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
@@ -274,11 +274,29 @@ function operationBoxBtn_0_ClickHandler() {
     toggleMenuState('menu_selector_log');
 }
 
+function operationBoxBtn_proxy_ClickHandler() {
+    save_settings();
+    ipcRenderer.send('operationBoxBtn_proxy-run-proxy-service', gcInputRender, proxyInputRender);
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '启动服务',
+        message: '正在启动服务...',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+    elems.pageLogText0.append(`请不要关闭稍后弹出来的任何一个窗口！<br>正在启动代理服务...<br>`);
+    toggleMenuState('menu_selector_log');
+}
+
 elems.operationBoxBtn_0.on('click', operationBoxBtn_0_ClickHandler);
 
 elems.operationBoxBtn_1.on('click', () => {
     ipcRenderer.send('operationBoxBtn_1-stop-service');
 });
+
+elems.operationBoxBtn_proxy.on('click', operationBoxBtn_proxy_ClickHandler);
 
 elems.operationBoxBtn_2.on('click', () => {
     ipcRenderer.send('operationBoxBtn_2-run-game');
@@ -752,11 +770,13 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
         }
     });
     elems.operationBoxBtn_0.addClass("disabled");
+    elems.operationBoxBtn_proxy.addClass("disabled");
     elems.operationBoxBtn_3.addClass("disabled");
     elems.choose3DMigotoPathButton.addClass("disabled");
     elems.selfSignedKeystoreButton.addClass("disabled");
     elems.officialKeystoreButton.addClass("disabled");
     elems.operationBoxBtn_0.off('click', operationBoxBtn_0_ClickHandler);
+    elems.operationBoxBtn_proxy.off('click', operationBoxBtn_proxy_ClickHandler);
     elems.operationBoxBtn_3.off('click', operationBoxBtn_3_ClickHandler);
     elems.choose3DMigotoPathButton.off('click', choose3DMigotoPathButton_ClickHandler);
     elems.selfSignedKeystoreButton.off('click', selfSignedKeystoreButton_ClickHandler);
