@@ -30,17 +30,13 @@ $(document).ready(function () {
 
     function setIframeListeners() {
         const iframeDoc = $DocsIframe[0].contentWindow.document;
-
         $(iframeDoc).on('click', function(event) {
             let targetElement = $(event.target);
-            
             while (targetElement && targetElement[0] !== iframeDoc.body && !targetElement.attr('href')) {
                 targetElement = targetElement.parent();
             }
-    
             if (targetElement && targetElement.attr('href')) {
                 const link = targetElement.attr('href');
-                
                 const httpRegex = /^https?:\/\//;
                 if (httpRegex.test(link)) {
                     event.preventDefault();
@@ -52,9 +48,7 @@ $(document).ready(function () {
             event.preventDefault();
         });
     }
-
     $DocsIframe.on('load', setIframeListeners);
-
     $('#home_page_iframe').on('click', function() {
         $DocsIframe.attr('src', "http://localhost:52805/BGP-docs");
         $DocsIframe.on('load', function() {
@@ -62,7 +56,6 @@ $(document).ready(function () {
             $DocsIframe.off('load');
         });
     });
-
     $('#backward_page_iframe').on('click', function() {
         $DocsIframe[0].contentWindow.history.back();
         $DocsIframe.on('load', function() {

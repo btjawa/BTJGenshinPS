@@ -1744,12 +1744,12 @@ async function update(gc_org_url) {
   const orgUrl = new URL(gc_org_url);
   try {
     await downloadFile(`${resURL[0]}${orgUrl.pathname}`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download`, "Grasscutter服务端");
-    await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download`, "Resources");
     exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar`,{ encoding: 'binary' },(error,stdout,stderr) => {
       if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
       if (stderr) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
       if (stdout) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
     })
+    await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download`, "Resources");
     exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip`,{ encoding: 'binary' },(error,stdout,stderr) => {
       if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
       if (stderr) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };

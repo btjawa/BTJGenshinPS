@@ -1,7 +1,7 @@
 @font-face{
     font-family: "SourceHanSans&SairaHybrid-Regular";
     src: 
-    url('../font/Source-Han-Sans-&-Saira-Hybrid-Regular.ttf') format('TrueType');
+    url('../font/Source-Han-Sans-&-Saira-Hybrid-Regular.woff2') format('woff2');
     font-display: fallback;
 }
 
@@ -52,12 +52,6 @@ input[type="checkbox"] {
 
 .ssl_ver_1 {
     margin-left: 7px;
-}
-
-.res_getway_0_checkbox, .res_getway_1_checkbox {
-    vertical-align: middle;
-    left: 20px !important;
-    margin-right: 22px !important;
 }
 
 label > input[type="checkbox"] + span {
@@ -502,22 +496,22 @@ button[name="clear_data"] {
 
 .page_0_right_banner_title {
     color: #e5e5e5;
-    position: fixed;
-    top: 60px;
-    right: 244px;
+    position: relative;
+    top: 8px;
+    left: 18px;
     font-size: 20px;
 }
 
 .page_0_right_banner_text {
-    position: fixed;
-    top: 80px;
-    right: 12px;
+    position: relative;
+    top: 8px;
+    left: 18px;
     font-size: 15px;
 }
 
 .update_progress {
     position: relative;
-    top: 150px;
+    top: 18px;
     left: 18px;
     font-size: 15px;
 }
@@ -552,13 +546,15 @@ button[name="clear_data"] {
 
 .page_0_text_1_flex {
     position: absolute;
-    right: 210px;
+    right: 230px;
     top: 10px;
     width: 100%;
 }
 
 .page_0_text_1_update_btn {
+    margin-top: -25px !important;
     margin-right: 10px;
+    height: 20px !important;
 }
 
 .page_0_text_2 {
@@ -569,7 +565,8 @@ button[name="clear_data"] {
 .page_0_text_2_sub_0, .page_0_text_2_sub_1,
 .page_0_text_2_sub_2, .page_0_text_4_sub_0,
 .page_0_text_4_sub_1, .page_0_text_5_sub_0,
-.page_0_text_5_sub_1, .page_0_text_3_sub_0 {
+.page_0_text_5_sub_1, .page_0_text_3_sub_0,
+.page_0_text_0 {
     margin-top: 5px;
 }
 
@@ -579,7 +576,15 @@ button[name="clear_data"] {
 
 .page_0_text_2_sub_1,
 .page_0_text_4 {
-    margin-right: 25px;
+    margin-right: 22.5px;
+}
+
+.page_0_text_2,
+.page_0_text_4,
+.page_settings_text_0,
+.page_settings_text_1,
+.page_settings_text_3 {
+    margin-left: 2px;
 }
 
 .page_0_text_3,
@@ -604,7 +609,10 @@ button[name="clear_data"] {
     align-items: center;
 }
 
-.page_0_text_0 {
+.page_0_text_0,
+.page_0_text_2_flex,
+.page_0_text_4_flex,
+.page_0_text_5_flex_1 {
     margin-bottom: 5px;
 }
 

@@ -5,8 +5,6 @@
         <meta name="color-scheme" content="dark light">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>BTJGenshinPS</title>
-        <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
-        <script type="text/javascript" src="./js/jquery-3.6.0.min.js"></script>   
         <link rel="stylesheet" href="./css/font-awesome/all.css">
         <link rel="stylesheet" href="./css/iziToast.min.css">
         <script type="text/javascript" src="./js/iziToast.min.js"></script>
@@ -68,7 +66,7 @@
         <div class="page_0">
             <div class="page_title">主页</div>
             <i class="page_subtitle">BTJGenshinPS</i>
-            <div class="page_0_text_0">游戏目录路径&nbsp;
+            <div class="page_0_text_0"><i class="fa-solid fa-gamepad-modern"></i>&ensp;游戏目录路径&nbsp;
                 <button name="choose_game_path">选择路径</button>
                 <button name="restore_official">恢复官服 (去除补丁)</button>
             </div>
@@ -78,21 +76,21 @@
             </div>
             <div class="page_0_right_banner">
                 <div class="page_0_text_1_flex">
-                    <div class="page_0_text_1_update_btn">更新资源</div>
+                    <div class="page_0_text_1_update_btn"><i class="fa-solid fa-folder-arrow-up"></i>&ensp;更新资源</div>
                     <div class="page_0_text_1">获取资源方式
                         <label class="res_getway_0">
                             <input type="checkbox" checked>
                             <span class="res_getway_0_checkbox"></span>
-                            <span class="label-text">代理</span>
+                            <span class="label-text"><i class="fa-solid fa-arrow-turn-up"></i>&ensp;代理</span>
                         </label>
                         <label class="res_getway_1">
                             <input type="checkbox">
                             <span class="res_getway_1_checkbox"></span>
-                            <span class="label-text">直连</span>
+                            <span class="label-text"><i class="fa-solid fa-arrow-up"></i>&ensp;直连</span>
                         </label>
                     </div>
                 </div>
-                <a class="page_0_right_banner_title">须知</a>
+                <a class="page_0_right_banner_title"><i class="fa-solid fa-circle-exclamation"></i>&emsp14;须知</a>
                 <a class="page_0_right_banner_text"><p>
                     若在启动服务后更改了设置，请重启应用<br>
                     以应用更改！<br>
@@ -101,9 +99,9 @@
                 </p></a>
                 <div class="update_progress">下载进度将会显示在这里</div>
             </div>
-            <div class="page_0_text_2">Grasscutter设置
+            <div class="page_0_text_2"><i class="fa-solid fa-server"></i>&ensp;Grasscutter设置
                 <div class="page_0_text_2_flex">
-                    <div class="page_0_text_2_sub_0">IP / 域名</div>
+                    <div class="page_0_text_2_sub_0">IP&nbsp;/&nbsp;域名</div>
                     <div class="page_0_text_2_sub_1">游戏服务器端口</div>
                     <div class="page_0_text_2_sub_2">DISPATCH端口</div>
                 </div>
@@ -111,7 +109,7 @@
             <input type="text" name="gc_ip" value="127.0.0.1">
             <input type="text" name="gc_game_port" value="22102">
             <input type="text" name="gc_dispatch_port" value="443">
-            <div class="page_0_text_3">SSL证书&nbsp;
+            <div class="page_0_text_3"><i class="fa-solid fa-file-certificate"></i>&ensp;SSL证书&nbsp;
                 <a class="page_0_text_3_sub_0">keystore.p12</a>&nbsp;
                 <label class="ssl_ver_0">
                     <input type="checkbox" checked>
@@ -124,7 +122,8 @@
                     <span class="label-text">官方证书(不推荐)</span>
                 </label>
             </div>
-            <div class="page_0_text_4">MongoDB设置
+            <div class="page_0_text_4">
+                <i class="fa-solid fa-database"></i>&ensp;MongoDB设置
                 <div class="page_0_text_4_flex">
                     <div class="page_0_text_4_sub_0">数据库端口</div>
                     <div class="page_0_text_4_sub_1">数据文件夹</div>
@@ -133,12 +132,12 @@
             <input type="text" name="mongo_port" value="27017" disabled="disabled">
             <input type="text" name="mongo_data_folder" value=".\data" disabled="disabled">
             <div class="page_0_text_5">
-                <div class="page_0_text_5_flex_0">客户端代理
+                <div class="page_0_text_5_flex_0"><i class="fa-solid fa-fire"></i>&ensp;客户端代理
                     <div class="page_0_text_5_flex_sub_0">
                         <label class="proxy_using_ssl">
                             <input type="checkbox" checked>
                             <span class="proxy_using_ssl_checkbox"></span>
-                            <span class="label-text">使用SSL</span>
+                            <span class="label-text"><i class="fa-solid fa-file-certificate"></i>&ensp;使用SSL</span>
                         </label>
                     </div>
                 </div>
@@ -166,11 +165,12 @@
         <div class="page_1">
             <div class="page_title">工具/扩展</div>
             <i class="page_subtitle">BTJGenshinPS</i>
-            <div class="page_tools_text_0">GcTools&nbsp;v1.12.2&nbsp;<button name="gctools_btn">下载/打开</button></div>
-            <div class="page_tools_text_1">Handbook手册&nbsp;(官方)&nbsp;<button name="handbook_txt">TXT</button><button name="handbook_html">可视化网页</button></div>
+            <div class="page_tools_text_0"><i class="fa-solid fa-gear"></i>&ensp;GcTools&nbsp;v1.12.2&nbsp;<button name="gctools_btn">下载/打开</button></div>
+            <div class="page_tools_text_1"><i class="fa-solid fa-book"></i>&ensp;Handbook手册&nbsp;(官方)&nbsp;<button name="handbook_txt">TXT</button><button name="handbook_html">可视化网页</button></div>
             <div class="page_tools_text_compass">
                 <div class="page_tools_text_compass_flex">
-                    MongoDB&nbsp;Compass<br>数据库管理工具
+                    <i class="fa-solid fa-database"></i>&nbsp;
+                    MongoDB&nbsp;Compass<br>&nbsp;&nbsp;数据库管理工具
                     <button name="compass_btn">下载/打开</button>
                 </div>    
             </div>
@@ -216,9 +216,9 @@
         <div class="page_settings">
             <div class="page_title">设置</div>
             <i class="page_subtitle">BTJGenshinPS</i>
-            <div class="page_settings_text_0">Java路径&nbsp;<button name="choose_java_path">选择Java路径</button></div>
+            <div class="page_settings_text_0"><i class="fa-brands fa-java"></i>&emsp13;Java路径&nbsp;<button name="choose_java_path">选择Java路径</button></div>
             <input type="text" name="java_path" disabled="disabled" text="自动检测">
-            <div class="page_settings_text_1">查看日志</div>
+            <div class="page_settings_text_1"><i class="fa-solid fa-file-lines"></i>&emsp13;查看日志</div>
             <div class="page_settings_text_1_flex">
                     <button name="open_log_dir">打开日志目录</button>
                     <button name="open_log_latest">打开最新日志</button>
@@ -226,7 +226,7 @@
             <div class="page_settings_text_2">3DMigoto路径&nbsp;<button name="choose_3dmigoto_path">选择3DMigoto路径</button></div>
             <i class="page_settings_text_2_sub">请将exe命名为&nbsp;"3DMigoto Loader.exe"</i>
             <input type="text" name="3dmigoto_path" disabled="disabled">
-            <div class="page_settings_text_3">应用配置</div>
+            <div class="page_settings_text_3"><i class="fa-solid fa-file-check"></i>&emsp13;应用配置</div>
             <i class="page_settings_text_3_sub">若想编辑配置，请在弹出的窗口中选择记事本或其他编辑器打开！<br>编辑后需重启应用以完成更改!</i>
             <div class="page_settings_text_3_flex">
                 <button name="edit_config">编辑应用配置</button>
@@ -234,6 +234,8 @@
                 <button name="import_config">导入应用配置</button>
             </div>
         </div>
+        <script>if (typeof module === 'object') window.module = module, module = undefined;</script>
+        <script type="text/javascript" src="./js/jquery-3.6.0.min.js"></script>
         <script type="text/javascript" src="./js/devtools-detect.js"></script>
         <script type="text/javascript" src="./js/ipc.renderer.js"></script>
         <script type="text/javascript" src="./js/render.js"></script>
