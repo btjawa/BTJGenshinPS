@@ -44,14 +44,14 @@ input[type="checkbox"] {
     display: none;
 }
 
-.ssl_ver_0, .ssl_ver_1,
+.ssl_ver_0, .ssl_ver_1 , .ssl_ver_2,
 .proxy_using_ssl {
     display: flex;
     align-items: center;
 }
 
-.ssl_ver_1 {
-    margin-left: 7px;
+.ssl_ver_1, .ssl_ver_2 {
+    margin-left: 0px;
 }
 
 label > input[type="checkbox"] + span {
@@ -477,15 +477,6 @@ button[name="clear_data"] {
     }
 }
 
-@keyframes page_0_text_1_anime {
-    0% {
-        top: -7px;
-    }
-    100% {
-        top: 10px;
-    }
-}
-
 .page_title {
     font-size: 22px;
 }
@@ -541,7 +532,6 @@ button[name="clear_data"] {
     display: flex;
     flex-direction: column;
     align-items: start;
-    animation: page_0_text_1_anime 0.66s cubic-bezier(0,1,.6,1)
 }
 
 .page_0_text_1_flex {
@@ -555,6 +545,38 @@ button[name="clear_data"] {
     margin-top: -25px !important;
     margin-right: 10px;
     height: 20px !important;
+}
+
+.page_0_text_conn_test {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    right: 115px;
+    top: 120px;
+    width: 100%;
+}
+
+.page_0_text_conn_test_text_0 {
+    position: relative;
+    right: 55px;
+    width: 160px;
+    text-align: right;
+}
+
+.page_0_text_conn_test_btn {
+    position: relative;
+    margin-top: 5px !important;
+    right: 10px;
+    width: 80px;
+    white-space: nowrap;
+}
+
+.page_0_text_conn_test_text_0_sub {
+    color: #999696;
+}
+
+.page_0_text_conn_test.active {
+    animation: page_0_text_conn_test_active_anime 0.66s cubic-bezier(0,1,.6,1), fadeIn 0.5s cubic-bezier(0,1,.6,1);
 }
 
 .page_0_text_2 {
@@ -638,12 +660,12 @@ button[name="clear_data"] {
     position: fixed;
     font-size: 13px;
     left: 100px;
-    text-decoration: underline;
 }
 
 .gc_version,
 .res_version {
     cursor: pointer;
+    text-decoration: underline;
 }
 
 .page_0_version_title { bottom: 45px; }
@@ -669,6 +691,7 @@ button[name="clear_data"] {
     justify-content: center;
 }
 
+.page_0_text_conn_test_btn:hover,
 .page_0_text_1_update_btn:hover,
 .operation_box_btn_0:hover,
 .operation_box_btn_1:hover,
@@ -687,6 +710,7 @@ button[name="clear_data"] {
     color: #e4e4e456;
 }
 
+.page_0_text_conn_test_btn,
 .page_0_text_1_update_btn,
 .operation_box_btn_0,
 .operation_box_btn_1,
@@ -882,6 +906,29 @@ button[name="clear_data"] {
 .page_tools_mods_list_open_select, .page_tools_plugs_list_open_select { right: 47px; }
 .page_tools_mods_list_delete, .page_tools_plugs_list_delete { right: 10px; }
 .page_tools_mods_name, .page_tools_plugs_name { font-size: 14px; }
+.page_tools_mods_name:hover, .page_tools_plugs_name:hover { cursor: pointer; }
+
+.page_0_text_1_flex.active {
+    animation: page_0_text_1_flex_active_anime 0.66s cubic-bezier(0,1,.6,1), fadeIn 0.5s cubic-bezier(0,1,.6,1);
+}
+
+@keyframes page_0_text_1_flex_active_anime {
+    0% {
+        top: -7px;
+    }
+    100% {
+        top: 10px;
+    }
+}
+
+@keyframes page_0_text_conn_test_active_anime {
+    0% {
+        top: 103px;
+    }
+    100% {
+        top: 120px;
+    }
+}
 
 .page_tools_text_3,
 .page_tools_plugs_drag_area {

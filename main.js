@@ -1,11 +1,13 @@
 const { app, globalShortcut, BrowserWindow, ipcMain, shell, dialog} = require('electron');
 const path = require('path');
 const fs = require('fs');
-const yauzl = require("yauzl");
 const { spawn, execSync } = require('child_process');
 const ini = require('ini');
 const util = require('util');
 const net = require('net');
+const StreamZip = require('node-stream-zip');
+const axios = require('axios');
+const https = require('https');
 const exec = util.promisify(require('child_process').exec);
 const Winreg = require('winreg');
 const iconv = require('iconv-lite');
@@ -52,6 +54,7 @@ let proxyInput = new Array(2);
 let SSLStatus = true;
 let modsList = [];
 let proxyPort = 54321;
+let gateServerStatus = true;
 
 
 
@@ -89,6 +92,29 @@ app.whenReady().then(async () => {
     const port = await checkPort(EXPRESS_PORT);
     await expressServer(port);
     createWindow(port);
+    exec(`certutil -store Root`, async (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return;
+      }
+      if (stdout.includes('3942b86a38669d255d41f62498ecb782181339b8')) {
+        console.log("Found self-signed root crt");
+      } else {
+        console.log("Self-signed root crt not found, add root crt");
+        await packageNec("init-crt");
+        exec(`start ${global.packagedPaths.dataPath}\\add_root_crt.bat`, async (error, stdout, stderr) => {
+          if (error) {
+            console.log(error);
+            return;
+          }
+          if (stdout) {
+            console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+            win.webContents.send("add_crt");
+          };
+          if (stderr) { console.log(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+        });
+      }
+    });
   } catch (err) {
     console.error(err);
   }
@@ -99,12 +125,10 @@ const checkPort = (port) => {
       const tester = net.createServer()
           .once('error', async (err) => {
               if (err.code === 'EADDRINUSE') {
-                  await dialog.showMessageBox(win, {
-                      type: 'warning',
-                      title: '端口已被占用',
-                      message: `${port}端口已被占用！请检查是否启动了多个APP！`,
-                  });
-                  app.quit();
+                  win.webContents.send('showMessageBox', "warning", `端口已被占用`, `${port}端口已被占用！请检查是否启动了多个APP！`);
+                  ipcMain.once('showMessageBox-callback', () => {
+                    app.quit();
+                  })
                   reject(new Error(`Port ${port} is in use`));
               } else {
                   reject(err);
@@ -165,22 +189,23 @@ app.on('window-all-closed', (event) => {
 
 app.on('before-quit', async (event) => {
   console.log('App is quitting...\nSaving config...');
+  exec('tasklist', (error, stdout, stderr) => {
+    if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+    if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) }
+    if (!stdout.includes('java.exe')) {
+      exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
+    }
+    if (!stdout.includes('mongod.exe')) {
+      exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
+    }
+    if (!stdout.includes('mitmdump.exe')) {
+      exec(`del ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`);
+    }
+  });
   exec(`taskkill /f /im curl.exe`);
-  exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
-  exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
-  exec(`del ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`);
   exec(`del ${global.packagedPaths.dataPath}\\add_root_crt.bat`);
   exec(`del ${global.packagedPaths.dataPath}\\run_3dmigoto.bat`);
 });
-
-(async () => {
-  await createMitmCA();
-  try {
-    await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
-  } catch(err) {
-    console.log("app.config.json not exists");
-  }
-})();
 
 
 
@@ -193,10 +218,10 @@ ipcMain.on('render-ready', async (event) => {
     win.webContents.openDevTools();
   }
   if (await checkGateServer()) {
+    await createMitmCA();
     await rwAppConfig();
     await rwMods();
     await rwPlugs();
-    await updateAPP();
   }
 });
 
@@ -212,7 +237,9 @@ ipcMain.on('update_latest', (event, gc_org_url) => {
 });
 
 ipcMain.on('handelClose', async (event, gcInputRender, proxyInputRender) => {
-  await rwAppConfig("simple-save", gcInputRender, proxyInputRender);
+  if (gateServerStatus) {
+    await rwAppConfig("simple-save", gcInputRender, proxyInputRender);
+  }
   app.quit();
 })
 
@@ -241,12 +268,16 @@ ipcMain.on('resGetWayButton_1-set', () => {
 });
 
 ipcMain.on('officialKeystoreBox-set', () => {
-  officialKeystore();
+  officialKeystore("render");
 });
 
 ipcMain.on('selfSignedKeystoreBox-set', () => {
-  selfSignedKeystore();
+  selfSignedKeystore("render");
 });
+
+ipcMain.on('noKeystoreBoxBox-set', () => {
+  noKeystore("render");
+})
 
 ipcMain.on('proxyUsingSSLCheckbox_ClickHandler-set-on', () => {
   SSLStatus = true;
@@ -267,8 +298,8 @@ ipcMain.on('restoreOfficialButton_delete-path', (event) => {
           console.error(`执行出错: ${error}`);
           return;
         }
-        console.log(`${stdout}`);
-        console.error(`${stderr}`);
+        console.log(stdout);
+        console.error(stderr);
       });
       patchExists = false;
       event.sender.send('chooseGamePathButton_selected-file', gamePath, patchExists, "delete_patch_succ");
@@ -458,6 +489,61 @@ ipcMain.on('plugsDragArea-add-file', async (event, filePaths) => {
   }
 });
 
+ipcMain.on('connTestBtn_test-conn', async (event, gcInputRender, proxyInputRender) => {
+  console.log("test conn", gcInputRender, proxyInputRender);
+  let token;
+  const host = (SSLStatus ? "https://" : "http://") + gcInputRender[0] + ":" + gcInputRender[2] + "/opencommand/api";
+  try {
+    await fs.promises.access(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins", "opencommand-plugin", "config.json"));
+    const OCConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
+    const OCConfig = JSON.parse(OCConfigData);
+    token = OCConfig.consoleToken ? OCConfig.consoleToken : "52837291";
+  } catch(err) {
+    console.log(err);
+    token = "52837291";
+  }
+  console.log(host)
+  let data = {
+    token: token,
+    action: "",
+    server: "",
+    data: {}
+  }
+  let reqConfig = {
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    timeout: 5000
+  };
+  if (SSLStatus !== false) {
+    reqConfig.httpsAgent = new https.Agent({ rejectUnauthorized: false });
+  }
+  try {
+    data.action = "ping";
+    const response0 = await axios.post(host, data, reqConfig);
+    console.log(response0.data, "\nfinished ping");
+    data.action = "online";
+    const response1 = await axios.post(host, data, reqConfig);
+    console.log(response1.data, "\nfinished get online players");
+    if (response1.data.message == "Success") {
+      win.webContents.send('showMessageBox', "info", `<i class="fa-solid fa-link"></i>&nbsp;连接成功！`,
+      `retcode: ${response1.data.retcode},
+      message: '${response1.data.message}'<br>当前在线人数：${response1.data.data.count}<br>
+      当前服务端版本：${response0.data.data}`);
+    } else {
+      win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接成功，但获取失败！`,
+      `retcode: ${response1.data.retcode},
+      message: '${response1.data.message}'<br>请检查是否更改了opencommand配置！<br><a style="font-size: 16px;">
+      ${path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins", "opencommand-plugin")}</a>`);
+    }
+  } catch (error) {
+    win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接失败！`,
+    `err.code: ${error.code} <br> 请检查服务是否已启动、端口是否已开放、IP是否可连接`);
+    console.error(error.code, "\nerr details has been written to log file");
+    fs.appendFileSync(path.join(logDirPath, `${currentMoment}.log`), `${error.message}\n${error.stack}\n\n`);
+  }
+});
+
 ipcMain.on('editAppConfigBtn-edit', async (event) => {
   try {
      await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
@@ -479,7 +565,7 @@ ipcMain.on('exportAppConfigBtn-export', async (event, gcInputRender, proxyInputR
     if (!result.canceled && result.filePaths.length > 0) {
       try {
         const exportPath = result.filePaths[0];
-        exec(`copy "${path.join(global.packagedPaths.entryPath, "app.config.json")}" "${path.join(exportPath, `app.config_${currentMoment}.json`)}"`, {encoding: "binary"}, (error, stdout, stderr) => {
+        exec(`copy "${path.join(global.packagedPaths.entryPath, "app.config.json")}" "${path.join(exportPath, `app.config_${moment().tz("Asia/Shanghai").format('YYYY-MM-DD_HH-mm-ss')}.json`)}"`, {encoding: "binary"}, (error, stdout, stderr) => {
           if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
           if (stdout) {
             console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
@@ -515,21 +601,15 @@ ipcMain.on('importAppConfigBtn-import', async (event) => {
           if (stdout) {
             console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
             console.log("Imported", configPath);
-            const resp0 = await dialog.showMessageBox(win, {
-              type: 'info',
-              title: '导入应用配置',
-              message: '导入成功！将重启应用以应用更改',
-            });
-            app.relaunch();
-            app.exit(0);
+            win.webContents.send('showMessageBox', "info", `导入应用配置`, `导入成功！将重启应用以应用更改`);
+            ipcMain.once('showMessageBox-callback', () => {
+              app.relaunch();
+              app.exit(0);
+            })
           };
           if (stderr) {
             console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'))
-            const resp1 = await dialog.showMessageBox(win, {
-              type: 'warning',
-              title: '导入应用配置',
-              message: '导入失败！',
-            });
+            win.webContents.send('showMessageBox', "warning", `导入应用配置`, `导入失败！`);
           };    
         })
       } catch(err) {
@@ -743,56 +823,54 @@ ipcMain.on('operationBoxBtn_3-run-3dmigoto', (event) => {
 });
 
 ipcMain.on('clear_data', async (event) => {
-  const resp0 = await dialog.showMessageBox(win, {
-    type: 'warning',
-    title: '恢复出厂',
-    message: '确定要恢复出厂吗？这将会删除所有的使用痕迹，包括你的游戏数据！！！被删除的数据将无法找回！！！',
-    buttons: ['确定', '取消'],
-    defaultId: 1,
-    cancelId: 1
-  });
+  win.webContents.send('showMessageBox', "warning", `恢复出厂`,
+    `确定要恢复出厂吗？这将会删除所有的使用痕迹，包括你的游戏数据！！！被删除的数据将无法找回！！！`, ["confirm", "cancel"]);
 
-  if (resp0.response === 0) {
-    win.webContents.send('clearing_data');
-    exec(`rm ${global.packagedPaths.entryPath}\\app.config.json`,{ encoding: 'binary' },(error,stdout,stderr) => {        
-      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-    });
-    exec(`for /r ${global.packagedPaths.gateServerPath}\\MongoDB\\data %G in (*.*) do del /s /q %G & for /d %G in (${global.packagedPaths.gateServerPath}\\MongoDB\\data\\*) do rmdir /s /q %G`, { encoding: 'binary' }, (error, stdout, stderr) => {
-      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-    });
-    exec(`rmdir /s /q "${global.packagedPaths.gateServerPath}\\Grasscutter\\GM Handbook"`,{ encoding: 'binary' },(error,stdout,stderr) => {
-      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-    });
-    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\logs`,{ encoding: 'binary' },(error,stdout,stderr) => {
-      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-    });
-    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\cache`,{ encoding: 'binary' },(error,stdout,stderr) => {
-      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-    });
-    exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\data\\gacha`,{ encoding: 'binary' },(error,stdout,stderr) => {
-      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-    });
-    const resp2 = await dialog.showMessageBox(win, {
-      type: 'info',
-      title: '恢复出厂',
-      message: '将重启应用以应用更改',
-      buttons: ['确定']
-    });
-    app.relaunch();
-    app.exit(0);
-  }
+  ipcMain.once('showMessageBox-callback', (event, callback) => {
+    if (callback === "confirm") {
+      win.webContents.send('clearing_data');
+      exec(`for /r ${global.packagedPaths.gateServerPath}\\MongoDB\\data %G in (*.*) do del /s /q %G & for /d %G in (${global.packagedPaths.gateServerPath}\\MongoDB\\data\\*) do rmdir /s /q %G`, { encoding: 'binary' }, (error, stdout, stderr) => {
+        if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+        if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+        if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+      });
+      exec(`del ${global.packagedPaths.entryPath}\\app.config.json`,{ encoding: 'binary' },(error,stdout,stderr) => {        
+        if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+        if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+        if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+      });
+      exec(`rmdir /s /q "${global.packagedPaths.gateServerPath}\\Grasscutter\\GM Handbook"`,{ encoding: 'binary' },(error,stdout,stderr) => {
+        if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+        if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+        if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+      });
+      exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\logs`,{ encoding: 'binary' },(error,stdout,stderr) => {
+        if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+        if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+        if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+      });
+      exec(`del /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12`,{ encoding: 'binary' },(error,stdout,stderr) => {
+        if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+        if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+        if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+      });
+      exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\cache`,{ encoding: 'binary' },(error,stdout,stderr) => {
+        if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+        if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+        if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+      });
+      exec(`rmdir /s /q ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\data\\gacha`,{ encoding: 'binary' },(error,stdout,stderr) => {
+        if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+        if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+        if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+      });
+      win.webContents.send('showMessageBox', "info", `恢复出厂`, `将重启应用以应用更改`);
+      ipcMain.once('showMessageBox-callback', () => {
+        app.relaunch();
+        app.exit(0);
+      })
+    }
+  })
 });
 
 
@@ -921,15 +999,19 @@ certutil -addstore -f "Root" "%USERPROFILE%\\.mitmproxy\\mitmproxy-ca-cert.cer"\
 exit\r`;
 
   let files = [
-    {name: 'run_mitm_proxy.bat', content: mitm_proxy_batch},
     {name: 'add_root_crt.bat', content: add_root_crt_batch}
   ];
 
-  if (action !== "proxy-only") {
+  if (action !== "proxy-only" && action !== "init-crt") {
     files.push(
       {name: 'run_gc.bat', content: gc_batch},
-      {name: 'run_mongo.bat', content: mongo_batch}
+      {name: 'run_mongo.bat', content: mongo_batch},
+      {name: 'run_mitm_proxy.bat', content: mitm_proxy_batch}
     );
+  } else if (action === "proxy-only") {
+    files.push(
+      {name: 'run_mitm_proxy.bat', content: mitm_proxy_batch}
+    )
   }
 
   try {
@@ -969,213 +1051,47 @@ async function createMitmCA () {
   }
 }
 
-function compareVersions(v1, v1suffix, v2, v2suffix) {
-  let s1 = v1.split('.').map(Number);
-  let s2 = v2.split('.').map(Number);
-  for(let i = 0; i < Math.max(s1.length, s2.length); i++) {
-      let n1 = s1[i] || 0;
-      let n2 = s2[i] || 0;
-      if (n1 > n2) return 1;
-      if (n2 > n1) return -1;
-  }
-  const versionSuffixPriority = {
-    'alpha': 1,
-    'beta': 2,
-    '': 3
-  };
-  if (versionSuffixPriority[v1suffix] > versionSuffixPriority[v2suffix]) return 1;
-  if (versionSuffixPriority[v1suffix] < versionSuffixPriority[v2suffix]) return -1;
-  return 0;
-}
-
-async function fetchRelease(resURL) {
-  const response = await fetch(`${resURL[2]}/repos/btjawa/BTJGenshinPS/tags`);
-  const tags = await response.json();
-  const latestTag = tags[0].name.replace('v', '');
-  const latestMatches = latestTag.match(/^([\d\.]+)-?(\w+)?/);
-  const latestTagVersion = latestMatches[1];
-  const latestTagType = latestMatches[2];
-  return {
-      latestTagVersion,
-      latestTagType,
-      latestTag
-  };
-}
-
-async function unzipFile(inputZipPath, outputDirectory) {
+async function unzipFile(inputZip, outputDir) {
   return new Promise((resolve, reject) => {
-    yauzl.open(inputZipPath, { lazyEntries: true }, (err, zipfile) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      zipfile.readEntry();
-      zipfile.on("entry", (entry) => {
-        const outputPath = path.join(outputDirectory, entry.fileName);
-        if (/\/$/.test(entry.fileName)) {
-          fs.mkdir(outputPath, { recursive: true }, (err) => {
-            if (err) {
-              reject(err);
-              return;
-            }
-            zipfile.readEntry();
-          });
+    const zip = new StreamZip({
+      file: inputZip,
+      storeEntries: true
+    });
+
+    zip.on('error', reject);
+
+    zip.on('ready', () => {
+      zip.extract(null, outputDir, (err, count) => {
+        if (err) {
+          reject(err);
         } else {
-          zipfile.openReadStream(entry, (err, readStream) => {
-            if (err) {
-              reject(err);
-              return;
-            }
-            fs.mkdir(path.dirname(outputPath), { recursive: true }, (err) => {
-              if (err) {
-                reject(err);
-                return;
-              }
-              readStream.pipe(fs.createWriteStream(outputPath));
-              readStream.on("end", () => {
-                zipfile.readEntry();
-              });
-            });
-          });
+          console.log(`Extracted ${count} entries to ${outputDir}`);
+          zip.close();
+          resolve();
         }
-      });
-      zipfile.on("end", () => {
-        resolve();
-      });
-      zipfile.on("error", (err) => {
-        reject(err);
       });
     });
   });
 }
 
-async function updateAPP() {
-  try {
-    console.log("Current Version:", currentVersion);
-    const currentMatches = currentVersion.match(/^([\d\.]+)-?(\w+)?/);
-    let currentVersionNum;
-    let currentVersionType;
-    if (currentMatches) {
-        currentVersionNum = currentMatches[1];
-        currentVersionType = currentMatches[2];
-    } else {
-      console.log("Format err:",currentVersion);
-      return;
-    }
-    const { latestTagVersion, latestTagType, latestTag } = await fetchRelease(resURL);
-
-    if (compareVersions(latestTagVersion, latestTagType, currentVersionNum, currentVersionType) === 1) {
-      if (app.isPackaged) {
-        console.log("Update available:", latestTag);
-        const resp0 = await dialog.showMessageBox(win, {
-          type: 'info',
-          title: '更新',
-          message: 'Github发布了新版本！是否更新APP？（不影响游戏数据）',
-          buttons: ['确定', '取消'],
-          defaultId: 1,
-          cancelId: 1
-        });
-        if (resp0.response === 0) {
-          win.webContents.send('app_update');
-          const downloadAppURL = `${resURL[0]}/btjawa/BTJGenshinPS/releases/download/v${latestTagVersion}-${latestTagType}/BTJGenshinPS-${latestTagVersion}-win32-ia32-app-${latestTagType}.zip`;
-          console.log("APP URL:", downloadAppURL);
-          await downloadFile(downloadAppURL, path.join(global.packagedPaths.entryPath, `BTJGenshinPS-win32-ia32-app.zip`), "App本体");
-          win.webContents.send('app_update_download_complete');
-          console.log("Download APP Update Completed");
-
-          const appExtractPath = path.join(global.packagedPaths.entryPath, "temp_update");
-          const appZipPath = path.join(global.packagedPaths.entryPath, "BTJGenshinPS-win32-ia32-app.zip");
-          await unzipFile(appZipPath, appExtractPath);
-
-          fs.unlink(appZipPath, (err) => {
-            if (err) {
-              console.error('Error deleting APP ZIP file:', err);
-              reject(err);
-              return;
-            }
-            console.log('APP ZIP file deleted successfully.');
-            console.log(appZipPath);
-          });
-
-          const update_app_batch = `@echo off\r
-chcp 65001>nul\r
-title Update\r
-for /D %%D in (*) do (\r
-if /I not "%%D"=="resources" (\r
-    rmdir /s /q "%%D"\r
-)\r
-)\r
-for %%F in (*) do (\r
-del "%%F"\r
-)\r
-rmdir /s /q ${global.packagedPaths.entryPath}\\data\r
-rmdir /s /q ${global.packagedPaths.entryPath}\\docs\r
-del ${global.packagedPaths.entryPath}\\app.asar\r
-xcopy "${global.packagedPaths.entryPath}\\temp_update" . /E /Y\r
-rmdir /s /q "${global.packagedPaths.entryPath}\\temp_update"\r
-start "" BTJGenshinPS.exe\r
-del ${global.packagedPaths.entryPath}\\update_app.bat\r`;
-
-          await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, 'update_app.bat'), update_app_batch, (err) => {
-            if (err) {
-              console.error(err);
-            } else {
-              console.log('Created update_app.bat');
-            }
-          });
-          const resp1 = await dialog.showMessageBox(win, {
-            type: 'info',
-            title: '更新',
-            message: '将重启应用以应用更改',
-            buttons: ['确定']
-          });
-          console.log("Restart APP to Complete Update");
-          spawn('cmd.exe', ['/c', `${path.join(global.packagedPaths.entryPath, 'update_app.bat')}`], {
-            detached: true,
-            stdio: 'ignore'
-          }).unref();
-          await rwAppConfig("simple-save", gcInputRender, proxyInputRender);
-          app.quit();
-        }
-      } else {
-        const resp1 = await dialog.showMessageBox(win, {
-          type: 'info',
-          title: '更新',
-          message: '有新Release！请前往Github查看以更新该开发版本！',
-        });
-      }
-    } else {
-      console.log("You are up to date! Github Latest Version:", latestTag);
-  }
-  } catch (error) {
-      console.error(error);
-  }
-}
-
-
 async function checkGateServer() {
   try {
     await fs.promises.access(global.packagedPaths.gateServerPath);
+    gateServerStatus = true;
     return true;
   } catch(err) {
     if (err.code === "ENOENT") {
       console.log("GateServer not found");
       if (app.isPackaged) {
-        await dialog.showMessageBox(win, {
-          type: 'info',
-          title: 'GateServer',
-          message: 'GateServer不存在！请从Github下载最新GateServer\n并解压至 resources\\GateServer ！\n应用已进入沙盒模式...',
-        });
+        win.webContents.send('showMessageBox', "warning", `GateServer`, `GateServer不存在！请从Github下载最新GateServer\n并解压至 resources\\GateServer ！\n应用已进入沙盒模式...`);
       } else {
-        await dialog.showMessageBox(win, {
-          type: 'warning',
-          title: 'GateServer',
-          message: 'GateServer不存在！请补全以便能正常package！',
-        });
+        win.webContents.send('showMessageBox', "warning", `GateServer`, `GateServer不存在！请补全以便能正常package！`);
       }
       win.webContents.send('gateserver_not-exists');
+      gateServerStatus = false;
       return false;
     } else {
+      gateServerStatus = null;
       console.error(err);
     }
   }
@@ -1187,85 +1103,140 @@ async function sendPatchGamePath(gamePath) {
   const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf8');
   let appConfig;
   try {
-    try {
-      await fs.promises.access(`${gamePathDir}\\version.dll`);
-      appConfig = JSON.parse(appConfigData);
-      if (gamePath !== "") {
-          patchExists = true;
-          win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
-          if (appConfig.game) {
-            appConfig.game.path = gamePath;
-          } else {
-            appConfig.game = { path: gamePath };
-          }
-      }
-      await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
-      console.log('app.config.json Updated Successfully');
-    } catch (error) {
-      if (gamePath !== "") {
-          const result = execSync(`copy "${global.packagedPaths.dataPath}\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, { encoding: 'binary' });
-          console.log(iconv.decode(Buffer.from(result, 'binary'), 'GBK'));
-          console.log("RSA Patched");
-          patchExists = true;
-          win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
-      }
-      appConfig = JSON.parse(appConfigData);
-      if (appConfig.game && appConfig.game.path) {
-          patchExists = true;
-      }
+    await fs.promises.access(`${gamePathDir}\\version.dll`);
+    appConfig = JSON.parse(appConfigData);
+    if (gamePath !== "") {
+        patchExists = true;
+        win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
+        if (appConfig.game) {
+          appConfig.game.path = gamePath;
+        } else {
+          appConfig.game = { path: gamePath };
+        }
     }
-  } catch (err) {
-    console.error(err);
+    await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
+    console.log('app.config.json Updated Successfully');
+  } catch (error) {
+    if (gamePath !== "") {
+        const result = execSync(`copy "${global.packagedPaths.dataPath}\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, { encoding: 'binary' });
+        console.log(iconv.decode(Buffer.from(result, 'binary'), 'GBK'));
+        console.log("RSA Patched");
+        patchExists = true;
+        win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
+    }
+    appConfig = JSON.parse(appConfigData);
+    if (appConfig.game && appConfig.game.path) {
+        patchExists = true;
+    }
   }
 }
 
 
-async function selfSignedKeystore() {
-  exec(`copy "${global.packagedPaths.dataPath}\\keystore_selfsigned.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, { encoding: 'binary' }, (error, stdout, stderr) => {
-    if (error) {
-      console.log(error);
-      return;
+async function selfSignedKeystore(action) {
+  try {
+    exec(`copy "${global.packagedPaths.dataPath}\\keystore_selfsigned.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, { encoding: 'binary' }, (error, stdout, stderr) => {
+      if (error) {
+        console.log(error);
+        return;
+      }
+      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+      console.log("selfSignedKeystore");
+      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+    });
+    try {    
+      await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
+      const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
+      const appConfig = JSON.parse(appConfigData);
+      if (appConfig.grasscutter.dispatch) {
+        appConfig.grasscutter.dispatch.ssl = "selfsigned"
+      }
+      if (action === "render") {
+        if (appConfig.proxy) {
+          SSLStatus = true;
+          appConfig.proxy.ssl = SSLStatus;
+          win.webContents.send('ssl_status', SSLStatus);
+          await writeAcConfig('ssl-set');
+        }
+      }
+      await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
+      console.log('app.config.json Updated successfully');
+    } catch (err) {
+      console.error(err)
     }
-    if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-    console.log("selfSignedKeystore");
-    if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-  });
-  try {    
-    await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
-    const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
-    const appConfig = JSON.parse(appConfigData);
-    if (appConfig.grasscutter.dispatch) {
-      appConfig.grasscutter.dispatch.ssl = "selfsigned"
-    }
-    await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
-    console.log('app.config.json Updated successfully');
-  } catch (err) {
-    console.error(err)
+  } catch(err) {
+    console.log(err);
   }
 };
 
 
-async function officialKeystore() {
-  exec(`copy "${global.packagedPaths.dataPath}\\keystore_official.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, { encoding: 'binary' }, (error, stdout, stderr) => {
-    if (error) {
-      console.log(error);
-      return;
-    }
-    if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-    console.log("officialKeystore");
-    if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-  });
+async function officialKeystore(action) {
   try {
-    await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
-    const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
-    const appConfig = JSON.parse(appConfigData);
-    if (appConfig.grasscutter.dispatch) {
-      appConfig.grasscutter.dispatch.ssl = "official"
+    exec(`copy "${global.packagedPaths.dataPath}\\keystore_official.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, { encoding: 'binary' }, (error, stdout, stderr) => {
+      if (error) {
+        console.log(error);
+        return;
+      }
+      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+      console.log("officialKeystore");
+      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+    });
+    try {
+      await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
+      const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
+      const appConfig = JSON.parse(appConfigData);
+      if (appConfig.grasscutter.dispatch) {
+        appConfig.grasscutter.dispatch.ssl = "official"
+      }
+      if (action === "render") {
+        if (appConfig.proxy) {
+          SSLStatus = true;
+          appConfig.proxy.ssl = SSLStatus;
+          win.webContents.send('ssl_status', SSLStatus);
+          await writeAcConfig('ssl-set');
+        }
+      }
+      await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
+      console.log('app.config.json Updated successfully');
+    } catch (err) {
+      console.error(err)
     }
-    await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
-    console.log('app.config.json Updated successfully');
-  } catch (err) {
-    console.error(err)
+  } catch(err) {
+    console.log(err);
+  }
+};
+
+async function noKeystore(action) {
+  try {
+    try {
+      await fs.promises.unlink(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "keystore.p12"));
+    } catch(err) {
+        if(err.code !== 'ENOENT') {
+            console.error(err);
+        }
+    }
+    console.log("noKeystore");
+    try {
+      await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
+      const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
+      const appConfig = JSON.parse(appConfigData);
+      if (appConfig.grasscutter.dispatch) {
+        appConfig.grasscutter.dispatch.ssl = "no"
+      }
+      if (action === "render") {
+        if (appConfig.proxy) {
+          SSLStatus = false;
+          appConfig.proxy.ssl = SSLStatus;
+          win.webContents.send('ssl_status', SSLStatus);
+          await writeAcConfig('ssl-set');
+        }
+      }
+      await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
+      console.log('app.config.json Updated successfully');
+    } catch (err) {
+      console.error(err)
+    }
+  } catch(err) {
+    console.log(err);
   }
 };
 
@@ -1442,6 +1413,10 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
           else if (appConfig.grasscutter.dispatch.ssl == "official") {
             officialKeystore();
             win.webContents.send('ssl_ver', "officialKeystore");
+          }
+          else if (appConfig.grasscutter.dispatch.ssl == "no") {
+            noKeystore();
+            win.webContents.send('ssl_ver', "noKeystore");
           }
           if (appConfig.grasscutter.host!=="127.0.0.1" && appConfig.grasscutter.host!=="localhost" && appConfig.grasscutter.host!=="0.0.0.0"){
             appConfig.grasscutter.dispatch.host = "dispatchcnglobal.yuanshen.com";
@@ -1730,10 +1705,12 @@ async function rwPlugs() {
     await fs.promises.access(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins"));
     const plugsPath = path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins");
     const allPlugs = await fs.promises.readdir(plugsPath);
-    if (allPlugs.length == 0) {
+    const jarFiles = allPlugs.filter(file => file.endsWith('.jar'));
+    
+    if (jarFiles.length == 0) {
       win.webContents.send('plugs-list', "empty");
     } else {
-      win.webContents.send('plugs-list', allPlugs);
+      win.webContents.send('plugs-list', jarFiles);
     }
   } catch(err) {
     console.error(err);
@@ -1766,9 +1743,12 @@ async function update(gc_org_url) {
 async function downloadFile(url, outputPath, action) {
   const proxyServer = await getSystemProxy();
   const curlArgs = ['-Lo', outputPath, url];
-  if (proxyServer) {
-    curlArgs.unshift('--proxy', `http://${proxyServer}`);
-    win.webContents.send('using_proxy', proxyServer);
+  if (proxyServer) { //ignore mitm proxy
+    const [host, port] = proxyServer.split(':');
+    if (port !== "54321") {
+      curlArgs.unshift('--proxy', `http://${proxyServer}`);
+      win.webContents.send('using_proxy', proxyServer);
+    }
   };
   return new Promise((resolve, reject) => {
     const curl = spawn('curl.exe', curlArgs);
@@ -1797,16 +1777,14 @@ async function run_main_service (gcInputRender, proxyInputRender) {
     return;
   }
   win.webContents.send('operationBoxBtn_0-success');
-  const add_root_crt_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\add_root_crt.bat`], {
-    stdio: 'ignore'
-  });
   const mongo_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mongo.bat`], {
     stdio: 'ignore'
   });
   const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`], {
     stdio: 'ignore'
   });
-  const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat  ${javaPath}`], {
+  console.log(javaPath)
+  const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat ${javaPath}`], {
     stdio: 'ignore'
   });
 }
@@ -1821,9 +1799,6 @@ async function run_proxy_service (gcInputRender, proxyInputRender) {
     return;
   }
   win.webContents.send('operationBoxBtn_proxy-success');
-  const add_root_crt_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\add_root_crt.bat`], {
-    stdio: 'ignore'
-  });
   const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`], {
     stdio: 'ignore'
   });
@@ -1841,12 +1816,7 @@ async function run_game() {
       console.log(stderr);
     });
   } else {
-    dialog.showMessageBox(win, {
-      type: 'info',
-      title: '启动游戏',
-      message: '游戏路径不存在！请点击“选择路径”选择游戏路径！',
-      buttons: ['确定']
-    });
+    win.webContents.send('showMessageBox', "info", `启动游戏`, `游戏路径不存在！请点击“选择路径”选择游戏路径！`);
   }
 }
 
@@ -1861,12 +1831,7 @@ async function run_3dmigoto() {
         try {
           _3DMigotoConfig.Loader.target = gamePath;
         } catch(err) {
-          dialog.showMessageBox(win, {
-            type: 'info',
-            title: '配置游戏路径',
-            message: '游戏路径不存在！请点击“选择路径”选择游戏路径！',
-            buttons: ['确定']
-          });
+          win.webContents.send('showMessageBox', "info", `启动游戏`, `游戏路径不存在！请点击“选择路径”选择游戏路径！`);
         }
       }
       await fs.promises.writeFile(path.join(_3DMigotoPathDir, "d3dx.ini"), ini.stringify(_3DMigotoConfig), 'utf-8');
@@ -1885,12 +1850,7 @@ exit`;
       }
     } catch(err) {
       if (err.code === "ENOENT") {
-        dialog.showMessageBox(win, {
-          type: 'info',
-          title: '注入3DMigoto',
-          message: '3DMigoto路径不存在！请在设置中点击“选择3DMigoto路径”选择路径！',
-          buttons: ['确定']
-        });
+        win.webContents.send('showMessageBox', "info", `注入3DMigoto`, `3DMigoto路径不存在！请在设置中点击“选择3DMigoto路径”选择路径！`);
       }
     }
 }

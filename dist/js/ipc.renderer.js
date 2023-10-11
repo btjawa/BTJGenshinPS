@@ -19,6 +19,7 @@ const elems = {
     resVersionLink: $('.res_version'),
     selfSignedKeystoreBox: $(".ssl_ver_0 input[type='checkbox']"),
     officialKeystoreBox: $(".ssl_ver_1 input[type='checkbox']"),
+    noKeystoreBox: $(".ssl_ver_2 input[type='checkbox']"),
     patchState: $('.patch_state'),
     operationBoxBtn_0: $('.operation_box_btn_0'),
     operationBoxBtn_1: $('.operation_box_btn_1'),
@@ -26,6 +27,7 @@ const elems = {
     operationBoxBtn_2: $('.operation_box_btn_2'),
     operationBoxBtn_3: $('.operation_box_btn_3'),
     updateBtn: $('.page_0_text_1_update_btn'),
+    connTestBtn: $('.page_0_text_conn_test_btn'),
     updateProgress: $('.update_progress'),
     resVersion: $('.res_version'),
     gcVersion: $('.gc_version'),
@@ -94,21 +96,26 @@ $(window).on('devtoolschange', event => {
 $(document).ready(function() {
     ipcRenderer.send('render-ready');
     getLatestCommitID();
-    $(elems.officialKeystoreBox).on('change', function() {
-        if ($(this).prop('checked')) {
-            $(elems.selfSignedKeystoreBox).prop('checked', false);
-        } else {
-            $(this).prop('checked', true);
-        }
-    });
-    
     $(elems.selfSignedKeystoreBox).on('change', function() {
         if ($(this).prop('checked')) {
             $(elems.officialKeystoreBox).prop('checked', false);
-        } else {
-            $(this).prop('checked', true);
+            $(elems.noKeystoreBox).prop('checked', false);
         }
     });
+
+    $(elems.officialKeystoreBox).on('change', function() {
+        if ($(this).prop('checked')) {
+            $(elems.selfSignedKeystoreBox).prop('checked', false);
+            $(elems.noKeystoreBox).prop('checked', false);
+        }
+    });
+    
+    $(elems.noKeystoreBox).on('change', function() {
+        if ($(this).prop('checked')) {
+            $(elems.officialKeystoreBox).prop('checked', false);
+            $(elems.selfSignedKeystoreBox).prop('checked', false);
+        }
+    });      
 
     $(elems.resGetWayButton_0).on('change', function() {
         if ($(this).prop('checked')) {
@@ -307,6 +314,27 @@ function selfSignedKeystoreBox_ClickHandler() {
 
 elems.selfSignedKeystoreBox.on('click', selfSignedKeystoreBox_ClickHandler);
 
+function noKeystoreBox_ClickHandler() {
+    if (!$(elems.noKeystoreBox).prop('checked')) {
+        elems.noKeystoreBox.off('click', noKeystoreBox_ClickHandler);
+        $(elems.noKeystoreBox).prop('checked', true);
+        elems.noKeystoreBox.on('click', noKeystoreBox_ClickHandler);
+        return;
+    }
+    ipcRenderer.send('noKeystoreBoxBox-set');
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: 'Keystore',
+        message: '已停用SSL！',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+}
+
+elems.noKeystoreBox.on('click', noKeystoreBox_ClickHandler);
+
 function proxyUsingSSLCheckbox_ClickHandler() {
     if ($(elems.proxyUsingSSLCheckbox).prop('checked')) {
         ipcRenderer.send('proxyUsingSSLCheckbox_ClickHandler-set-on');
@@ -385,32 +413,18 @@ function operationBoxBtn_3_ClickHandler() {
 
 elems.operationBoxBtn_3.on('click', operationBoxBtn_3_ClickHandler);
 
-elems.updateBtn.on('click', () => {
+elems.connTestBtn.on('click', () => {
+    save_settings();
+    ipcRenderer.send('connTestBtn_test-conn', gcInputRender, proxyInputRender);
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
-        layout: '3',
-        title: '更新',
-        message: '正在尝试更新...<br>注意插件等需要手动更新！',
+        layout: '2',
+        title: '测试连接',
+        message: `HOST:&nbsp;${gcInputRender[0]}&emsp;PORT:&nbsp;${gcInputRender[2]}`,
         onOpening: function() {
             izi_notify()
         }
     });
-    fetch('https://api.github.com/repos/Grasscutters/Grasscutter/releases/latest')
-        .then(response => response.json())
-        .then(data => {
-            const latestReleaseUrl = data.assets[0].browser_download_url;
-            ipcRenderer.send('update_latest', latestReleaseUrl);
-        })
-        .catch(error => {
-            iziToast.error({
-                icon: 'fa-solid fa-circle-exclamation',
-                layout: '2',
-                title: 'Github API 已超限！请等待一分钟！',
-                onOpening: function() {
-                    izi_notify()
-                }
-            });
-        });
 });
 
 elems.clearData.on('click', () => {
@@ -466,6 +480,7 @@ elems.editAppConfigBtn.on('click', () => {
 });
 
 elems.exportAppConfigBtn.on('click', () => {
+    save_settings();
     ipcRenderer.send('exportAppConfigBtn-export', gcInputRender, proxyInputRender);
 });
 
@@ -477,7 +492,40 @@ elems.importAppConfigBtn.on('click', () => {
 
 // IPC PROCESS
 
-
+ipcRenderer.on('showMessageBox', (event, type, title, message, buttons = [], btn_texts = []) => {
+    let options = {
+        icon: type,
+        title: title,
+        html: message,
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        denyButtonText: '拒绝'
+    };
+    if (buttons.includes('confirm') && btn_texts[buttons.indexOf('confirm')]) {
+        options.confirmButtonText = btn_texts[buttons.indexOf('confirm')];
+    } 
+    if (buttons.includes('cancel')) {
+        options.showCancelButton = true;
+        if (btn_texts[buttons.indexOf('cancel')]) {
+            options.cancelButtonText = btn_texts[buttons.indexOf('cancel')];
+        }
+    }
+    if (buttons.includes('deny')) {
+        options.showDenyButton = true;
+        if (btn_texts[buttons.indexOf('cancel')]) {
+            options.denyButtonText = btn_texts[buttons.indexOf('deny')];
+        }
+    }    
+    Swal.fire(options).then((result) => {
+        if (result.isConfirmed) {
+            ipcRenderer.send('showMessageBox-callback', 'confirm');
+        } else if (result.isDenied) {
+            ipcRenderer.send('showMessageBox-callback', 'deny');
+        } else if (result.isDismissed) {
+            ipcRenderer.send('showMessageBox-callback', 'cancel');
+        }
+    });
+});
 
 ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
     iziToast.info({
@@ -505,9 +553,15 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
     if (ver === "selfSignedKeystore") {
         elems.selfSignedKeystoreBox.prop('checked', true);
         elems.officialKeystoreBox.prop('checked', false);
+        elems.noKeystoreBox.prop('checked', false);
     } else if (ver === "officialKeystore") {
         elems.selfSignedKeystoreBox.prop('checked', false);
         elems.officialKeystoreBox.prop('checked', true);
+        elems.noKeystoreBox.prop('checked', false);
+    } else if (ver === "noKeystore") {
+        elems.selfSignedKeystoreBox.prop('checked', false);
+        elems.officialKeystoreBox.prop('checked', false);
+        elems.noKeystoreBox.prop('checked', true);
     }
 })
 
@@ -538,6 +592,18 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
 .on('main-window-unmax', () => {
     elems.dragbar_window.css('display', 'none');
     elems.dragbar_maximize.css('display', 'block');
+})
+
+.on('add_crt', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: 'root.crt',
+        message: '成功导入根证书！',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
 })
 
 .on('openHandbookHTMLBtn_not-found', (event) => {
@@ -849,32 +915,6 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
     });
 })
 
-
-.on('update_complete', (event) => {
-    elems.updateProgress.html("下载进度将会显示在这里");
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '2',
-        title: '更新',
-        message: '更新成功！',
-        onOpening: function() {
-            izi_notify()
-        }
-    });
-})
-
-.on('app_update', (event) => {
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '2',
-        title: '更新',
-        message: '开始下载APP更新...',
-        onOpening: function() {
-            izi_notify()
-        }
-    });
-})
-
 .on('gateserver_not-exists', (event) => {
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
@@ -889,40 +929,13 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
     elems.operationBoxBtn_proxy.addClass("disabled");
     elems.operationBoxBtn_3.addClass("disabled");
     elems.choose3DMigotoPathButton.addClass("disabled");
-    elems.selfSignedKeystoreBox.addClass("disabled");
-    elems.officialKeystoreBox.addClass("disabled");
     elems.operationBoxBtn_0.off('click', operationBoxBtn_0_ClickHandler);
     elems.operationBoxBtn_proxy.off('click', operationBoxBtn_proxy_ClickHandler);
     elems.operationBoxBtn_3.off('click', operationBoxBtn_3_ClickHandler);
     elems.choose3DMigotoPathButton.off('click', choose3DMigotoPathButton_ClickHandler);
     elems.selfSignedKeystoreBox.off('click', selfSignedKeystoreBox_ClickHandler);
     elems.officialKeystoreBox.off('click', officialKeystoreBox_ClickHandler);
-})
-
-.on('app_update_download_complete', (event) => {
-    elems.updateProgress.html("下载进度将会显示在这里");
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '2',
-        title: '更新',
-        message: '成功下载APP更新！准备重启以完成更新...',
-        onOpening: function() {
-            izi_notify()
-        }
-    });
-})
-
-.on('gateserver_install_download_complete', (event) => {
-    elems.updateProgress.html("下载进度将会显示在这里");
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '2',
-        title: '更新',
-        message: '成功下载GateServer！准备解压...',
-        onOpening: function() {
-            izi_notify()
-        }
-    });
+    elems.noKeystoreBox.off('click', noKeystoreBox_ClickHandler);
 })
 
 .on('clearing_data', (event) => {

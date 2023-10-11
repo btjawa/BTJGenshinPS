@@ -70,7 +70,7 @@ npm run package # Package
 
 ### Update App
 
-自动更新：将会在每次启动应用时自动检测新版本
+自动更新：目前暂时移除，考虑开一个dev分支
 
 手动更新：下载Release中带有 `app` 的zip，替换掉除 `resources` 文件夹以外的所有文件
 

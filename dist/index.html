@@ -8,6 +8,7 @@
         <link rel="stylesheet" href="./css/font-awesome/all.css">
         <link rel="stylesheet" href="./css/iziToast.min.css">
         <script type="text/javascript" src="./js/iziToast.min.js"></script>
+        <script type="text/javascript" src="./js/sweetalert2.all.min.js"></script>
         <link rel="stylesheet" href="./css/style.css">
         <link rel="stylesheet" href="./css/loading-box.css">
         <link rel="stylesheet" href="./css/iconfont.css">
@@ -72,7 +73,7 @@
             </div>
             <div class="page_0_text_patch_flex">
                 <input type="text" name="game_path" disabled="disabled">
-                <div class="patch_state">已检测到补丁&nbsp;(version.dll)</div>
+                <div class="patch_state">已检测到补丁!</div>
             </div>
             <div class="page_0_right_banner">
                 <div class="page_0_text_1_flex">
@@ -89,6 +90,12 @@
                             <span class="label-text"><i class="fa-solid fa-arrow-up"></i>&ensp;直连</span>
                         </label>
                     </div>
+                </div>
+                <div class="page_0_text_conn_test">
+                    <div class="page_0_text_conn_test_text_0">测试连接<br>
+                        <i class="page_settings_text_2_sub">暂只支持使用当前设置<br>需要OpenCommand支持</i>
+                    </div>
+                    <div class="page_0_text_conn_test_btn"><i class="fa-solid fa-link"></i>&ensp;测试连接</div>
                 </div>
                 <a class="page_0_right_banner_title"><i class="fa-solid fa-circle-exclamation"></i>&emsp14;须知</a>
                 <a class="page_0_right_banner_text"><p>
@@ -120,6 +127,11 @@
                     <input type="checkbox">
                     <span class="official-keystore"></span>
                     <span class="label-text">官方证书(不推荐)</span>
+                </label>
+                <label class="ssl_ver_2">
+                    <input type="checkbox">
+                    <span class="no-keystore"></span>
+                    <span class="label-text">不使用SSL</span>
                 </label>
             </div>
             <div class="page_0_text_4">
@@ -223,7 +235,7 @@
                     <button name="open_log_dir">打开日志目录</button>
                     <button name="open_log_latest">打开最新日志</button>
                 </div>
-            <div class="page_settings_text_2">3DMigoto路径&nbsp;<button name="choose_3dmigoto_path">选择3DMigoto路径</button></div>
+            <div class="page_settings_text_2"><i class="fa-solid fa-folder-magnifying-glass"></i>&emsp13;3DMigoto路径&nbsp;<button name="choose_3dmigoto_path">选择3DMigoto路径</button></div>
             <i class="page_settings_text_2_sub">请将exe命名为&nbsp;"3DMigoto Loader.exe"</i>
             <input type="text" name="3dmigoto_path" disabled="disabled">
             <div class="page_settings_text_3"><i class="fa-solid fa-file-check"></i>&emsp13;应用配置</div>

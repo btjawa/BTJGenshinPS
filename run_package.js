@@ -2,8 +2,8 @@ const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const fs = require('fs').promises;
 const path = require('path');
-const version = "1.0.0";
-const type = "beta";
+const packageJson = require('./package.json');
+const [version, type] = packageJson.version.split('-');
 const iconv = require('iconv-lite');
 
 const localesDir = path.join(__dirname, `BTJGenshinPS-${version}-win32-ia32-${type}`, 'locales');
@@ -40,6 +40,11 @@ async function package() {
       console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
 
     ({error, stdout, stderr} = await exec(`xcopy .\\node_modules\\moment-timezone .\\BTJGenshinPS-win32-ia32\\resources\\app\\node_modules\\moment-timezone /E /I /Y`));
+    if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
+
+    ({error, stdout, stderr} = await exec(`xcopy .\\node_modules\\form-data .\\BTJGenshinPS-win32-ia32\\resources\\app\\node_modules\\form-data /E /I /Y`));
     if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
       console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
       console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));

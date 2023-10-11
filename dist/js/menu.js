@@ -3,7 +3,8 @@ const menuItems = [
         selector: 'menu_selector_0',
         page: 'page_0',
         iconClass: 'fa-home',
-        active: true
+        active: true,
+        extra: ["page_0_text_1_flex", "page_0_text_conn_test"]
     },
     {
         selector: 'menu_selector_1',
@@ -31,25 +32,25 @@ const menuItems = [
     }
 ];
 
-function toggleMenuState(activeSelector) {
+function toggleMenuState(selector) {
     menuItems.forEach(item => {
-        const active = item.selector === activeSelector;
+        const active = item.selector === selector;
         const prefix = active ? 'fa-solid' : 'fa-light';
         $(`.${item.selector}_background`).toggleClass('active', active);
         $(`#${item.selector}_icon`).attr("class", `${prefix} ${item.iconClass}`);
         $(`.menu_underline_${item.selector.split('_')[2]}`).toggleClass('active', active);
         $(`.${item.page}`).toggle(active).toggleClass('active', active);
+        if (item.extra) {
+            for (let i = 0; i < item.extra.length; i++) {
+                $(`.${item.extra[i]}`).toggleClass('active', active);
+            }
+        }
     });
 }
 
-$(document).ready(function () {
-    const activeItem = menuItems.find(item => item.active);
-    if (activeItem) {
-        toggleMenuState(activeItem.selector);
-    }
+$(document).ready(() => {
     menuItems.forEach(item => {
-        $(`.${item.selector}`).on('click', function () {
-            toggleMenuState(item.selector);
-        });
+        if (item.active) toggleMenuState(item.selector);
+        $(`.${item.selector}`).on('click', () => toggleMenuState(item.selector));
     });
 });
