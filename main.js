@@ -27,7 +27,7 @@ global.packagedPaths = {
 };
 
 const config_version = 1;
-const logDirPath = path.join(global.packagedPaths.rootPath, 'log');
+const logDirPath = path.join(global.packagedPaths.rootPath, 'logs');
 const EXPRESS_PORT = 52805;
 const defaultAppConfig = { 
   version: config_version,
@@ -97,7 +97,7 @@ app.whenReady().then(async () => {
         console.error(`exec error: ${error}`);
         return;
       }
-      if (stdout.includes('3942b86a38669d255d41f62498ecb782181339b8')) {
+      if (stdout.includes('6fc55dd6c7a9f76ed1d980dd657fcfe6941228ec')) {
         console.log("Found self-signed root crt");
       } else {
         console.log("Self-signed root crt not found, add root crt");
@@ -125,10 +125,12 @@ const checkPort = (port) => {
       const tester = net.createServer()
           .once('error', async (err) => {
               if (err.code === 'EADDRINUSE') {
-                  win.webContents.send('showMessageBox', "warning", `端口已被占用`, `${port}端口已被占用！请检查是否启动了多个APP！`);
-                  ipcMain.once('showMessageBox-callback', () => {
-                    app.quit();
-                  })
+                  const response0 = await dialog.showMessageBox(win, {
+                    type: "warning",
+                    title: "端口已被占用",
+                    message: `${port}端口已被占用！请检查是否启动了多个APP！`
+                  });
+                  app.quit();
                   reject(new Error(`Port ${port} is in use`));
               } else {
                   reject(err);
@@ -162,7 +164,6 @@ const expressServer = (port) => {
       express_app.get('*', (req, res) => {
         return res.status(404).send(`<body>
         <center><h1>404 Not Found</h1>
-        <h2>尝试访问<a href="http://localhost:${port}">根目录</a>以重新路由</2>
         </center>
         <hr><center>btjawa</center>
         </body>`);
@@ -220,6 +221,30 @@ ipcMain.on('render-ready', async (event) => {
   if (await checkGateServer()) {
     await createMitmCA();
     await rwAppConfig();
+    if (!await checkVCRedist()) {
+      win.webContents.send('showMessageBox', `info`, `初始化`, `初次使用，请在弹出的窗口中安装必要依赖<br>或手动安装：<br>${path.join(global.packagedPaths.gateServerPath, "MongoDB", "vc_redist.x64.exe")}<br>若显示"修改安装程序"，请点击"修复"`)
+      exec(`start "" "${path.join(global.packagedPaths.gateServerPath, "MongoDB", "vc_redist.x64.exe")}"`, { encoding: "binary" }, (error, stdout, stderr) => {
+        if (error) {
+          console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
+          return;
+        }
+        if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+        if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+      })
+    }
+    exec('tasklist', (error, stdout, stderr) => {
+      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) }
+      if (stdout.includes('java.exe')) {
+        packageNec("gc");
+      }
+      if (stdout.includes('mongod.exe')) {
+        packageNec("mongo");
+      }
+      if (stdout.includes('mitmdump.exe')) {
+        packageNec("mitm");
+      }
+    });
     await rwMods();
     await rwPlugs();
   }
@@ -267,17 +292,13 @@ ipcMain.on('resGetWayButton_1-set', () => {
   resSetDirect();
 });
 
-ipcMain.on('officialKeystoreBox-set', () => {
-  officialKeystore("render");
-});
-
 ipcMain.on('selfSignedKeystoreBox-set', () => {
   selfSignedKeystore("render");
 });
 
 ipcMain.on('noKeystoreBoxBox-set', () => {
   noKeystore("render");
-})
+});
 
 ipcMain.on('proxyUsingSSLCheckbox_ClickHandler-set-on', () => {
   SSLStatus = true;
@@ -289,23 +310,21 @@ ipcMain.on('proxyUsingSSLCheckbox_ClickHandler-set-off', () => {
   rwAppConfig("ssl-set");
 });
 
-ipcMain.on('restoreOfficialButton_delete-path', (event) => {
-  if (gamePath) {
-    console.log(`${gamePathDir}\\version.dll`)
-    if (fs.existsSync(`${gamePathDir}\\version.dll`)) {
-      exec(`rm "${gamePathDir}\\version.dll"`, { encoding: 'binary' }, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`执行出错: ${error}`);
-          return;
-        }
-        console.log(stdout);
-        console.error(stderr);
-      });
+ipcMain.on('restoreOfficialButton_delete-path', async (event) => {
+  if (gamePath) { 
+    console.log(path.join(gamePathDir, "version.dll"))
+    try {
+      await fs.promises.access(path.join(gamePathDir, "version.dll"))
+      await fs.promises.unlink(path.join(gamePathDir, "version.dll"));
       patchExists = false;
       event.sender.send('chooseGamePathButton_selected-file', gamePath, patchExists, "delete_patch_succ");
-    } else {
-      patchExists = false;
-      event.sender.send('chooseGamePathButton_selected-file', gamePath, patchExists, "patch_not_exst");
+    } catch(err) {
+      if (err.code === "ENOENT") {
+        patchExists = false;
+        event.sender.send('chooseGamePathButton_selected-file', gamePath, patchExists, "patch_not_exst");
+      } else {
+        console.error(err);
+      }
     }
   } else {
     patchExists = false;
@@ -536,11 +555,23 @@ ipcMain.on('connTestBtn_test-conn', async (event, gcInputRender, proxyInputRende
       message: '${response1.data.message}'<br>请检查是否更改了opencommand配置！<br><a style="font-size: 16px;">
       ${path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins", "opencommand-plugin")}</a>`);
     }
-  } catch (error) {
-    win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接失败！`,
-    `err.code: ${error.code} <br> 请检查服务是否已启动、端口是否已开放、IP是否可连接`);
-    console.error(error.code, "\nerr details has been written to log file");
-    fs.appendFileSync(path.join(logDirPath, `${currentMoment}.log`), `${error.message}\n${error.stack}\n\n`);
+  } catch (err) {
+    if (err.code === "ERR_BAD_REQUEST") {
+      win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接失败！`,
+      `err.code: ${err.code} <br> 请尝试在SSL证书中，选择不使用SSL，并取消勾选代理的使用SSL`);
+      console.error(err.code, "\nerr details has been written to log file");
+      fs.appendFileSync(path.join(logDirPath, `${currentMoment}.log`), `${err.message}\n${err.stack}\n\n`);
+    } else if (err.code === "ECONNREFUSED") {
+      win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接失败！`,
+      `err.code: ${err.code} <br> 看起来服务还未启动，或是ip等配置有误！<br> 请检查服务是否已启动、端口是否已开放、IP是否可连接`);
+      console.error(err.code, "\nerr details has been written to log file");
+      fs.appendFileSync(path.join(logDirPath, `${currentMoment}.log`), `${err.message}\n${err.stack}\n\n`);
+    } else {
+      win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接失败！`,
+      `err.code: ${err.code} <br> 未知错误码`);
+      console.error(err.code, "\nerr details has been written to log file");
+      fs.appendFileSync(path.join(logDirPath, `${currentMoment}.log`), `${err.message}\n${err.stack}\n\n`);
+    }
   }
 });
 
@@ -667,18 +698,19 @@ ipcMain.on('openHandbookHTMLBtn_try-open', () => {
 
 ipcMain.on('chooseJavaPathButton_open-file-dialog', async (event) => {
   const result = await dialog.showOpenDialog({
-    title: '请定位到jdk文件夹，即bin的上一级',
+    title: '请定位到jdk文件夹中的bin文件夹',
     properties: ['openDirectory']
   });
   if (!result.canceled && result.filePaths.length > 0) {
     try {
-      exec(`"${path.join(result.filePaths[0], "bin", "java")}" --version`, {encoding: 'binary'}, async (error, stdout, stderr) => {
+      exec(`"${path.join(result.filePaths[0], "java.exe")}" --version`, {encoding: 'binary'}, async (error, stdout, stderr) => {
         if (error) {
           console.log(error);
           return;
         }
-        if (stdout && stdout.includes('Java(TM) SE Runtime Environment')) {
-          javaPath = path.join(result.filePaths[0], "bin", "java.exe");
+        console.log(stdout)
+        if (stdout && stdout.includes('Runtime Environment')) {
+          javaPath = path.join(result.filePaths[0], "java.exe");
           console.log(javaPath, "\n");
           win.webContents.send('chooseJavaPathButton_was-jdk', javaPath, "init");
           try {
@@ -698,14 +730,17 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', async (event) => {
             console.error(err);
           }
         } else {
-          exec(`"${path.join(result.filePaths[0], "bin", "java")}" -version`, {encoding: 'binary'}, async (error, stdout, stderr) => {
+          exec(`"${path.join(result.filePaths[0], "java.exe")}" -version`, {encoding: 'binary'}, async (error, stdout, stderr) => {
             if (error) { 
               console.log(error);
               win.webContents.send('chooseJavaPathButton_not-valid');
               return; 
             }
-            if (stdout && stdout.includes('Java(TM) SE Runtime Environment')) {
+            if (stdout && stdout.includes('Runtime Environment')) {
               win.webContents.send('chooseJavaPathButton_was-jre', javaPath, "init");
+            } else {
+              console.error(err);
+              win.webContents.send('chooseJavaPathButton_not-valid');
             }
           });
         }
@@ -756,7 +791,11 @@ ipcMain.on('choose3DMigotoPathButton_open-file-dialog', async (event) => {
         win.webContents.send('choose3DMigotoPathButton_file-not-valid');
       }
     } catch (err) {
-      console.error(err);
+      if (err.code === "ENOENT") {
+        win.webContents.send('showMessageBox', "info", `3DMigoto`, `3DMigoto路径不存在或d3dx.ini不存在！<br>
+        请检查是否为 "3DMigoto Loader.exe"！请检查d3dx.ini是否正确配置及存在！`);
+        console.error(err);
+      }
     }
   }
 });
@@ -795,7 +834,7 @@ ipcMain.on('operationBoxBtn_0-run-main-service', async (event, gcInputRender, pr
 });
 
 ipcMain.on('operationBoxBtn_proxy-run-proxy-service', async (event, gcInputRender, proxyInputRender) => {
-  await packageNec("proxy-only");
+  await packageNec("mitm");
   run_proxy_service(gcInputRender, proxyInputRender);
 });
 
@@ -803,15 +842,18 @@ ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
   const processes = ['java.exe', 'mongod.exe', 'mitmdump.exe'];
   const addition = [
     'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f',
-    'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f'
+    'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f',
+    'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "" /f'
   ];
   await killProcesses(processes, addition);
-  exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
-  exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
-  exec(`del ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`);
-  exec(`del ${global.packagedPaths.dataPath}\\add_root_crt.bat`);
-  exec(`del ${global.packagedPaths.dataPath}\\run_3dmigoto.bat`);
-  win.webContents.send('operationBoxBtn_1-success');
+  setTimeout(() => {
+    exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
+    exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
+    exec(`del ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`);
+    exec(`del ${global.packagedPaths.dataPath}\\add_root_crt.bat`);
+    exec(`del ${global.packagedPaths.dataPath}\\run_3dmigoto.bat`);
+    win.webContents.send('operationBoxBtn_1-success');
+  }, 250)
 });
 
 ipcMain.on('operationBoxBtn_2-run-game', (event) => {
@@ -928,7 +970,7 @@ chcp 65001>nul\r
 title Grasscutter - 不要关闭这个窗口\r
 echo 不要关闭这个窗口！！！\r
 echo.\r
-echo 将使用此命令来调用Java： %1\r
+echo 将使用此命令来调用Java： "${javaPath}"\r
 echo.\r
 \r
 cd ${global.packagedPaths.gateServerPath}\\Grasscutter\r
@@ -943,7 +985,7 @@ ping>nul\r
 echo 遇到卡草问题时，等半到一分钟/重启游戏大概率可以解决。由于Res仍在Dev，角色死亡无法复活时请重新进入游戏。\r
 echo.\r
 echo 正在启动Grasscutter服务端...\r
-%1 -jar grasscutter.jar\r
+"${javaPath}" -jar grasscutter.jar\r
 exit`;
 
   const mongo_batch = `@echo off\r
@@ -965,20 +1007,23 @@ echo 不要关闭这个窗口！！！\r
 echo.\r
 echo 由 github/btjawa 改包\r
 echo.\r
-echo 清除系统代理...\r
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f\r
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f\r
-echo.\r
 echo 设置系统代理...\r
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 1 /f\r
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "127.0.0.1:${proxyPort}" /f\r
+if NOT "%1"=="127.0.0.1" (\r
+  if NOT "%1"=="localhost" (\r
+    reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 1 /f\r
+    reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "%1:${proxyPort}" /f\r
+  ) else (\r
+    reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 1 /f\r
+    reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "%1:${proxyPort}" /f\r
+  )\r
+) else (\r
+  reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 1 /f\r
+  reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "127.0.0.1:${proxyPort}" /f\r
+)\r
 echo.\r
 echo 正在启动Mitm代理...\r
 cd "${global.packagedPaths.gateServerPath}\\Proxy"\r
 mitmdump -s proxy.py --ssl-insecure --set block_global=false --listen-port ${proxyPort}\r
-echo 清除系统代理...\r
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f\r
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f\r
 exit.\r`;
 
 /*
@@ -998,21 +1043,30 @@ certutil -addstore -f "Root" "${global.packagedPaths.dataPath}\\root.crt"\r
 certutil -addstore -f "Root" "%USERPROFILE%\\.mitmproxy\\mitmproxy-ca-cert.cer"\r
 exit\r`;
 
-  let files = [
-    {name: 'add_root_crt.bat', content: add_root_crt_batch}
-  ];
+  let files = [];
 
-  if (action !== "proxy-only" && action !== "init-crt") {
-    files.push(
-      {name: 'run_gc.bat', content: gc_batch},
-      {name: 'run_mongo.bat', content: mongo_batch},
-      {name: 'run_mitm_proxy.bat', content: mitm_proxy_batch}
-    );
-  } else if (action === "proxy-only") {
-    files.push(
-      {name: 'run_mitm_proxy.bat', content: mitm_proxy_batch}
-    )
-  }
+  switch (action) {
+    case "mitm":
+      files.push({name: 'run_mitm_proxy.bat', content: mitm_proxy_batch});
+      break;
+    case "mongo":
+      files.push({name: 'run_mongo.bat', content: mongo_batch});
+      break;
+    case "gc":
+      files.push({name: 'run_gc.bat', content: gc_batch});
+      break;
+    case "init-crt":
+      files.push({name: 'add_root_crt.bat', content: add_root_crt_batch})
+      break;
+    default:
+      files.push(
+        {name: 'add_root_crt.bat', content: add_root_crt_batch},
+        {name: 'run_gc.bat', content: gc_batch},
+        {name: 'run_mongo.bat', content: mongo_batch},
+        {name: 'run_mitm_proxy.bat', content: mitm_proxy_batch}
+      );
+      break;
+  }  
 
   try {
     for (let file of files) {
@@ -1074,11 +1128,64 @@ async function unzipFile(inputZip, outputDir) {
   });
 }
 
+async function checkVCRedist() {
+  return new Promise((resolve, reject) => {
+    const regKey = new Winreg({
+      hive: Winreg.HKLM,
+      key: '\\SOFTWARE\\WOW6432Node\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\X64'
+    });
+    regKey.get('Installed', (err, item) => {
+      if (err) {
+        resolve(false);
+      } else {
+        const isInstalled = (item && item.value == "0x1");
+        resolve(isInstalled);
+      }
+    });
+  });
+}
+
 async function checkGateServer() {
   try {
     await fs.promises.access(global.packagedPaths.gateServerPath);
-    gateServerStatus = true;
+    let losts = [];
+    const paths = [
+      path.join(global.packagedPaths.gateServerPath, 'Grasscutter'),
+      path.join(global.packagedPaths.gateServerPath, 'MongoDB'),
+      path.join(global.packagedPaths.gateServerPath, 'Proxy'),
+      path.join(global.packagedPaths.gateServerPath, '3DMigoto')
+    ]
+    for (let path of paths) {
+      try {
+        await fs.promises.access(path);
+      } catch (err) {
+        if (err.code === "ENOENT") {
+          losts.push(path);
+        } else {
+          console.error(err);
+        }
+      }
+    }
+    if (losts.length > 0) {
+      console.log("missing", losts);
+      let message = losts.map(p => {
+        let parts = p.split('\\');
+        let index = parts.indexOf('resources');
+        return parts.slice(index).join('\\');
+      }).join('\n');
+      if (app.isPackaged) {
+        win.webContents.send('showMessageBox', "warning", `GateServer`, `缺少以下组件<br>${message}<br>请从Github下载最新GateServer\n并解压至 resources\\GateServer ！\n应用已进入沙盒模式...`);
+      } else {
+        win.webContents.send('showMessageBox', "warning", `GateServer`, `缺少以下组件<br>${message}<br>请补全以便能正常package！`);
+      }
+      win.webContents.send('gateserver_not-exists');
+      gateServerStatus = false;
+      return false;
+    } else {
+      gateServerStatus = true;
     return true;
+    }
+
   } catch(err) {
     if (err.code === "ENOENT") {
       console.log("GateServer not found");
@@ -1134,7 +1241,7 @@ async function sendPatchGamePath(gamePath) {
 
 async function selfSignedKeystore(action) {
   try {
-    exec(`copy "${global.packagedPaths.dataPath}\\keystore_selfsigned.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, { encoding: 'binary' }, (error, stdout, stderr) => {
+    exec(`copy "${global.packagedPaths.dataPath}\\keystore_local.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, { encoding: 'binary' }, (error, stdout, stderr) => {
       if (error) {
         console.log(error);
         return;
@@ -1149,43 +1256,6 @@ async function selfSignedKeystore(action) {
       const appConfig = JSON.parse(appConfigData);
       if (appConfig.grasscutter.dispatch) {
         appConfig.grasscutter.dispatch.ssl = "selfsigned"
-      }
-      if (action === "render") {
-        if (appConfig.proxy) {
-          SSLStatus = true;
-          appConfig.proxy.ssl = SSLStatus;
-          win.webContents.send('ssl_status', SSLStatus);
-          await writeAcConfig('ssl-set');
-        }
-      }
-      await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
-      console.log('app.config.json Updated successfully');
-    } catch (err) {
-      console.error(err)
-    }
-  } catch(err) {
-    console.log(err);
-  }
-};
-
-
-async function officialKeystore(action) {
-  try {
-    exec(`copy "${global.packagedPaths.dataPath}\\keystore_official.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, { encoding: 'binary' }, (error, stdout, stderr) => {
-      if (error) {
-        console.log(error);
-        return;
-      }
-      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-      console.log("officialKeystore");
-      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-    });
-    try {
-      await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
-      const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
-      const appConfig = JSON.parse(appConfigData);
-      if (appConfig.grasscutter.dispatch) {
-        appConfig.grasscutter.dispatch.ssl = "official"
       }
       if (action === "render") {
         if (appConfig.proxy) {
@@ -1317,133 +1387,132 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
     await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
     const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
     const appConfig = JSON.parse(appConfigData);
-    
-    if (appConfig.getRes === "proxy") {
-      resSetProxy();
-      win.webContents.send('res_getway', "proxy");
-    } else if (appConfig.getRes === "direct") {
-      resSetDirect();
-      win.webContents.send('res_getway', "direct");
-    }
-
-    if (action === "main-service-save" || action === "simple-save" || action === "proxy-service-save") {
-      if (appConfig.grasscutter) {
-        appConfig.grasscutter.host = gcInputRender[0];
-        appConfig.grasscutter.port = gcInputRender[1];
+    if (await checkGateServer()) {
+      if (appConfig.getRes === "proxy") {
+        resSetProxy();
+        win.webContents.send('res_getway', "proxy");
+      } else if (appConfig.getRes === "direct") {
+        resSetDirect();
+        win.webContents.send('res_getway', "direct");
+      }
+  
+      if (action === "main-service-save" || action === "simple-save" || action === "proxy-service-save") {
+        if (appConfig.grasscutter) {
+          appConfig.grasscutter.host = gcInputRender[0];
+          appConfig.grasscutter.port = gcInputRender[1];
+          if (appConfig.grasscutter.dispatch) {
+            if (appConfig.grasscutter.host!=="127.0.0.1" && appConfig.grasscutter.host!=="localhost" && appConfig.grasscutter.host!=="0.0.0.0"){
+              appConfig.grasscutter.dispatch.host = "dispatchcnglobal.yuanshen.com";
+            } else {
+              appConfig.grasscutter.dispatch.host = "127.0.0.1";
+            }
+          }
+        }
         if (appConfig.grasscutter.dispatch) {
-          if (appConfig.grasscutter.host!=="127.0.0.1" && appConfig.grasscutter.host!=="localhost" && appConfig.grasscutter.host!=="0.0.0.0"){
-            appConfig.grasscutter.dispatch.host = "dispatchcnglobal.yuanshen.com";
-          } else {
-            appConfig.grasscutter.dispatch.host = "127.0.0.1";
-          }
+          appConfig.grasscutter.dispatch.port = gcInputRender[2];
         }
-      }
-      if (appConfig.grasscutter.dispatch) {
-        appConfig.grasscutter.dispatch.port = gcInputRender[2];
-      }
-      if (appConfig.proxy) {
-        appConfig.proxy.host = proxyInputRender[0];
-        appConfig.proxy.port = proxyInputRender[1];
-      }
-      await writeAcConfig("main-service-save", gcInputRender, proxyInputRender);
-    }
-
-    else if (action === "ssl-set") {
-      appConfig.proxy.ssl = SSLStatus;
-      await writeAcConfig("ssl-set");
-    }
-    
-    else {
-      if (appConfig.game) {
-        try {
-          await fs.promises.access(appConfig.game.path);
-          gamePath = appConfig.game.path;
-          gamePathDir = path.dirname(gamePath);
-        } catch(err) {
-          if (err.code = "ENOENT") {
-            gamePath = "";
-            gamePathDir = "";
-          } else {
-            console.error(err);
-          }
+        if (appConfig.proxy) {
+          appConfig.proxy.host = proxyInputRender[0];
+          appConfig.proxy.port = proxyInputRender[1];
         }
-
-        if (gamePath) { await sendPatchGamePath(gamePath) }
-
+        await writeAcConfig("main-service-save", gcInputRender, proxyInputRender);
+      }
+  
+      else if (action === "ssl-set") {
+        appConfig.proxy.ssl = SSLStatus;
+        await writeAcConfig("ssl-set");
+      }
+      
+      else {
         if (appConfig.game) {
-          if (appConfig.game._3dmigoto !== "") {
-            try {
-              await fs.promises.access(appConfig.game._3dmigoto);
-              _3DMigotoPath = appConfig.game._3dmigoto;
-              _3DMigotoPathDir = path.dirname(_3DMigotoPath)
-            } catch(err) {
-              if (err.code = "ENOENT") {
-                _3DMigotoPath = path.join(global.packagedPaths.gateServerPath, "3DMigoto", "3DMigoto Loader.exe");
-                _3DMigotoPathDir = path.dirname(_3DMigotoPath);
-              } else {
-                console.error(err);
+          try {
+            await fs.promises.access(appConfig.game.path);
+            gamePath = appConfig.game.path;
+            gamePathDir = path.dirname(gamePath);
+          } catch(err) {
+            if (err.code = "ENOENT") {
+              gamePath = "";
+              gamePathDir = "";
+            } else {
+              console.error(err);
+            }
+          }
+  
+          if (gamePath) { await sendPatchGamePath(gamePath) }
+  
+          if (appConfig.game) {
+            if (appConfig.game._3dmigoto !== "") {
+              try {
+                await fs.promises.access(appConfig.game._3dmigoto);
+                _3DMigotoPath = appConfig.game._3dmigoto;
+                _3DMigotoPathDir = path.dirname(_3DMigotoPath)
+                const _3DMigotoConfigData = await fs.promises.readFile(path.join(_3DMigotoPathDir, "d3dx.ini"), 'utf-8');
+                const _3DMigotoConfig = ini.parse(_3DMigotoConfigData);
+                if (_3DMigotoConfig.Include.include_recursive) {
+                  _3DMigotoModsPath = _3DMigotoConfig.Include.include_recursive;
+                  console.log(path.join(_3DMigotoPathDir, _3DMigotoModsPath));
+                }
+                if (_3DMigotoPath) {
+                  console.log(_3DMigotoPath);
+                  win.webContents.send('choose3DMigotoPathButton_was', _3DMigotoPath);
+                }
+              } catch(err) {
+                if (err.code = "ENOENT") {
+                  _3DMigotoPath = path.join(global.packagedPaths.gateServerPath, "3DMigoto", "3DMigoto Loader.exe");
+                  _3DMigotoPathDir = path.dirname(_3DMigotoPath);
+                  win.webContents.send('showMessageBox', "info", `3DMigoto`, `3DMigoto路径不存在或d3dx.ini不存在！<br>
+                  请在设置中点击“选择3DMigoto路径”选择路径！请检查d3dx.ini是否正确配置及存在！`);
+                } else {
+                  console.error(err);
+                }
               }
             }
-            const _3DMigotoConfigData = await fs.promises.readFile(path.join(_3DMigotoPathDir, "d3dx.ini"), 'utf-8');
-            const _3DMigotoConfig = ini.parse(_3DMigotoConfigData);
-            if (_3DMigotoConfig.Include.include_recursive) {
-              _3DMigotoModsPath = _3DMigotoConfig.Include.include_recursive;
-              console.log(path.join(_3DMigotoPathDir, _3DMigotoModsPath));
-            }
-            if (_3DMigotoPath) {
-              console.log(_3DMigotoPath);
-              win.webContents.send('choose3DMigotoPathButton_was', _3DMigotoPath);
-            }
           }
         }
-      }
-
-      if (appConfig.java !== "") {
-        javaPath = appConfig.java.exec;
-        console.log(javaPath, "\n")
-        win.webContents.send('chooseJavaPathButton_was-jdk', javaPath);
-      }
-
-      if (appConfig.grasscutter) {
-        if (appConfig.grasscutter.dispatch) {
-          if (appConfig.grasscutter.dispatch.ssl == "selfsigned") {
-            selfSignedKeystore();
-            win.webContents.send('ssl_ver', "selfSignedKeystore");
-          }
-          else if (appConfig.grasscutter.dispatch.ssl == "official") {
-            officialKeystore();
-            win.webContents.send('ssl_ver', "officialKeystore");
-          }
-          else if (appConfig.grasscutter.dispatch.ssl == "no") {
-            noKeystore();
-            win.webContents.send('ssl_ver', "noKeystore");
-          }
-          if (appConfig.grasscutter.host!=="127.0.0.1" && appConfig.grasscutter.host!=="localhost" && appConfig.grasscutter.host!=="0.0.0.0"){
-            appConfig.grasscutter.dispatch.host = "dispatchcnglobal.yuanshen.com";
-          } else {
-            appConfig.grasscutter.dispatch.host = "127.0.0.1";
-          }
+  
+        if (appConfig.java !== "") {
+          javaPath = appConfig.java.exec;
+          console.log(javaPath, "\n")
+          win.webContents.send('chooseJavaPathButton_was-jdk', javaPath);
         }
-        gcInput = [appConfig.grasscutter.host, appConfig.grasscutter.port, appConfig.grasscutter.dispatch.port, appConfig.grasscutter.dispatch.host];
-        win.webContents.send('gc_text', gcInput);
+  
+        if (appConfig.grasscutter) {
+          if (appConfig.grasscutter.dispatch) {
+            if (appConfig.grasscutter.dispatch.ssl == "selfsigned") {
+              selfSignedKeystore();
+              win.webContents.send('ssl_ver', "selfSignedKeystore");
+            }
+            else if (appConfig.grasscutter.dispatch.ssl == "no") {
+              noKeystore();
+              win.webContents.send('ssl_ver', "noKeystore");
+            }
+            if (appConfig.grasscutter.host!=="127.0.0.1" && appConfig.grasscutter.host!=="localhost" && appConfig.grasscutter.host!=="0.0.0.0"){
+              appConfig.grasscutter.dispatch.host = "dispatchcnglobal.yuanshen.com";
+            } else {
+              appConfig.grasscutter.dispatch.host = "127.0.0.1";
+            }
+          }
+          gcInput = [appConfig.grasscutter.host, appConfig.grasscutter.port, appConfig.grasscutter.dispatch.port, appConfig.grasscutter.dispatch.host];
+          win.webContents.send('gc_text', gcInput);
+        }
+  
+        if (appConfig.proxy) {
+          proxyInput = [appConfig.proxy.host, appConfig.proxy.port];
+          SSLStatus = appConfig.proxy.ssl;
+          win.webContents.send('proxy_text', proxyInput);
+          win.webContents.send('ssl_status', SSLStatus);
+        }
+        await writeAcConfig();
       }
-
-      if (appConfig.proxy) {
-        proxyInput = [appConfig.proxy.host, appConfig.proxy.port];
-        SSLStatus = appConfig.proxy.ssl;
-        win.webContents.send('proxy_text', proxyInput);
-        win.webContents.send('ssl_status', SSLStatus);
-      }
-      await writeAcConfig();
+      
+      await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8', async (err) => {
+        if (err) {
+          console.error('Err when writing config to file:', err);
+          return;
+        }
+        console.log('app.config.json Updated successfully');
+      });
     }
-    
-    await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8', async (err) => {
-      if (err) {
-        console.error('Err when writing config to file:', err);
-        return;
-      }
-      console.log('app.config.json Updated successfully');
-    });
   } catch (err) {
     if (err.code === "ENOENT") {
       gcInput = ["127.0.0.1", "22102", "443", "127.0.0.1"]
@@ -1467,17 +1536,6 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
       win.webContents.send('chooseJavaPathButton_was-jdk', javaPath);
       win.webContents.send('choose3DMigotoPathButton_was', _3DMigotoPath)
       console.log('app.config.json Created successfully');
-      /*
-      win.webContents.send('vc_redist_init', path.join(global.packagedPaths.gateServerPath, "MongoDB", "vc_redist.x64.exe"));
-      exec(`start "" "${path.join(global.packagedPaths.gateServerPath, "MongoDB", "vc_redist.x64.exe")}"`, { encoding: "binary" }, (error, stdout, stderr) => {
-        if (error) {
-          console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
-          return;
-        }
-        if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-        if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-      })
-      */
     } else {
       console.error(err)
     }
@@ -1497,7 +1555,7 @@ async function writeAcConfig (action, gcInputRender, proxyInputRender) {
 
     if (action === "main-service-save" || action === "simple-save" || action === "proxy-service-save") {
       if (gcConfig.server.http) {
-        gcConfig.server.http.accessAddress = gcInputRender[3];
+        gcConfig.server.http.accessAddress = "dispatchcnglobal.yuanshen.com";
         console.log("\nhttp.accessAddress " + gcConfig.server.http.accessAddress);
         gcConfig.server.http.bindPort = gcInputRender[2];
         console.log("http.bindPort " + gcConfig.server.http.bindPort);
@@ -1780,11 +1838,11 @@ async function run_main_service (gcInputRender, proxyInputRender) {
   const mongo_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mongo.bat`], {
     stdio: 'ignore'
   });
-  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`], {
+  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat ${gcInputRender[0]}`], {
     stdio: 'ignore'
   });
   console.log(javaPath)
-  const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat ${javaPath}`], {
+  const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat`], {
     stdio: 'ignore'
   });
 }
@@ -1822,35 +1880,23 @@ async function run_game() {
 
 async function run_3dmigoto() {
     try {
-      await fs.promises.access(`${_3DMigotoPathDir}`);
-      await fs.promises.access(`${_3DMigotoPath}`);
-      const _3DMigotoConfigData = await fs.promises.readFile(path.join(_3DMigotoPathDir, "d3dx.ini"), 'utf-8');
-      const _3DMigotoConfig = ini.parse(_3DMigotoConfigData);
-      console.log(_3DMigotoConfig.Loader.target)
-      if (_3DMigotoConfig.Loader.target !== "") {
-        try {
-          _3DMigotoConfig.Loader.target = gamePath;
-        } catch(err) {
-          win.webContents.send('showMessageBox', "info", `启动游戏`, `游戏路径不存在！请点击“选择路径”选择游戏路径！`);
-        }
-      }
-      await fs.promises.writeFile(path.join(_3DMigotoPathDir, "d3dx.ini"), ini.stringify(_3DMigotoConfig), 'utf-8');
+      await fs.promises.access(_3DMigotoPathDir);
+      await fs.promises.access(_3DMigotoPath);
+      await fs.promises.access(path.join(_3DMigotoPathDir, "d3dx.ini"));
       const run_3dmigoto_batch = `@echo off\r
 chcp 65001>nul\r
 cd ${_3DMigotoPathDir}\r
 "3DMigoto Loader.exe"\r
 exit`;
-      try {
-        await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_3dmigoto.bat'), run_3dmigoto_batch);
-        console.log('Created run_3dmigoto.bat');
-        const run_3dmigoto_process = spawn('cmd.exe', ['/c', `${global.packagedPaths.dataPath}\\run_3dmigoto.bat`]);
-        run_game();
-      } catch (err) {
-        console.error(err);
-      }
+      await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_3dmigoto.bat'), run_3dmigoto_batch);
+      console.log('Created run_3dmigoto.bat');
+      const run_3dmigoto_process = spawn('cmd.exe', ['/c', `${global.packagedPaths.dataPath}\\run_3dmigoto.bat`]);
+      run_game();
     } catch(err) {
       if (err.code === "ENOENT") {
-        win.webContents.send('showMessageBox', "info", `注入3DMigoto`, `3DMigoto路径不存在！请在设置中点击“选择3DMigoto路径”选择路径！`);
+        console.error(err);
+        win.webContents.send('showMessageBox', "info", `注入3DMigoto`, `3DMigoto路径不存在或d3dx.ini不存在！<br>
+        请在设置中点击“选择3DMigoto路径”选择路径！请检查d3dx.ini是否正确配置及存在！`);
       }
     }
 }

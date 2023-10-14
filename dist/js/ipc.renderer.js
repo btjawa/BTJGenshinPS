@@ -18,7 +18,6 @@ const elems = {
     gcVersionLink: $('.gc_version'),
     resVersionLink: $('.res_version'),
     selfSignedKeystoreBox: $(".ssl_ver_0 input[type='checkbox']"),
-    officialKeystoreBox: $(".ssl_ver_1 input[type='checkbox']"),
     noKeystoreBox: $(".ssl_ver_2 input[type='checkbox']"),
     patchState: $('.patch_state'),
     operationBoxBtn_0: $('.operation_box_btn_0'),
@@ -71,9 +70,11 @@ function izi_notify() {
 function save_settings() {
     gcInputRender = [elems.gcIp.val(), elems.gcGamePort.val(), elems.gcDispatchPort.val()];
     if (elems.gcIp.val() !== "127.0.0.1" && elems.gcIp.val() !== "localhost" && elems.gcIp.val() !== "0.0.0.0") {
-        gcInputRender[3] = "dispatchcnglobal.yuanshen.com";
-    } else {
-        gcInputRender[3] = "127.0.0.1";
+        if (elems.selfSignedKeystoreBox.prop('checked')) {
+            elems.pageLogText0.append(`检测到监听IP不为本地，且启用了SSL，请确保服务器同样开启代理，并在用户系统设置代理为&nbsp;${elems.gcIp.val()}:54321<br>`);
+        } else {
+            elems.pageLogText0.append(`检测到监听IP不为本地<br>`);
+        }
     }
     proxyInputRender = [elems.proxyIP.val(), elems.proxyPort.val()];
 }
@@ -98,21 +99,12 @@ $(document).ready(function() {
     getLatestCommitID();
     $(elems.selfSignedKeystoreBox).on('change', function() {
         if ($(this).prop('checked')) {
-            $(elems.officialKeystoreBox).prop('checked', false);
-            $(elems.noKeystoreBox).prop('checked', false);
-        }
-    });
-
-    $(elems.officialKeystoreBox).on('change', function() {
-        if ($(this).prop('checked')) {
-            $(elems.selfSignedKeystoreBox).prop('checked', false);
             $(elems.noKeystoreBox).prop('checked', false);
         }
     });
     
     $(elems.noKeystoreBox).on('change', function() {
         if ($(this).prop('checked')) {
-            $(elems.officialKeystoreBox).prop('checked', false);
             $(elems.selfSignedKeystoreBox).prop('checked', false);
         }
     });      
@@ -151,7 +143,7 @@ function getLatestCommitID() {
             console.error(error);
         });
 
-    $.getJSON('https://gitlab.com/api/v4/projects/YuukiPS%2FGC-Resources/repository/commits')
+    $.getJSON('https://api-glab-proxy.btl-cdn.top/api/v4/projects/YuukiPS%2FGC-Resources/repository/commits')
         .then(commits => {
             res_latestCommitSha = commits[0].id;
             elems.resVersionLink.on('click', () => {
@@ -210,9 +202,11 @@ elems.openLogLatestBtn.on('click', () => {
     ipcRenderer.send('openLogLatestBtn_open-log-latest');
 });
 
-elems.openGcToolsBtn.on('click', () => {
+function openGcToolsBtn_ClickHandler() {
     ipcRenderer.send('openGcToolsBtn_try-open');
-});
+}
+
+elems.openGcToolsBtn.on('click', openGcToolsBtn_ClickHandler);
 
 elems.openCompassBtn.on('click', () => {
     ipcRenderer.send('openCompassBtn_try-open');
@@ -271,27 +265,6 @@ function resGetWayButton_1_ClickHandler() {
 }
 
 elems.resGetWayButton_1.on('click', resGetWayButton_1_ClickHandler);
-
-function officialKeystoreBox_ClickHandler() {
-    if (!$(elems.officialKeystoreBox).prop('checked')) {
-        elems.officialKeystoreBox.off('click', officialKeystoreBox_ClickHandler);
-        $(elems.officialKeystoreBox).prop('checked', true);
-        elems.officialKeystoreBox.on('click', officialKeystoreBox_ClickHandler);
-        return;
-    }
-    ipcRenderer.send('officialKeystoreBox-set');
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '2',
-        title: 'Keystore',
-        message: '正在使用 官方Keystore！',
-        onOpening: function() {
-            izi_notify()
-        }
-    });
-}
-
-elems.officialKeystoreBox.on('click', officialKeystoreBox_ClickHandler);
 
 function selfSignedKeystoreBox_ClickHandler() {
     if (!$(elems.selfSignedKeystoreBox).prop('checked')) {
@@ -412,6 +385,34 @@ function operationBoxBtn_3_ClickHandler() {
 }
 
 elems.operationBoxBtn_3.on('click', operationBoxBtn_3_ClickHandler);
+
+elems.updateBtn.on('click', () => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '3',
+        title: '更新',
+        message: '正在尝试更新...<br>注意插件等需要手动更新！',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+    fetch('https://api.github.com/repos/Grasscutters/Grasscutter/releases/latest')
+        .then(response => response.json())
+        .then(data => {
+            const latestReleaseUrl = data.assets[0].browser_download_url;
+            ipcRenderer.send('update_latest', latestReleaseUrl);
+        })
+        .catch(error => {
+            iziToast.error({
+                icon: 'fa-solid fa-circle-exclamation',
+                layout: '2',
+                title: 'Github API 已超限！请等待一分钟！',
+                onOpening: function() {
+                    izi_notify()
+                }
+            });
+        });
+});
 
 elems.connTestBtn.on('click', () => {
     save_settings();
@@ -539,6 +540,19 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
     });
 })
 
+.on('update_complete', (event) => {
+    elems.updateProgress.html("下载进度将会显示在这里");
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '更新',
+        message: '更新成功！',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+})
+
 .on('res_getway', (event, way) => {
     if (way === "proxy") {
         elems.resGetWayButton_0.prop('checked', true);
@@ -552,15 +566,9 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
 .on('ssl_ver', (event, ver) => {
     if (ver === "selfSignedKeystore") {
         elems.selfSignedKeystoreBox.prop('checked', true);
-        elems.officialKeystoreBox.prop('checked', false);
-        elems.noKeystoreBox.prop('checked', false);
-    } else if (ver === "officialKeystore") {
-        elems.selfSignedKeystoreBox.prop('checked', false);
-        elems.officialKeystoreBox.prop('checked', true);
         elems.noKeystoreBox.prop('checked', false);
     } else if (ver === "noKeystore") {
         elems.selfSignedKeystoreBox.prop('checked', false);
-        elems.officialKeystoreBox.prop('checked', false);
         elems.noKeystoreBox.prop('checked', true);
     }
 })
@@ -610,8 +618,8 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
     iziToast.error({
         icon: 'fa-solid fa-circle-exclamation',
         layout: '2',
-        title: 'Handbook TXT',
-        message: '找不到txt！请尝试运行服务生成！',
+        title: 'Handbook HTML',
+        message: '找不到HTML！请尝试运行服务生成！',
         onOpening: function() {
             izi_notify()
         }
@@ -916,26 +924,18 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
 })
 
 .on('gateserver_not-exists', (event) => {
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '2',
-        title: 'GateServer',
-        message: 'GateServer不存在！请勿运行服务！<br>应用已进入沙盒模式...',
-        onOpening: function() {
-            izi_notify()
-        }
-    });
     elems.operationBoxBtn_0.addClass("disabled");
     elems.operationBoxBtn_proxy.addClass("disabled");
     elems.operationBoxBtn_3.addClass("disabled");
     elems.choose3DMigotoPathButton.addClass("disabled");
+    elems.openGcToolsBtn.addClass("disabled");
     elems.operationBoxBtn_0.off('click', operationBoxBtn_0_ClickHandler);
     elems.operationBoxBtn_proxy.off('click', operationBoxBtn_proxy_ClickHandler);
     elems.operationBoxBtn_3.off('click', operationBoxBtn_3_ClickHandler);
     elems.choose3DMigotoPathButton.off('click', choose3DMigotoPathButton_ClickHandler);
     elems.selfSignedKeystoreBox.off('click', selfSignedKeystoreBox_ClickHandler);
-    elems.officialKeystoreBox.off('click', officialKeystoreBox_ClickHandler);
     elems.noKeystoreBox.off('click', noKeystoreBox_ClickHandler);
+    elems.openGcToolsBtn.off('click', openGcToolsBtn_ClickHandler);
 })
 
 .on('clearing_data', (event) => {
@@ -944,19 +944,6 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
         layout: '2',
         title: '恢复出厂',
         message: '正在清除数据...',
-        onOpening: function() {
-            izi_notify()
-        }
-    });
-})
-
-.on('vc_redist_init', (event, path) => {
-    iziToast.info({
-        icon: 'fa-solid fa-circle-info',
-        layout: '2',
-        title: '初始化',
-        timeout: 5000,
-        message: `初次使用，请按照弹出的窗口中的指引安装必要依赖<br>或手动安装:&nbsp;${path}<br>若显示"修改安装程序"，请点击"修复"`,
         onOpening: function() {
             izi_notify()
         }

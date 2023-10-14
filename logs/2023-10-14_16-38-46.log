@@ -1,0 +1,81 @@
+[init 2023-10-14 16:38:46] Log initialized
+当遇到错误时，请在 https://github.com/btjawa/BTJGenshinPS/issues 提供本日志并提交。
+
+[log 2023-10-14 16:38:46] Start Logging...
+
+[log 2023-10-14 16:38:46] Server is running on http://localhost:52805
+
+[log 2023-10-14 16:38:46] Found self-signed root crt
+
+[log 2023-10-14 16:38:46] C:\Users\BTJ\.mitmproxy exist.
+
+[log 2023-10-14 16:38:46] proxy
+
+[log 2023-10-14 16:38:46] D:\BTJGenshinPS\GateServer\3DMigoto\Mods
+
+[log 2023-10-14 16:38:46] D:\BTJGenshinPS\GateServer\3DMigoto\3DMigoto Loader.exe
+
+[log 2023-10-14 16:38:46] C:\Program Files\Java\jdk-17\bin\java.exe 
+
+
+[log 2023-10-14 16:38:46] app.config.json Updated successfully
+
+[log 2023-10-14 16:38:46] app.config.json Updated successfully
+
+[log 2023-10-14 16:38:46] 
+http.accessAddress dispatchcnglobal.yuanshen.com
+
+[log 2023-10-14 16:38:46] http.bindPort 443
+
+[log 2023-10-14 16:38:46] 
+game.accessAddress 192.168.3.5
+
+[log 2023-10-14 16:38:46] game.bindPort 22102
+
+[log 2023-10-14 16:38:46] 
+REMOTE_HOST = "127.0.0.1"
+
+[log 2023-10-14 16:38:46] REMOTE_PORT = 443
+
+
+[log 2023-10-14 16:38:46] moded mitm config
+
+[log 2023-10-14 16:38:46] 已复制         1 个文件。
+
+
+[log 2023-10-14 16:38:46] selfSignedKeystore
+
+[log 2023-10-14 16:38:46] 
+
+[log 2023-10-14 16:38:46] Created run_3dmigoto.bat
+
+[log 2023-10-14 16:38:46] 操作成功完成。
+操作成功完成。
+操作成功完成。
+
+
+[log 2023-10-14 16:38:46] proxy
+
+[log 2023-10-14 16:38:46] app.config.json Updated successfully
+
+[log 2023-10-14 16:38:46] 
+http.accessAddress dispatchcnglobal.yuanshen.com
+
+[log 2023-10-14 16:38:46] http.bindPort 443
+
+[log 2023-10-14 16:38:46] 
+game.accessAddress 192.168.3.5
+
+[log 2023-10-14 16:38:46] game.bindPort 22102
+
+[log 2023-10-14 16:38:46] 
+REMOTE_HOST = "127.0.0.1"
+
+[log 2023-10-14 16:38:46] REMOTE_PORT = 443
+
+
+[log 2023-10-14 16:38:46] moded mitm config
+
+[log 2023-10-14 16:38:46] App is quitting...
+Saving config...
+

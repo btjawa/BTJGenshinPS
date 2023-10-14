@@ -172,7 +172,8 @@ button[name="edit_config"] {
     margin-left: 0px;
 }
 
-button[name=choose_3dmigoto_path].disabled,
+button[name="gctools_btn"].disabled,
+button[name="choose_3dmigoto_path"].disabled,
 button[name="compass_btn"] {
     background-color: #80808860;
     color: #e4e4e456;

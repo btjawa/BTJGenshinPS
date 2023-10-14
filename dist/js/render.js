@@ -1,6 +1,8 @@
 $(document).ready(function () {
     const $DocsIframe = $('#doc_iframe');
 
+    $DocsIframe.on('load', setIframeListeners);
+
     iziToast.settings({
         timeout: 2500,
         icon: 'Fontawesome',
@@ -24,40 +26,41 @@ $(document).ready(function () {
         });
     });
 
-    $('#refresh_iframe').on('click', function() {
-        $DocsIframe[0].contentWindow.location.reload();
-    });
-
     function setIframeListeners() {
-        const iframeDoc = $DocsIframe[0].contentWindow.document;
-        $(iframeDoc).on('click', function(event) {
-            let targetElement = $(event.target);
-            while (targetElement && targetElement[0] !== iframeDoc.body && !targetElement.attr('href')) {
-                targetElement = targetElement.parent();
+        const iframe = $DocsIframe[0].contentWindow.document;
+        $(iframe).on('click', function(event) {
+            let element = $(event.target);
+            while (element && element[0] !== iframe.body && !element.attr('href')) {
+                element = element.parent();
             }
-            if (targetElement && targetElement.attr('href')) {
-                const link = targetElement.attr('href');
-                const httpRegex = /^https?:\/\//;
-                if (httpRegex.test(link)) {
+            if (element && element.attr('href')) {
+                const link = element.attr('href');
+                const regex = /(http|https):\/\/([\w.]+\/?)\S*/ig;
+                if (regex.test(link)) {
                     event.preventDefault();
                     ipcRenderer.send('open-url', link);
                 }
             }
         });
-        $(iframeDoc).on('auxclick', function(event) {
+        $(iframe).on('auxclick', function(event) {
             event.preventDefault();
         });
     }
-    $DocsIframe.on('load', setIframeListeners);
-    $('#home_page_iframe').on('click', function() {
-        $DocsIframe.attr('src', "http://localhost:52805/BGP-docs");
+
+    $('#refresh_iframe').on('click', function() {
+        $DocsIframe[0].contentWindow.location.reload();
+    });
+    
+    $('#backward_page_iframe').on('click', function() {
+        $DocsIframe[0].contentWindow.history.back();
         $DocsIframe.on('load', function() {
             setIframeListeners();
             $DocsIframe.off('load');
         });
     });
-    $('#backward_page_iframe').on('click', function() {
-        $DocsIframe[0].contentWindow.history.back();
+
+    $('#home_page_iframe').on('click', function() {
+        $DocsIframe.attr('src', "http://localhost:52805/BGP-docs");
         $DocsIframe.on('load', function() {
             setIframeListeners();
             $DocsIframe.off('load');
