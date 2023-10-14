@@ -19,13 +19,11 @@ GateServer请从Release中获取，code只包含app
 
 ## To Do
 
-- [x] 修复console输出中文锟斤拷
-
 - [x] 十分详细的文档
 
 - [x] 实现一键更新资源
 
-- [x] 实现一键更新本体
+- [ ] *~~实现一键更新本体~~*
 
 - [x] 联机模式
 
@@ -37,7 +35,7 @@ GateServer请从Release中获取，code只包含app
 
 - [ ] 自由选择服务端版本
 
-- [x] 注入模组 (WIP)
+- [x] 注入模组
 
 ## Development
 
