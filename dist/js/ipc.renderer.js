@@ -364,7 +364,7 @@ function operationBoxBtn_proxy_ClickHandler() {
             izi_notify()
         }
     });
-    elems.pageLogText0.append(`请不要关闭稍后弹出来的任何一个窗口！<br>正在启动代理服务...<br>`);
+    elems.pageLogText0.append(`请不要关闭稍后弹出来的任何一个窗口！<br>正在启动代理服务...<br>正在检查目标主机连通性...<br>`);
     toggleMenuState('menu_selector_log');
 }
 
@@ -538,6 +538,15 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
             izi_notify()
         }
     });
+})
+
+
+.on('operationBoxBtn_proxy-msg', (event, msg, err) => {
+    if (err) {
+        elems.pageLogText0.append(`遇到错误：${err}<br>将尝试使用本地代理<br>`);
+    } else {
+        elems.pageLogText0.append(msg);
+    }
 })
 
 .on('update_complete', (event) => {
@@ -889,6 +898,19 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
             izi_notify()
         }
     });
+})
+
+.on('operationBoxBtn_proxy-success', (event) => {
+    iziToast.info({
+        icon: 'fa-solid fa-circle-info',
+        layout: '2',
+        title: '启动代理',
+        message: '成功启动代理！',
+        onOpening: function() {
+            izi_notify()
+        }
+    });
+    elems.pageLogText0.append(`成功启动代理！<br>`); 
 })
 
 .on('update_progress', (event, progressText, action) => {

@@ -5,6 +5,7 @@ const { spawn, execSync } = require('child_process');
 const ini = require('ini');
 const util = require('util');
 const net = require('net');
+const os = require('os');
 const StreamZip = require('node-stream-zip');
 const axios = require('axios');
 const https = require('https');
@@ -1007,19 +1008,20 @@ echo 不要关闭这个窗口！！！\r
 echo.\r
 echo 由 github/btjawa 改包\r
 echo.\r
-echo 设置系统代理...\r
-if NOT "%1"=="127.0.0.1" (\r
-  if NOT "%1"=="localhost" (\r
-    reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 1 /f\r
-    reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "%1:${proxyPort}" /f\r
-  ) else (\r
-    reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 1 /f\r
-    reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "%1:${proxyPort}" /f\r
+echo 目标服务器：%1:%2\r
+echo.\r
+echo 使用SSL：${SSLStatus}
+echo.\r
+IF NOT "%1"=="127.0.0.1" (\r
+  IF NOT "%1"=="localhost" (\r
+      echo 请在远程服务器上查看Mitm日志！\r
+      echo.\r
   )\r
-) else (\r
-  reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 1 /f\r
-  reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "127.0.0.1:${proxyPort}" /f\r
 )\r
+echo 设置系统代理...\r
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 1 /f\r
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "%1:${proxyPort}" /f\r
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyOverride /t REG_SZ /d "" /f\r
 echo.\r
 echo 正在启动Mitm代理...\r
 cd "${global.packagedPaths.gateServerPath}\\Proxy"\r
@@ -1208,36 +1210,24 @@ async function checkGateServer() {
 async function sendPatchGamePath(gamePath) {
   console.log(gamePath);
   const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf8');
-  let appConfig;
-  try {
-    await fs.promises.access(`${gamePathDir}\\version.dll`);
-    appConfig = JSON.parse(appConfigData);
-    if (gamePath !== "") {
-        patchExists = true;
-        win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
-        if (appConfig.game) {
-          appConfig.game.path = gamePath;
-        } else {
-          appConfig.game = { path: gamePath };
-        }
+  let appConfig = JSON.parse(appConfigData);
+  if (gamePath !== "") {
+    const stdout = execSync(`copy "${global.packagedPaths.dataPath}\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, { encoding: 'binary' });
+    console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+    console.log("RSA Patched");
+    patchExists = true;
+    win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
+    if (appConfig.game) {
+        appConfig.game.path = gamePath;
+    } else {
+        appConfig.game = { path: gamePath };
     }
     await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
     console.log('app.config.json Updated Successfully');
-  } catch (error) {
-    if (gamePath !== "") {
-        const result = execSync(`copy "${global.packagedPaths.dataPath}\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, { encoding: 'binary' });
-        console.log(iconv.decode(Buffer.from(result, 'binary'), 'GBK'));
-        console.log("RSA Patched");
-        patchExists = true;
-        win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
-    }
-    appConfig = JSON.parse(appConfigData);
-    if (appConfig.game && appConfig.game.path) {
-        patchExists = true;
-    }
+  } else if (appConfig.game && appConfig.game.path) {
+    patchExists = true;
   }
 }
-
 
 async function selfSignedKeystore(action) {
   try {
@@ -1781,14 +1771,14 @@ async function update(gc_org_url) {
     await downloadFile(`${resURL[0]}${orgUrl.pathname}`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download`, "Grasscutter服务端");
     exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar`,{ encoding: 'binary' },(error,stdout,stderr) => {
       if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      if (stderr) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-      if (stdout) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+      if (stderr) { console.error(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+      if (stdout) { console.log(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
     })
     await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download`, "Resources");
     exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip`,{ encoding: 'binary' },(error,stdout,stderr) => {
       if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      if (stderr) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-      if (stdout) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+      if (stderr) { console.error(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
+      if (stdout) { console.log(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
     })
     console.log("Update Completed");
     win.webContents.send('update_complete');
@@ -1797,13 +1787,83 @@ async function update(gc_org_url) {
   }
 }
 
+async function proxySettingWizard(targetServer, targetPort) {
+  return new Promise((resolve, reject) => {
+    try {
+      const interfaces = os.networkInterfaces();
+      for (let ifaceName in interfaces) {
+        const iface = interfaces[ifaceName];
+        for (let alias of iface) {
+          if (alias.address === targetServer && targetServer !== "localhost" && targetServer !== "127.0.0.1") {
+            console.log(`Matched IP: ${alias.address}`);
+            win.webContents.send('showMessageBox', "info", "代理设置向导", `检测到目标服务器为本机IP(${targetServer})<br> “确定” 使用该IP连接代理 “拒绝” 使用本地地址连接代理`, ["confirm", "deny"]);
+            ipcMain.once('showMessageBox-callback', (event, callback) => {
+              if (callback === "confirm") {
+                resolve(targetServer);
+              } else if (callback === "deny") {
+                resolve("127.0.0.1");
+              }
+            });
+            return;
+          }
+        }
+      }
+    } catch (error) {
+      console.error(error.message);
+    }
+    try {
+      const options = {
+        host: targetServer,
+        port: targetPort,
+        path: '/',
+        method: 'GET',
+        rejectUnauthorized: true,
+        timeout: 5000
+      };
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+        res.on('end', () => {
+          console.log(data)
+        });
+      });
+      req.setTimeout(options.timeout, () => {
+        req.abort();
+        win.webContents.send('operationBoxBtn_proxy-msg', '', 'Request timed out 5000ms');
+        console.log('Request timed out 5000ms');
+        resolve("127.0.0.1");
+      });
+      req.on('error', (e) => {
+        console.log(e.message);
+        if (e.message.includes('unable to verify')) {
+          win.webContents.send('showMessageBox', "info", "代理设置向导", "检测到目标服务器SSL无法被本地验证<br>“确定” 使用远程服务器内部代理(推荐) “拒绝” 使用本地代理(不推荐)", ["confirm", "deny"]);
+          ipcMain.once('showMessageBox-callback', (event, callback) => {
+            if (callback === "confirm") {
+              resolve(targetServer);
+            } else if (callback === "deny") {
+              resolve("127.0.0.1");
+            }
+          });
+        } else {
+          resolve("127.0.0.1");
+        }
+      });
+      req.end();
+    } catch(err) {
+      console.error(err.message);
+      reject(err);  
+    }
+  });
+}
 
 async function downloadFile(url, outputPath, action) {
   const proxyServer = await getSystemProxy();
   const curlArgs = ['-Lo', outputPath, url];
-  if (proxyServer) { //ignore mitm proxy
+  if (proxyServer) {
     const [host, port] = proxyServer.split(':');
-    if (port !== "54321") {
+    if (port !== "54321") { //ignore mitm proxy
       curlArgs.unshift('--proxy', `http://${proxyServer}`);
       win.webContents.send('using_proxy', proxyServer);
     }
@@ -1838,7 +1898,7 @@ async function run_main_service (gcInputRender, proxyInputRender) {
   const mongo_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mongo.bat`], {
     stdio: 'ignore'
   });
-  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat ${gcInputRender[0]}`], {
+  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat ${SSLStatus ? await proxySettingWizard(proxyInputRender[0], proxyInputRender[1]) : proxyInputRender[0]} ${proxyInputRender[1]}`], {
     stdio: 'ignore'
   });
   console.log(javaPath)
@@ -1856,10 +1916,10 @@ async function run_proxy_service (gcInputRender, proxyInputRender) {
     win.webContents.send('gateserver_not-exists');
     return;
   }
-  win.webContents.send('operationBoxBtn_proxy-success');
-  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`], {
+  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat ${SSLStatus ? await proxySettingWizard(proxyInputRender[0], proxyInputRender[1]) : proxyInputRender[0]} ${proxyInputRender[1]}`], {
     stdio: 'ignore'
   });
+  win.webContents.send('operationBoxBtn_proxy-success');
 }
 
 async function run_game() {
