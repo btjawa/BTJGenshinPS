@@ -48,13 +48,15 @@ const elems = {
     gcDispatchPort: $('input[name=gc_dispatch_port]'),
     proxyIP: $('input[name=proxy_ip]'),
     proxyPort: $('input[name=proxy_port]'),
-    proxyUsingSSLCheckbox: $(".proxy_using_ssl input[type='checkbox']")
+    proxyUsingSSLCheckbox: $(".proxy_using_ssl input[type='checkbox']"),
+    remoteMitmGuide: $('button[name="remote_mitm_guide"]')
 };
 
 const izi_notify_mp3 = new Audio("sounds/izi_notify.mp3");
 
 let gcInputRender = new Array(4);
 let proxyInputRender = new Array(2);
+let gcSSLStatus;
 let gc_latestCommitSha;
 let gc_latestReleaseTagName;
 let res_latestCommitSha;
@@ -68,14 +70,7 @@ function izi_notify() {
 }
 
 function save_settings() {
-    gcInputRender = [elems.gcIp.val(), elems.gcGamePort.val(), elems.gcDispatchPort.val()];
-    if (elems.gcIp.val() !== "127.0.0.1" && elems.gcIp.val() !== "localhost" && elems.gcIp.val() !== "0.0.0.0") {
-        if (elems.selfSignedKeystoreBox.prop('checked')) {
-            elems.pageLogText0.append(`检测到监听IP不为本地，且启用了SSL，请确保服务器同样开启代理，并在用户系统设置代理为&nbsp;${elems.gcIp.val()}:54321<br>`);
-        } else {
-            elems.pageLogText0.append(`检测到监听IP不为本地<br>`);
-        }
-    }
+    gcInputRender = [elems.gcIp.val(), elems.gcGamePort.val(), elems.gcDispatchPort.val(), elems.gcIp.val()];
     proxyInputRender = [elems.proxyIP.val(), elems.proxyPort.val()];
 }
 
@@ -274,6 +269,7 @@ function selfSignedKeystoreBox_ClickHandler() {
         return;
     }
     ipcRenderer.send('selfSignedKeystoreBox-set');
+    gcSSLStatus = true;
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -295,6 +291,7 @@ function noKeystoreBox_ClickHandler() {
         return;
     }
     ipcRenderer.send('noKeystoreBoxBox-set');
+    gcSSLStatus = false;
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -338,7 +335,7 @@ elems.proxyUsingSSLCheckbox.on('click', proxyUsingSSLCheckbox_ClickHandler);
 
 function operationBoxBtn_0_ClickHandler() {
     save_settings();
-    ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender);
+    ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender, gcSSLStatus);
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -354,7 +351,7 @@ function operationBoxBtn_0_ClickHandler() {
 
 function operationBoxBtn_proxy_ClickHandler() {
     save_settings();
-    ipcRenderer.send('operationBoxBtn_proxy-run-proxy-service', gcInputRender, proxyInputRender);
+    ipcRenderer.send('operationBoxBtn_proxy-run-proxy-service', gcInputRender, proxyInputRender, gcSSLStatus);
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -542,11 +539,10 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
 
 
 .on('operationBoxBtn_proxy-msg', (event, msg, err) => {
-    if (err) {
-        elems.pageLogText0.append(`遇到错误：${err}<br>将尝试使用本地代理<br>`);
-    } else {
-        elems.pageLogText0.append(msg);
-    }
+    elems.pageLogText0.append(err ? `遇到错误：${err}<br>请检查端口开放、IP是否正确等，并尝试重新启动服务，报错详情请看日志`: msg, "<br>");
+    elems.remoteMitmGuide.on('click', () => {
+        toggleMenuState('menu_selector_2');
+    })
 })
 
 .on('update_complete', (event) => {
@@ -576,9 +572,11 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
     if (ver === "selfSignedKeystore") {
         elems.selfSignedKeystoreBox.prop('checked', true);
         elems.noKeystoreBox.prop('checked', false);
+        gcSSLStatus = true;
     } else if (ver === "noKeystore") {
         elems.selfSignedKeystoreBox.prop('checked', false);
         elems.noKeystoreBox.prop('checked', true);
+        gcSSLStatus = false;
     }
 })
 
@@ -596,7 +594,7 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
     elems.gcDispatchPort.val(input[2]);
 })
 
-.on('proxy_text', (event, input, status) => {
+.on('proxy_text', (event, input) => {
     elems.proxyIP.val(input[0]);
     elems.proxyPort.val(input[1]);
 })
@@ -678,7 +676,7 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: 'MongoDB&nbsp;Compass',
-        message: 'MongoDB&nbsp;Compass下载成功！尝试打开...',
+        message: 'MongoDB&nbsp;Compass下载成功！正在解压...',
         onOpening: function() {
             izi_notify()
         }

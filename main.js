@@ -1,7 +1,7 @@
-const { app, globalShortcut, BrowserWindow, ipcMain, shell, dialog} = require('electron');
+const { app, globalShortcut, BrowserWindow, ipcMain, shell, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { spawn, execSync } = require('child_process');
+const { spawn } = require('child_process');
 const ini = require('ini');
 const util = require('util');
 const net = require('net');
@@ -9,6 +9,7 @@ const os = require('os');
 const StreamZip = require('node-stream-zip');
 const axios = require('axios');
 const https = require('https');
+const http = require('http');
 const exec = util.promisify(require('child_process').exec);
 const Winreg = require('winreg');
 const iconv = require('iconv-lite');
@@ -89,99 +90,8 @@ process.stderr.write = (function(write) {
 console.log("Start Logging...")
 
 app.whenReady().then(async () => {
-  try {
-    const port = await checkPort(EXPRESS_PORT);
-    await expressServer(port);
-    createWindow(port);
-    exec(`certutil -store Root`, async (error, stdout, stderr) => {
-      if (error) {
-        console.error(`exec error: ${error}`);
-        return;
-      }
-      if (stdout.includes('6fc55dd6c7a9f76ed1d980dd657fcfe6941228ec')) {
-        console.log("Found self-signed root crt");
-      } else {
-        console.log("Self-signed root crt not found, add root crt");
-        await packageNec("init-crt");
-        exec(`start ${global.packagedPaths.dataPath}\\add_root_crt.bat`, async (error, stdout, stderr) => {
-          if (error) {
-            console.log(error);
-            return;
-          }
-          if (stdout) {
-            console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-            win.webContents.send("add_crt");
-          };
-          if (stderr) { console.log(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-        });
-      }
-    });
-  } catch (err) {
-    console.error(err);
-  }
+  await init(EXPRESS_PORT);
 });
-
-const checkPort = (port) => {
-  return new Promise((resolve, reject) => {
-      const tester = net.createServer()
-          .once('error', async (err) => {
-              if (err.code === 'EADDRINUSE') {
-                  const response0 = await dialog.showMessageBox(win, {
-                    type: "warning",
-                    title: "端口已被占用",
-                    message: `${port}端口已被占用！请检查是否启动了多个APP！`
-                  });
-                  app.quit();
-                  reject(new Error(`Port ${port} is in use`));
-              } else {
-                  reject(err);
-              }
-          })
-          .once('listening', () => {
-              tester.once('close', () => resolve(port)).close();
-          })
-          .listen(port);
-  });
-};
-
-const expressServer = (port) => {
-  return new Promise((resolve, reject) => {
-    express_app.use((req, res, next) => {
-      res.header("Access-Control-Allow-Origin", "*");
-      res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-      const BLACKLIST = [
-        /^\/app-main\//,
-        /^\/BGP-docs\//
-      ]
-      const isBlacklisted = BLACKLIST.some(pattern => pattern.test(req.path));
-      if (isBlacklisted) {
-        if (!req.headers['user-agent'].includes(`${packageJson.name}/${currentVersion}`)) {
-            return res.status(403).send(`<body>
-            <center><h1>403 Forbidden</h1></center>
-            <hr><center>btjawa</center>
-            </body>`);
-        }
-      }
-      express_app.get('*', (req, res) => {
-        return res.status(404).send(`<body>
-        <center><h1>404 Not Found</h1>
-        </center>
-        <hr><center>btjawa</center>
-        </body>`);
-      });
-      next();
-    });
-    express_app.use('/BGP-docs', express.static(path.join(__dirname, './dist/docs')));
-    express_app.use('/app-main', express.static(path.join(__dirname, './dist')));
-    express_app.listen(port, () => {
-        console.log(`Server is running on http://localhost:${port}`);
-        resolve(port);
-    });
-    express_app.on('error', (error) => {
-      reject(error);
-    });
-  });
-};
 
 app.on('window-all-closed', (event) => {
   if (process.platform !== 'darwin') {
@@ -191,22 +101,23 @@ app.on('window-all-closed', (event) => {
 
 app.on('before-quit', async (event) => {
   console.log('App is quitting...\nSaving config...');
-  exec('tasklist', (error, stdout, stderr) => {
-    if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-    if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) }
+  try {
+    const stdout = await exec('tasklist');
     if (!stdout.includes('java.exe')) {
-      exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
+      await fs.promises.unlink(path.join(global.packagedPaths.dataPath, 'run_gc.bat'));
     }
     if (!stdout.includes('mongod.exe')) {
-      exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
+      await fs.promises.unlink(path.join(global.packagedPaths.dataPath, 'run_mongo.bat'));
     }
     if (!stdout.includes('mitmdump.exe')) {
-      exec(`del ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`);
+      await fs.promises.unlink(path.join(global.packagedPaths.dataPath, 'run_mitm_proxy.bat'));
     }
-  });
-  exec(`taskkill /f /im curl.exe`);
-  exec(`del ${global.packagedPaths.dataPath}\\add_root_crt.bat`);
-  exec(`del ${global.packagedPaths.dataPath}\\run_3dmigoto.bat`);
+    exec(`taskkill /f /im curl.exe`);
+    await fs.promises.unlink(path.join(global.packagedPaths.dataPath, 'add_root_crt.bat'));
+    await fs.promises.unlink(path.join(global.packagedPaths.dataPath, 'run_3dmigoto.bat'));
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 
@@ -225,10 +136,7 @@ ipcMain.on('render-ready', async (event) => {
     if (!await checkVCRedist()) {
       win.webContents.send('showMessageBox', `info`, `初始化`, `初次使用，请在弹出的窗口中安装必要依赖<br>或手动安装：<br>${path.join(global.packagedPaths.gateServerPath, "MongoDB", "vc_redist.x64.exe")}<br>若显示"修改安装程序"，请点击"修复"`)
       exec(`start "" "${path.join(global.packagedPaths.gateServerPath, "MongoDB", "vc_redist.x64.exe")}"`, { encoding: "binary" }, (error, stdout, stderr) => {
-        if (error) {
-          console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
-          return;
-        }
+        if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
         if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
         if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
       })
@@ -585,15 +493,10 @@ ipcMain.on('exportAppConfigBtn-export', async (event, gcInputRender, proxyInputR
     if (!result.canceled && result.filePaths.length > 0) {
       try {
         const exportPath = result.filePaths[0];
-        exec(`copy "${path.join(global.packagedPaths.entryPath, "app.config.json")}" "${path.join(exportPath, `app.config_${moment().tz("Asia/Shanghai").format('YYYY-MM-DD_HH-mm-ss')}.json`)}"`, {encoding: "binary"}, (error, stdout, stderr) => {
-          if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-          if (stdout) {
-            console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-            console.log("Copied app.config.json to", exportPath);
-            win.webContents.send('exportAppConfigBtn-export-success', exportPath);
-          };
-          if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };    
-        })
+        await fs.promises.copyFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 
+        path.join(exportPath, `app.config_${moment().tz("Asia/Shanghai").format('YYYY-MM-DD_HH-mm-ss')}.json`));
+        console.log("Copied app.config.json to", exportPath);
+        win.webContents.send('exportAppConfigBtn-export-success', exportPath);
       } catch(err) {
         console.error(err);
       }
@@ -616,21 +519,12 @@ ipcMain.on('importAppConfigBtn-import', async (event) => {
     if (!result.canceled && result.filePaths.length > 0) {
       try {
         const configPath = result.filePaths[0];
-        exec(`copy "${configPath}" "${path.join(global.packagedPaths.entryPath, "app.config.json")}"`, {encoding: "binary"}, async (error, stdout, stderr) => {
-          if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-          if (stdout) {
-            console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-            console.log("Imported", configPath);
-            win.webContents.send('showMessageBox', "info", `导入应用配置`, `导入成功！将重启应用以应用更改`);
-            ipcMain.once('showMessageBox-callback', () => {
-              app.relaunch();
-              app.exit(0);
-            })
-          };
-          if (stderr) {
-            console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'))
-            win.webContents.send('showMessageBox', "warning", `导入应用配置`, `导入失败！`);
-          };    
+        await fs.promises.copyFile(configPath, path.join(global.packagedPaths.entryPath, "app.config.json"));
+        console.log("Imported", configPath);
+        win.webContents.send('showMessageBox', "info", `导入应用配置`, `导入成功！将重启应用以应用更改`);
+        ipcMain.once('showMessageBox-callback', () => {
+          app.relaunch();
+          app.exit(0);
         })
       } catch(err) {
         console.error(err);
@@ -638,30 +532,46 @@ ipcMain.on('importAppConfigBtn-import', async (event) => {
     }
  } catch(err) {
    console.error(err);
+   win.webContents.send('showMessageBox', "warning", `导入应用配置`, `导入失败！`);
  }
 })
 
-ipcMain.on('openGcToolsBtn_try-open', () => {
+ipcMain.on('openGcToolsBtn_try-open', async () => {
   if (fs.existsSync(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"))) {
     console.log("run gctools");
     shell.openPath(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"));
   } else {
     console.error("GcTools not found, try download");
     win.webContents.send("openGcToolsBtn_starting-download");
-    (async () => {
-      try {
-        await downloadFile(`${resURL[0]}/jie65535/GrasscutterCommandGenerator/releases/download/v1.12.2/GcTools-v1.12.2.exe`, path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"), "GcTools v1.12.2");
-        win.webContents.send("openGcToolsBtn_download-complete");
-        try {
-          shell.openPath(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"));
-          console.log("run gctools");
-        } catch(err) {
-          console.error(err);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    })();
+    try {
+      await downloadFile(`${resURL[0]}/jie65535/GrasscutterCommandGenerator/releases/download/v1.12.2/GcTools-v1.12.2.exe`, path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"), "GcTools v1.12.2");
+      win.webContents.send("openGcToolsBtn_download-complete");
+      shell.openPath(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "GcTools-v1.12.2.exe"));
+      console.log("run gctools");
+    } catch (error) {
+      console.error(error);
+    }
+  }
+})
+
+ipcMain.on('openCompassBtn_try-open', async () => {
+  if (fs.existsSync(path.join(global.packagedPaths.dataPath, "MongoDB Compass"))) {
+    console.log("run mongodb compass");
+    shell.openPath(path.join(global.packagedPaths.dataPath, "MongoDB Compass", "MongoDBCompass.exe"));
+  } else {
+    console.error("compass not found, try download");
+    win.webContents.send("openCompassBtn_starting-download");
+    await fs.promises.mkdir(path.join(global.packagedPaths.dataPath, "MongoDB Compass"));
+    try {
+      await downloadFile(`https://downloads.mongodb.com/compass/mongodb-compass-1.40.4-win32-x64.zip`, path.join(global.packagedPaths.dataPath, "MongoDB Compass", "MongoDBCompass.zip"), "MongoDB Compass 1.40.4");
+      win.webContents.send("openCompassBtn_download-complete");
+      await unzipFile(path.join(global.packagedPaths.dataPath, "MongoDB Compass", "MongoDBCompass.zip"), path.join(global.packagedPaths.dataPath, "MongoDB Compass"));
+      shell.openPath(path.join(global.packagedPaths.dataPath, "MongoDB Compass", "MongoDBCompass.exe"));
+      await fs.promises.unlink(path.join(global.packagedPaths.dataPath, "MongoDB Compass", "MongoDBCompass.zip"))
+      console.log("run mongodb compass");
+    } catch (error) {
+      console.error(error);
+    }
   }
 })
 
@@ -693,10 +603,7 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', async (event) => {
   if (!result.canceled && result.filePaths.length > 0) {
     try {
       exec(`"${path.join(result.filePaths[0], "java.exe")}" --version`, {encoding: 'binary'}, async (error, stdout, stderr) => {
-        if (error) {
-          console.log(error);
-          return;
-        }
+        if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
         console.log(stdout)
         if (stdout && stdout.includes('Runtime Environment')) {
           javaPath = path.join(result.filePaths[0], "java.exe");
@@ -721,14 +628,14 @@ ipcMain.on('chooseJavaPathButton_open-file-dialog', async (event) => {
         } else {
           exec(`"${path.join(result.filePaths[0], "java.exe")}" -version`, {encoding: 'binary'}, async (error, stdout, stderr) => {
             if (error) { 
-              console.log(error);
+              console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
               win.webContents.send('chooseJavaPathButton_not-valid');
               return; 
             }
             if (stdout && stdout.includes('Runtime Environment')) {
               win.webContents.send('chooseJavaPathButton_was-jre', javaPath, "init");
             } else {
-              console.error(err);
+              console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
               win.webContents.send('chooseJavaPathButton_not-valid');
             }
           });
@@ -816,15 +723,15 @@ ipcMain.on('chooseGamePathButton_open-file-dialog', async (event) => {
   }
 });
 
-ipcMain.on('operationBoxBtn_0-run-main-service', async (event, gcInputRender, proxyInputRender) => {
+ipcMain.on('operationBoxBtn_0-run-main-service', async (event, gcInputRender, proxyInputRender, gcSSLStatus) => {
   await checkJava();
   await packageNec();
-  run_main_service(gcInputRender, proxyInputRender);
+  run_main_service(gcInputRender, proxyInputRender, gcSSLStatus);
 });
 
-ipcMain.on('operationBoxBtn_proxy-run-proxy-service', async (event, gcInputRender, proxyInputRender) => {
+ipcMain.on('operationBoxBtn_proxy-run-proxy-service', async (event, gcInputRender, proxyInputRender, gcSSLStatus) => {
   await packageNec("mitm");
-  run_proxy_service(gcInputRender, proxyInputRender);
+  run_proxy_service(gcInputRender, proxyInputRender, gcSSLStatus);
 });
 
 ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
@@ -835,14 +742,8 @@ ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
     'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "" /f'
   ];
   await killProcesses(processes, addition);
-  setTimeout(() => {
-    exec(`del ${global.packagedPaths.dataPath}\\run_gc.bat`);
-    exec(`del ${global.packagedPaths.dataPath}\\run_mongo.bat`);
-    exec(`del ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat`);
-    exec(`del ${global.packagedPaths.dataPath}\\add_root_crt.bat`);
-    exec(`del ${global.packagedPaths.dataPath}\\run_3dmigoto.bat`);
-    win.webContents.send('operationBoxBtn_1-success');
-  }, 250)
+  await packageNec("clear");
+  win.webContents.send('operationBoxBtn_1-success');
 });
 
 ipcMain.on('operationBoxBtn_2-run-game', (event) => {
@@ -853,35 +754,47 @@ ipcMain.on('operationBoxBtn_3-run-3dmigoto', (event) => {
   run_3dmigoto();
 });
 
-ipcMain.on('clear_data', async (event) => {
+ipcMain.on('clear_data', (event) => {
   win.webContents.send('showMessageBox', "warning", `恢复出厂`, `确定要恢复出厂吗？这将会删除所有的使用痕迹，包括你的游戏数据！！！被删除的数据将无法找回！！！`, ["confirm", "cancel"]);
-
-  ipcMain.once('showMessageBox-callback', (event, callback) => {
+  ipcMain.once('showMessageBox-callback', async (event, callback) => {
     if (callback === "confirm") {
       win.webContents.send('clearing_data');
       const paths = [
-        `${global.packagedPaths.gateServerPath}\\MongoDB\\data`,
+        `${global.packagedPaths.gateServerPath}\\MongoDB\\data\\*`,
         `${global.packagedPaths.entryPath}\\app.config.json`,
-        `${global.packagedPaths.gateServerPath}\\Grasscutter\\GM Handbook`,
-        `${global.packagedPaths.gateServerPath}\\Grasscutter\\logs`,
         `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12`,
-        `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\cache`,
-        `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\data\\gacha`
+        `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\plugins\\opencommand-plugin\\data.json`,
+        `${global.packagedPaths.gateServerPath}\\Grasscutter\\GcTools-v1.12.2.exe`
       ];
+      const dirs = [
+        `${global.packagedPaths.gateServerPath}\\Grasscutter\\GM Handbook`,
+        `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\cache`,
+        `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\data\\gacha`,
+        `${global.packagedPaths.gateServerPath}\\Grasscutter\\logs`,
+        `${global.packagedPaths.dataPath}\\MongoDB Compass`
+      ]
       for (const path of paths) {
-        exec(`rmdir /s /q "${path}"`, { encoding: 'binary' }, (error, stdout, stderr) => {
+        exec(`del /s /q "${path}"`, { encoding: 'binary' }, (error, stdout, stderr) => {
           if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
           if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')); }
           if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')); }
         });
       }
+      for (const dir of dirs) {
+        exec(`rmdir /s /q "${dir}"`, { encoding: 'binary' }, (error, stdout, stderr) => {
+          if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+          if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')); }
+          if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')); }
+        });
+      }
+      await packageNec("clear");
       win.webContents.send('showMessageBox', "info", `恢复出厂`, `将重启应用以应用更改`);
       ipcMain.once('showMessageBox-callback', () => {
         app.relaunch();
         app.exit(0);
       });
     }
-  });
+  });  
 });
 
 
@@ -894,10 +807,100 @@ function writeToLog(message, type = "log") {
   fs.appendFileSync(path.join(logDirPath, `${currentMoment}.log`), `[${type} ${currentMomentLog}] ${message}\n`);
 }
 
+async function init(port) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const tester = net.createServer()
+        .once('error', async (err) => {
+          if (err.code === 'EADDRINUSE') {
+            const response0 = await dialog.showMessageBox(win, {
+              type: "warning",
+              title: "端口已被占用",
+              message: `${port}端口已被占用！请检查是否启动了多个APP！`
+            });
+            reject(new Error(`Port ${port} is in use`));
+            app.quit();
+          } else {
+            reject(err);
+          }
+        })
+        .once('listening', () => {
+          tester.once('close', async () => {
+            await expressServer(port);
+            createWindow(port);
+            await packageNec("clear");
+            exec(`certutil -store Root`, async (error, stdout, stderr) => {
+              if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+              if (stdout.includes('6fc55dd6c7a9f76ed1d980dd657fcfe6941228ec')) {
+                console.log("Found self-signed root crt");
+              } else {
+                console.log("Self-signed root crt not found, add root crt");
+                await packageNec("init-crt");
+                exec(`start ${global.packagedPaths.dataPath}\\add_root_crt.bat`, async (error, stdout, stderr) => {
+                  if (error) {
+                    console.log(error);
+                    return;
+                  }
+                  if (stdout) {
+                    console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
+                    win.webContents.send("add_crt");
+                  };
+                  if (stderr) { console.log(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
+                });
+              }
+            });
+          }).close();
+        })
+        .listen(port);
+    } catch (err) {
+      console.error(err);
+    }
+  });
+}
+
+async function expressServer(port) {
+  return new Promise((resolve, reject) => {
+    express_app.use((req, res, next) => {
+      res.header("Access-Control-Allow-Origin", "*");
+      res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+      const BLACKLIST = [
+        /^\/app-main\//,
+        /^\/BGP-docs\//
+      ]
+      const isBlacklisted = BLACKLIST.some(pattern => pattern.test(req.path));
+      if (isBlacklisted) {
+        if (!req.headers['user-agent'].includes(`${packageJson.name}/${currentVersion}`)) {
+          return res.status(403).send(`<body>
+          <center><h1>403 Forbidden</h1></center>
+          <hr><center>btjawa</center>
+          </body>`);
+        }
+      }
+      express_app.get('*', (req, res) => {
+        return res.status(404).send(`<body>
+        <center><h1>404 Not Found</h1>
+        </center>
+        <hr><center>btjawa</center>
+        </body>`);
+      });
+      next();
+    });
+    express_app.use('/BGP-docs', express.static(path.join(__dirname, './dist/docs')));
+    express_app.use('/app-main', express.static(path.join(__dirname, './dist')));
+    express_app.listen(port, () => {
+        console.log(`Server is running on http://localhost:${port}`);
+        resolve(port);
+    });
+    express_app.on('error', (error) => {
+      reject(error);
+    });
+  });
+};
+
 async function createWindow(port) {
   win = new BrowserWindow({
     width: 1030,
-    height: 635,
+    height: 630,
     title: "BTJGenshinPS",
     icon: "./dist/favicon.ico",
     frame: false,
@@ -924,6 +927,7 @@ async function createWindow(port) {
     globalShortcut.register('CommandOrControl+Shift+-', () => {});
     globalShortcut.register('CommandOrControl+0', () => {});
     globalShortcut.register('F5', () => {});
+    globalShortcut.register('F11', () => {});
     globalShortcut.register('CommandOrControl+R', () => {});
     globalShortcut.register('CommandOrControl+W', () => {});
     globalShortcut.register('CommandOrControl+M', () => {});
@@ -976,7 +980,7 @@ echo 不要关闭这个窗口！！！\r
 echo.\r
 echo 由 github/btjawa 改包\r
 echo.\r
-echo 目标服务器：%1:%2\r
+echo 目标服务器：%2:%3\r
 echo.\r
 echo 使用SSL：${SSLStatus}
 echo.\r
@@ -996,15 +1000,6 @@ cd "${global.packagedPaths.gateServerPath}\\Proxy"\r
 mitmdump -s proxy.py --ssl-insecure --set block_global=false --listen-port ${proxyPort}\r
 exit.\r`;
 
-/*
-  const mitm_proxy_batch_already_in_use = `@echo off\r
-chcp 65001>nul\r
-echo ${proxyPort} 已被占用！请kill占用此端口的进程并重新启动服务！
-echo 按任意键退出...
-pause>nul\r
-exit\r`
-*/
-
   const add_root_crt_batch =`@echo off\r
 chcp 65001>nul\r
 %1 start "" mshta vbscript:createobject("shell.application").shellexecute("""%~0""","::",,"runas",1)(window.close)&exit\r
@@ -1013,37 +1008,58 @@ certutil -addstore -f "Root" "${global.packagedPaths.dataPath}\\root.crt"\r
 certutil -addstore -f "Root" "%USERPROFILE%\\.mitmproxy\\mitmproxy-ca-cert.cer"\r
 exit\r`;
 
-  let files = [];
-
-  switch (action) {
-    case "mitm":
-      files.push({name: 'run_mitm_proxy.bat', content: mitm_proxy_batch});
-      break;
-    case "mongo":
-      files.push({name: 'run_mongo.bat', content: mongo_batch});
-      break;
-    case "gc":
-      files.push({name: 'run_gc.bat', content: gc_batch});
-      break;
-    case "init-crt":
-      files.push({name: 'add_root_crt.bat', content: add_root_crt_batch})
-      break;
-    default:
-      files.push(
-        {name: 'add_root_crt.bat', content: add_root_crt_batch},
-        {name: 'run_gc.bat', content: gc_batch},
-        {name: 'run_mongo.bat', content: mongo_batch},
-        {name: 'run_mitm_proxy.bat', content: mitm_proxy_batch}
-      );
-      break;
-  }  
+const run_3dmigoto_batch = `@echo off\r
+chcp 65001>nul\r
+cd ${_3DMigotoPathDir}\r
+"3DMigoto Loader.exe"\r
+exit`;
 
   try {
-    for (let file of files) {
-      await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, file.name), file.content);
-      console.log(`Created ${file.name}`);
+    let files = [];
+    switch (action) {
+      case "mitm":
+        files.push({name: 'run_mitm_proxy.bat', content: mitm_proxy_batch});
+        break;
+      case "mongo":
+        files.push({name: 'run_mongo.bat', content: mongo_batch});
+        break;
+      case "gc":
+        files.push({name: 'run_gc.bat', content: gc_batch});
+        break;
+      case "init-crt":
+        files.push({name: 'add_root_crt.bat', content: add_root_crt_batch});
+        break;
+      case "3dmigoto":
+        files.push({name: 'run_3dmigoto.bat', content: run_3dmigoto_batch});
+        break;
+      case "clear":
+      default:
+        files.push(
+          {name: 'add_root_crt.bat', content: add_root_crt_batch},
+          {name: 'run_gc.bat', content: gc_batch},
+          {name: 'run_mongo.bat', content: mongo_batch},
+          {name: 'run_mitm_proxy.bat', content: mitm_proxy_batch},
+          {name: 'run_3dmigoto.bat', content: run_3dmigoto_batch},
+        );
+        break;
     }
-  } catch (err) {
+    for (let file of files) {
+      const filePath = path.join(global.packagedPaths.dataPath, file.name);
+      if (action === "clear") {
+        try {
+          await fs.promises.unlink(filePath);
+          console.log(`Deleted ${file.name}`);
+        } catch (err) {
+          err.code === 'ENOENT' ? 
+          console.log(`File ${file.name} does not exist, skipping delete`) 
+          : console.log(err);
+        }
+      } else {
+        await fs.promises.writeFile(filePath, file.content);
+        console.log(`Created ${file.name}`);
+      }
+    }
+  } catch(err) {
     console.error(err);
   }
 };
@@ -1077,13 +1093,12 @@ async function createMitmCA () {
 
 async function unzipFile(inputZip, outputDir) {
   return new Promise((resolve, reject) => {
+    process.noAsar = true
     const zip = new StreamZip({
       file: inputZip,
       storeEntries: true
     });
-
     zip.on('error', reject);
-
     zip.on('ready', () => {
       zip.extract(null, outputDir, (err, count) => {
         if (err) {
@@ -1091,6 +1106,7 @@ async function unzipFile(inputZip, outputDir) {
         } else {
           console.log(`Extracted ${count} entries to ${outputDir}`);
           zip.close();
+          process.noAsar = false
           resolve();
         }
       });
@@ -1179,55 +1195,47 @@ async function sendPatchGamePath(gamePath) {
   console.log(gamePath);
   const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf8');
   let appConfig = JSON.parse(appConfigData);
-  if (gamePath) {
-    const stdout = execSync(`copy "${global.packagedPaths.dataPath}\\RSAPatch.dll" "${gamePathDir}\\version.dll"`, { encoding: 'binary' });
-    console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-    console.log("RSA Patched");
-    patchExists = true;
-    win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
-    if (appConfig.game) {
-        appConfig.game.path = gamePath;
-    } else {
-        appConfig.game = { path: gamePath };
+  try {
+    if (gamePath) {
+      fs.copyFileSync(path.join(global.packagedPaths.dataPath, "RSAPatch.dll"), path.join(gamePathDir, "version.dll"));
+      console.log("RSA Patched");
+      patchExists = true;
+      win.webContents.send('chooseGamePathButton_selected-file', gamePath, patchExists);
+      if (appConfig.game) {
+          appConfig.game.path = gamePath;
+      } else {
+          appConfig.game = { path: gamePath };
+      }
+      await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
+      console.log('app.config.json Updated Successfully');
+    } else if (appConfig.game && appConfig.game.path) {
+      patchExists = true;
     }
-    await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
-    console.log('app.config.json Updated Successfully');
-  } else if (appConfig.game && appConfig.game.path) {
-    patchExists = true;
+  } catch(err) {
+    console.error(err);
   }
 }
 
 async function selfSignedKeystore(action) {
-  try {
-    exec(`copy "${global.packagedPaths.dataPath}\\keystore_local.p12" "${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12"`, { encoding: 'binary' }, (error, stdout, stderr) => {
-      if (error) {
-        console.log(error);
-        return;
-      }
-      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-      console.log("selfSignedKeystore");
-      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-    });
-    try {    
-      await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
-      const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
-      const appConfig = JSON.parse(appConfigData);
-      if (appConfig.grasscutter.dispatch) {
-        appConfig.grasscutter.dispatch.ssl = "selfsigned"
-      }
-      if (action === "render") {
-        if (appConfig.proxy) {
-          SSLStatus = true;
-          appConfig.proxy.ssl = SSLStatus;
-          win.webContents.send('ssl_status', SSLStatus);
-          await writeAcConfig('ssl-set');
-        }
-      }
-      await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
-      console.log('app.config.json Updated successfully');
-    } catch (err) {
-      console.error(err)
+  try { 
+    fs.promises.copyFile(path.join(global.packagedPaths.dataPath, "keystore.p12"), path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "keystore.p12"));
+    console.log("selfSignedKeystore");
+    await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
+    const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
+    const appConfig = JSON.parse(appConfigData);
+    if (appConfig.grasscutter.dispatch) {
+      appConfig.grasscutter.dispatch.ssl = "selfsigned"
     }
+    if (action === "render") {
+      if (appConfig.proxy) {
+        SSLStatus = true;
+        appConfig.proxy.ssl = SSLStatus;
+        win.webContents.send('ssl_status', SSLStatus);
+        await writeAcConfig('ssl-set');
+      }
+    }
+    await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
+    console.log('app.config.json Updated successfully');
   } catch(err) {
     console.log(err);
   }
@@ -1304,30 +1312,30 @@ async function resSetDirect () {
 
 async function killProcesses(processes, addition = []) {
   return new Promise(async (resolve, reject) => {
-    const { stderr, stdout, error } = await exec('tasklist', { encoding: 'binary' }, (error, stdout, stderr))
-    if (error) {
-      console.error(error);
-      reject(error);
-      return;
-    }
-    const tasks = iconv.decode(Buffer.from(stdout, 'binary'), 'GBK');
-    const tasksToExecute = processes.filter(process => tasks.includes(process)).map(process => `taskkill /f /im ${process}`);
-    tasksToExecute.push(...addition);
-    if (tasksToExecute.length === 0) {
-      resolve();
-      return;
-    }
-    exec(tasksToExecute.join(' & '), { encoding: 'binary' }, (error, stdout, stderr) => {
-      if (error) {
-        console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
-        reject(error);
+    try {
+      const { stderr, stdout } = await exec('tasklist', { encoding: 'binary' })
+      const tasks = iconv.decode(Buffer.from(stdout, 'binary'), 'GBK');
+      const tasksToExecute = processes.filter(process => tasks.includes(process)).map(process => `taskkill /f /im ${process}`);
+      tasksToExecute.push(...addition);
+      if (tasksToExecute.length === 0) {
+        resolve();
         return;
       }
-      if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')); }
-      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')); }
-      resolve();
-    });
-    });
+      exec(tasksToExecute.join(' & '), { encoding: 'binary' }, (error, stdout, stderr) => {
+        if (error) {
+          console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK'));
+          reject(error);
+          return;
+        }
+        if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')); }
+        if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')); }
+        resolve();
+      });
+    } catch(err) {
+      console.error(err);
+      reject(err);
+    }
+  });
 }
 
 async function rwAppConfig(action, gcInputRender, proxyInputRender) {
@@ -1414,6 +1422,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
         appConfig.grasscutter.host = gcInputRender[0];
         appConfig.grasscutter.port = gcInputRender[1];
         appConfig.grasscutter.dispatch.port = gcInputRender[2];
+        appConfig.grasscutter.dispatch.host = gcInputRender[3];
         appConfig.proxy.host = proxyInputRender[0];
         appConfig.proxy.port = proxyInputRender[1];
         await writeAcConfig("main-service-save", gcInputRender, proxyInputRender);
@@ -1649,50 +1658,44 @@ async function rwPlugs() {
 async function update(gc_org_url) {
   const orgUrl = new URL(gc_org_url);
   try {
-    await downloadFile(`${resURL[0]}${orgUrl.pathname}`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download`, "Grasscutter服务端");
-    exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\grasscutter.jar`,{ encoding: 'binary' },(error,stdout,stderr) => {
-      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      if (stderr) { console.error(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-      if (stdout) { console.log(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-    })
-    await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download`, "Resources");
-    exec(`move ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip.download ${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\resources.zip`,{ encoding: 'binary' },(error,stdout,stderr) => {
-      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      if (stderr) { console.error(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')) };
-      if (stdout) { console.log(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-    })
+    await downloadFile(`${resURL[0]}${orgUrl.pathname}`, path.join(global.packagedPaths.gateServerPath, 'Grasscutter', 'grasscutter.jar.download'), "Grasscutter服务端");
+    await fs.promises.rename(
+        path.join(global.packagedPaths.gateServerPath, 'Grasscutter', 'grasscutter.jar.download'),
+        path.join(global.packagedPaths.gateServerPath, 'Grasscutter', 'grasscutter.jar')
+    );
+    await downloadFile(`${resURL[1]}/YuukiPS/GC-Resources/-/archive/4.0/GC-Resources-4.0.zip`, path.join(global.packagedPaths.gateServerPath, 'Grasscutter', 'workdir', 'resources.zip.download'), "Resources");
+    await fs.promises.rename(
+        path.join(global.packagedPaths.gateServerPath, 'Grasscutter', 'workdir', 'resources.zip.download'),
+        path.join(global.packagedPaths.gateServerPath, 'Grasscutter', 'workdir', 'resources.zip')
+    );
     console.log("Update Completed");
     win.webContents.send('update_complete');
   } catch (error) {
-    console.log(error);
+      console.error(error);
   }
 }
 
-async function proxySettingWizard(targetServer, targetPort) {
-  return new Promise((resolve, reject) => {
+async function proxySettingWizard(targetServer, targetPort, SSLStatus, gcSSLStatus) {
+  return new Promise(async (resolve, reject) => {
     try {
+      if (["localhost", "127.0.0.1"].includes(targetServer)) {
+        return (gcSSLStatus === SSLStatus) ? resolve(targetServer)
+        : (win.webContents.send('showMessageBox', "info", "代理设置向导", `本地服务器${gcSSLStatus?"已":"未"}使用SSL，请将代理SSL${SSLStatus?"关闭":"开启"}后再试<br>Code: EPROTO`), undefined);
+      }
       const interfaces = os.networkInterfaces();
       for (let ifaceName in interfaces) {
         const iface = interfaces[ifaceName];
         for (let alias of iface) {
-          if (alias.address === targetServer && !["localhost", "127.0.0.1"].includes(targetServer)) {
+          if (alias.address === targetServer) {
             console.log(`Matched IP: ${alias.address}`);
             win.webContents.send('showMessageBox', "info", "代理设置向导", `检测到目标服务器为本机IP(${targetServer})<br> “确定” 使用该IP连接代理 “拒绝” 使用本地地址连接代理`, ["confirm", "deny"]);
             ipcMain.once('showMessageBox-callback', (event, callback) => {
-              if (callback === "confirm") {
-                resolve(targetServer);
-              } else if (callback === "deny") {
-                resolve("127.0.0.1");
-              }
+              return resolve(callback === "confirm" ? targetServer : "127.0.0.1");
             });
             return;
           }
         }
       }
-    } catch (error) {
-      console.error(error.message);
-    }
-    try {
       const options = {
         host: targetServer,
         port: targetPort,
@@ -1701,40 +1704,45 @@ async function proxySettingWizard(targetServer, targetPort) {
         rejectUnauthorized: true,
         timeout: 5000
       };
-      const req = https.request(options, (res) => {
+      const proto = SSLStatus ? https : http;
+      const req = proto.request(options, (res) => {
         let data = '';
         res.on('data', (chunk) => {
           data += chunk;
         });
         res.on('end', () => {
-          console.log(data)
+          console.log(`Received status code ${res.statusCode}`);
+          return resolve("127.0.0.1");
         });
       });
       req.setTimeout(options.timeout, () => {
         req.abort();
+        console.error('Request timed out 5000ms');
         win.webContents.send('operationBoxBtn_proxy-msg', '', 'Request timed out 5000ms');
-        console.log('Request timed out 5000ms');
-        resolve("127.0.0.1");
       });
-      req.on('error', (e) => {
-        console.log(e.message);
-        if (e.message.includes('unable to verify')) {
-          win.webContents.send('showMessageBox', "info", "代理设置向导", "检测到目标服务器SSL无法被本地验证<br>“确定” 使用远程服务器内部代理(推荐) “拒绝” 使用本地代理(不推荐)", ["confirm", "deny"]);
+      req.on('error', (err) => {
+        console.error(err);
+        req.abort();
+        if (err.code.includes('CERT') && SSLStatus) {
+          win.webContents.send('showMessageBox', "info", "代理设置向导", `检测到目标服务器SSL无法被本地验证<br>“确定” 使用远程服务器内部代理(推荐) “拒绝” 使用本地代理(不推荐)<br>${err}<br>Code: ${err.code}`, ["confirm", "deny"]);
           ipcMain.once('showMessageBox-callback', (event, callback) => {
             if (callback === "confirm") {
-              resolve(targetServer);
-            } else if (callback === "deny") {
-              resolve("127.0.0.1");
+              win.webContents.send('operationBoxBtn_proxy-msg', `请在目标服务器内部署mitm代理！<button name="remote_mitm_guide">部署教程&nbsp;<i class="fa-solid fa-link"></i></button>`);
+            } else {
+              win.webContents.send('operationBoxBtn_proxy-msg', `警告：该情况下使用本地代理可能会导致502与400错误！`);
             }
+            return resolve(callback === "confirm" ? targetServer : "127.0.0.1");
           });
+        } else if (err.code === "EPROTO") {
+          win.webContents.send('showMessageBox', "info", "代理设置向导", `目标服务器返回协议错误，当前SSL状态：${SSLStatus}，请尝试${SSLStatus?"关闭":"开启"}SSL后再试<br>${err}<br>Code: ${err.code}`);
         } else {
-          resolve("127.0.0.1");
+          win.webContents.send('operationBoxBtn_proxy-msg', '', `${err}, Code: ${err.code}`);
         }
       });
       req.end();
     } catch(err) {
-      console.error(err.message);
-      reject(err);  
+      console.error(err);
+      reject(err);
     }
   });
 }
@@ -1742,7 +1750,7 @@ async function proxySettingWizard(targetServer, targetPort) {
 async function downloadFile(url, outputPath, action) {
   const proxyServer = await getSystemProxy();
   const curlArgs = ['-Lo', outputPath, url];
-  if (proxyServer && !proxyServer.includes(':54321')) { //ignore mitm proxy
+  if (proxyServer && !proxyServer.includes(':', proxyPort)) { //ignore mitm proxy
     curlArgs.unshift('--proxy', `http://${proxyServer}`);
     win.webContents.send('using_proxy', proxyServer);
   };
@@ -1763,7 +1771,7 @@ async function downloadFile(url, outputPath, action) {
 }
 
 
-async function run_main_service (gcInputRender, proxyInputRender) {
+async function run_main_service (gcInputRender, proxyInputRender, gcSSLStatus) {
   await rwAppConfig("main-service-save", gcInputRender, proxyInputRender)
   const processes = ['java.exe', 'mongod.exe', 'mitmdump.exe'];
   await killProcesses(processes);
@@ -1772,20 +1780,21 @@ async function run_main_service (gcInputRender, proxyInputRender) {
     win.webContents.send('gateserver_not-exists');
     return;
   }
-  win.webContents.send('operationBoxBtn_0-success');
-  const mongo_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mongo.bat`], {
+  const proxyIP = await proxySettingWizard(proxyInputRender[0], proxyInputRender[1], SSLStatus, gcSSLStatus);
+  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat ${proxyIP} ${proxyInputRender[0]} ${proxyInputRender[1]}`], {
     stdio: 'ignore'
   });
-  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat ${SSLStatus ? await proxySettingWizard(proxyInputRender[0], proxyInputRender[1]) : proxyInputRender[0]} ${proxyInputRender[1]}`], {
+  const mongo_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mongo.bat`], {
     stdio: 'ignore'
   });
   console.log(javaPath)
   const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat`], {
     stdio: 'ignore'
   });
+  win.webContents.send('operationBoxBtn_0-success');
 }
 
-async function run_proxy_service (gcInputRender, proxyInputRender) {
+async function run_proxy_service (gcInputRender, proxyInputRender, gcSSLStatus) {
   await rwAppConfig("proxy-service-save", gcInputRender, proxyInputRender)
   const processes = ['mitmdump.exe'];
   await killProcesses(processes);
@@ -1794,7 +1803,8 @@ async function run_proxy_service (gcInputRender, proxyInputRender) {
     win.webContents.send('gateserver_not-exists');
     return;
   }
-  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat ${SSLStatus ? await proxySettingWizard(proxyInputRender[0], proxyInputRender[1]) : proxyInputRender[0]} ${proxyInputRender[1]}`], {
+  const proxyIP = await proxySettingWizard(proxyInputRender[0], proxyInputRender[1], SSLStatus, gcSSLStatus);
+  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat ${proxyIP} ${proxyInputRender[0]} ${proxyInputRender[1]}`], {
     stdio: 'ignore'
   });
   win.webContents.send('operationBoxBtn_proxy-success');
@@ -1821,13 +1831,7 @@ async function run_3dmigoto() {
       await fs.promises.access(_3DMigotoPathDir);
       await fs.promises.access(_3DMigotoPath);
       await fs.promises.access(path.join(_3DMigotoPathDir, "d3dx.ini"));
-      const run_3dmigoto_batch = `@echo off\r
-chcp 65001>nul\r
-cd ${_3DMigotoPathDir}\r
-"3DMigoto Loader.exe"\r
-exit`;
-      await fs.promises.writeFile(path.join(global.packagedPaths.dataPath, 'run_3dmigoto.bat'), run_3dmigoto_batch);
-      console.log('Created run_3dmigoto.bat');
+      await packageNec("3dmigoto");
       const run_3dmigoto_process = spawn('cmd.exe', ['/c', `${global.packagedPaths.dataPath}\\run_3dmigoto.bat`]);
       run_game();
     } catch(err) {

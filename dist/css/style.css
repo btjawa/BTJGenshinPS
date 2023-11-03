@@ -44,6 +44,19 @@ input[type="checkbox"] {
     display: none;
 }
 
+input:focus,
+button:focus {
+    border: 2px solid #007BFF;
+    outline: none;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 1);
+    color: #fff;
+    background-color: #007bff88;
+}
+
+::selection {
+    background-color: #007BFF;
+}
+
 .ssl_ver_0, .ssl_ver_1 , .ssl_ver_2,
 .proxy_using_ssl {
     display: flex;
@@ -174,7 +187,7 @@ button[name="edit_config"] {
 
 button[name="gctools_btn"].disabled,
 button[name="choose_3dmigoto_path"].disabled,
-button[name="compass_btn"] {
+button[name="compass_btn"].disabled {
     background-color: #80808860;
     color: #e4e4e456;
 }
@@ -667,6 +680,12 @@ button[name="clear_data"] {
 .res_version {
     cursor: pointer;
     text-decoration: underline;
+    transition: color 0.1s ease-in-out, border 0.1s ease-in-out;
+}
+
+.gc_version:hover,
+.res_version:hover {
+    color: #999696;
 }
 
 .page_0_version_title { bottom: 45px; }
@@ -815,6 +834,7 @@ button[name="clear_data"] {
 }
 
 .page_log_text_0 {
+    user-select:text;
     display:block;
     position: relative;
     top: 6px;
