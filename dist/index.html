@@ -15,6 +15,14 @@
         <link rel="icon" href="./favicon.ico">
     </head>
     <body>
+        <div class="context">
+            <ul><li class="context-copy">
+                <a id="copy-button"><i class="fa fa-file fa-fw"></i><span>复制</span></a>
+            </li>
+            <li class="context-paste">
+                <a id="paste-button"><i class="fa fa-paste fa-fw"></i><span>粘贴</span></a>
+            </li></ul>
+        </div>
         <div class="dragbar">
             <img class="title_img" src="./favicon.ico">
             <a class="title_text">BTJGenshinPS</a>
@@ -93,7 +101,7 @@
                 </div>
                 <div class="page_0_text_conn_test">
                     <div class="page_0_text_conn_test_text_0">测试连接<br>
-                        <i class="page_settings_text_2_sub">暂只支持使用当前设置<br>需要OpenCommand支持</i>
+                        <i class="page_settings_text_sub">只支持使用客户端代理设置<br>需要OpenCommand支持</i>
                     </div>
                     <div class="page_0_text_conn_test_btn"><i class="fa-solid fa-link"></i>&ensp;测试连接</div>
                 </div>
@@ -182,7 +190,7 @@
                 </div>    
             </div>
             <div class="page_tools_text_2">模组管理</div>
-            <i class="page_tools_text_2_sub">若想使用模组,&nbsp;请在启动服务后下方点击&nbsp;"注入3DMigoto",&nbsp;不用再额外启动游戏！<br>可在设置中指定3DMigoto路径,&nbsp;默认使用自带版本</i>
+            <i class="page_settings_text_sub">若想使用模组,&nbsp;请在下方点击&nbsp;"注入3DMigoto",&nbsp;不用再额外启动游戏！<br>可在设置中指定3DMigoto路径,&nbsp;默认使用自带版本<br>游戏内可以按"F10"重载配置/模组</i>
             <div class="page_tools_mods_actions">
                 <div class="operation_box_btn_3">注入3DMigoto</div>
                 <div class="page_tools_mods_drag_area">将文件夹拖放至此处以添加模组</div>
@@ -190,7 +198,6 @@
             <div class="page_tools_mods_list">
                 <div class="page_tools_mods_list_item">
                     <div class="page_tools_mods_name">模组名称将会在此处显示...</div>
-                    
                 </div>
                 <div class="bottom-spacing"></div>
             </div>
@@ -199,7 +206,6 @@
             <div class="page_tools_plugs_list">
                 <div class="page_tools_plugs_list_item">
                     <div class="page_tools_plugs_name">插件名称将会在此处显示...</div>
-                    
                 </div>
                 <div class="bottom-spacing"></div>
             </div>
@@ -224,22 +230,30 @@
             <div class="page_title">设置</div>
             <i class="page_subtitle">BTJGenshinPS</i>
             <div class="page_settings_text_0"><i class="fa-brands fa-java"></i>&emsp13;Java路径&nbsp;<button name="choose_java_path">选择Java路径</button></div>
-            <input type="text" name="java_path" disabled="disabled" text="自动检测">
+            <input type="text" name="java_path" disabled="disabled">
+            <div class="page_settings_text_2"><i class="fa-solid fa-folder-magnifying-glass"></i>&emsp13;3DMigoto路径&nbsp;<button name="choose_3dmigoto_path">选择3DMigoto路径</button></div>
+            <i class="page_settings_text_sub">请将exe命名为&nbsp;"3DMigoto Loader.exe"</i><br>
+            <input type="text" name="3dmigoto_path" disabled="disabled">
             <div class="page_settings_text_1"><i class="fa-solid fa-file-lines"></i>&emsp13;查看日志</div>
             <div class="page_settings_text_1_flex">
-                    <button name="open_log_dir">打开日志目录</button>
-                    <button name="open_log_latest">打开最新日志</button>
-                </div>
-            <div class="page_settings_text_2"><i class="fa-solid fa-folder-magnifying-glass"></i>&emsp13;3DMigoto路径&nbsp;<button name="choose_3dmigoto_path">选择3DMigoto路径</button></div>
-            <i class="page_settings_text_2_sub">请将exe命名为&nbsp;"3DMigoto Loader.exe"</i>
-            <input type="text" name="3dmigoto_path" disabled="disabled">
+                <button name="open_log_dir">打开日志目录</button>
+                <button name="open_log_latest">打开最新日志</button>
+            </div>
             <div class="page_settings_text_3"><i class="fa-solid fa-file-check"></i>&emsp13;应用配置</div>
-            <i class="page_settings_text_3_sub">若想编辑配置，请在弹出的窗口中选择记事本或其他编辑器打开！<br>编辑后需重启应用以完成更改!</i>
+            <i class="page_settings_text_sub">若想编辑配置，请在弹出的窗口中选择记事本或其他编辑器打开！<br>编辑后需重启应用以完成更改!</i>
             <div class="page_settings_text_3_flex">
                 <button name="edit_config">编辑应用配置</button>
                 <button name="export_config">导出应用配置</button>
                 <button name="import_config">导入应用配置</button>
             </div>
+            <div class="page_settings_gc_title"><i class="fa-solid fa-server"></i>&ensp;Grasscutter设置</div>
+            <div class="page_settings_text_4"><i class="fa-brands fa-java"></i>&emsp13;JVM参数头</div>
+            <i class="page_settings_text_sub">除了第一个参数，其余每个参数前都需要加上一个空格<br>请勿随意修改，可通过删除应用配置重置</i><br>
+            <textarea name="gc_jvm_head" text="-XX:+UseG1GC -XX:+UnlockExperimentalVMOptions"></textarea>
+            <div class="page_settings_text_5"><i class="fa-brands fa-java"></i>&emsp13;JVM参数尾</div>
+            <i class="page_settings_text_sub">除了第一个参数，其余每个参数前都需要加上一个空格<br>请勿随意修改，可通过删除应用配置重置</i><br>
+            <textarea name="gc_jvm_tail"></textarea>
+            <div class="bottom-spacing"></div>
         </div>
         <script>if (typeof module === 'object') window.module = module, module = undefined;</script>
         <script type="text/javascript" src="./js/jquery-3.6.0.min.js"></script>

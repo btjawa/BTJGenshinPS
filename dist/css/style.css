@@ -28,9 +28,59 @@ body {
     padding: 0;
     background-color: #444654;
     font-family: "SourceHanSans&SairaHybrid-Regular",Arial, sans-serif;
+    overflow: hidden;
 }
 
-input[type="text"] {
+.context {
+    background: no-repeat center/cover #6e6e6e;
+    font-size: 13px;
+    width: 130px;
+    box-shadow: 0px 0px 15px #333, 1px 1px 3px rgba(0, 0, 0, 0.3);
+    position: absolute;
+    left: 199px;
+    top: 5px;
+    display: none;
+    z-index: 1001;
+    border-radius: 5px;
+}
+
+.context.active {
+    display: block;
+    animation: fadeIn 0.5s cubic-bezier(0,1,.6,1);
+}
+
+.context ul,
+.context ul li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: block;
+    line-height: 35px;
+}
+
+.context ul li a {
+    user-select: none;
+    text-decoration: none;
+    color: #c4c4c4;
+    padding: 0 15px;
+    display: block;
+}
+
+.context ul li a:hover {
+    cursor: pointer;
+    color: #fff;
+    background-color: #4040407d;
+    transition: background-color 0.1s, border 0.1s;
+    border-radius: 5px;
+}
+
+.context ul li a i {
+    margin-right: 10px;
+}
+
+
+input[type="text"],
+textarea {
     font-family: "SourceHanSans&SairaHybrid-Regular", Arial, sans-serif;
     height: 25px;
     border-radius: 5px;
@@ -45,6 +95,7 @@ input[type="checkbox"] {
 }
 
 input:focus,
+textarea:focus,
 button:focus {
     border: 2px solid #007BFF;
     outline: none;
@@ -116,34 +167,28 @@ input[name="game_path"],
 input[name="java_path"],
 input[name="3dmigoto_path"] {
     font-size: 17px;
-}
-
-input[name="gc_ip"],
-input[name="gc_game_port"],
-input[name="gc_dispatch_port"],
-input[name="proxy_ip"],
-input[name="proxy_port"] {
-    font-family: "SourceHanSans&SairaHybrid-Regular";
     width: 120px;
     color: #e5e5e5;
-    vertical-align: center;  
+    vertical-align: center;
 }
 
 input[name="mongo_port"],
 input[name="mongo_data_folder"] {
-    width: 120px;
     color: #a8a5a5;
-    vertical-align: center;  
 }
 
-
+input[name="game_path"] ,
 input[name="java_path"],
-input[name="3dmigoto_path"] {
-    width: 100%;
+input[name="3dmigoto_path"],
+textarea[name="gc_jvm_head"],
+textarea[name="gc_jvm_tail"] {
+    width: 400px;
 }
 
-input[name="game_path"] {
-    width: 400px;
+textarea[name="gc_jvm_head"],
+textarea[name="gc_jvm_tail"] {
+    resize: vertical;
+    min-height: 40px;
 }
 
 input[name="game_path"],
@@ -464,12 +509,15 @@ button[name="clear_data"] {
 .page_0, .page_1,
 .page_2, .page_log,
 .page_settings {
+    display: none;
     color: #c4c4c4;
     position: relative;
-    width: max-content;
+    width: calc(100% - 105px);
     top: 60px;
     left: 100px;
     user-select: none;
+    overflow: auto;
+    max-height: 560px;
 }
 
 .page_0_right_banner {
@@ -495,12 +543,22 @@ button[name="clear_data"] {
     font-size: 22px;
 }
 
+.page_settings_gc_title {
+    font-size: 20px;
+    margin-top: 16px;
+    margin-bottom: 10px;
+}
+
+textarea[name="gc_jvm_head"],
+textarea[name="gc_jvm_tail"] {
+    font-size: 15px;
+}
+
 .page_subtitle {
     color: #999696;
 }
 
 .page_0_right_banner_title {
-    color: #e5e5e5;
     position: relative;
     top: 8px;
     left: 18px;
@@ -521,25 +579,8 @@ button[name="clear_data"] {
     font-size: 15px;
 }
 
-.page_0.inactive {
-    display: none;
-}
-
 .patch_state {
     margin-left: 6px;
-}
-
-.patch_state.active {
-    animation: path_state_active_anime 0.66s cubic-bezier(0,1,.6,1), fadeIn 0.5s cubic-bezier(0,1,.6,1);
-}
-
-@keyframes path_state_active_anime {
-    0% {
-        top: 133px;
-    }
-    100% {
-        top: 150px;
-    }
 }
 
 .page_0_text_1 {
@@ -572,8 +613,8 @@ button[name="clear_data"] {
 
 .page_0_text_conn_test_text_0 {
     position: relative;
-    right: 55px;
-    width: 160px;
+    right: 64px;
+    width: 168px;
     text-align: right;
 }
 
@@ -587,10 +628,6 @@ button[name="clear_data"] {
 
 .page_0_text_conn_test_text_0_sub {
     color: #999696;
-}
-
-.page_0_text_conn_test.active {
-    animation: page_0_text_conn_test_active_anime 0.66s cubic-bezier(0,1,.6,1), fadeIn 0.5s cubic-bezier(0,1,.6,1);
 }
 
 .page_0_text_2 {
@@ -780,8 +817,7 @@ button[name="clear_data"] {
     border-radius: 8px;
 }
 
-.operation_box.active, .page_0.active,
-.page_1.active, .page_2.active,
+.page_0.active, .page_1.active, .page_2.active,
 .page_settings.active, .page_log.active {
     display: block;
     animation: page_active_anime 0.66s cubic-bezier(0,1,.6,1), fadeIn 0.5s cubic-bezier(0,1,.6,1);
@@ -789,13 +825,11 @@ button[name="clear_data"] {
 
 .doc_iframe {
     border: none;
-    position: absolute;
-    left: -12px;
-    top: -10px;
-    width: 100%; 
-    height: 100%;
-    width: calc(100vw - 90px);
-    height: calc(100vh - 50px);
+    position: fixed;
+    top: 50px;
+    left: 88px;
+    width: calc(100% - 88px);
+    height: calc(100% - 50px);
 }
 
 #iframe_button {
@@ -827,7 +861,7 @@ button[name="clear_data"] {
 
 .page_log_console {
     position: relative;
-    top: 1vh;
+    margin-top: 1vh;
     width: 85vw;
     min-height: 75vh;
     background-color: #363940;
@@ -844,7 +878,8 @@ button[name="clear_data"] {
 .page_settings_text_0,
 .page_settings_text_1,
 .page_settings_text_2,
-.page_settings_text_3 {
+.page_settings_text_3,
+.page_settings_text_5 {
     margin-top: 10px;
 }
 
@@ -852,19 +887,14 @@ button[name="clear_data"] {
     margin-bottom: 5px;
 }
 
-.page_settings_text_2_sub,
-.page_settings_text_3_sub {
+.page_settings_text_sub {
     color: #999696;
     font-size: 14px;
+    margin-top: 27px;
 }
 
 .page_settings_text_3_flex {
     margin-top: 5px;
-}
-
-.page_settings_text_2_sub,
-.page_settings_text_3_sub {
-    margin-top: 27px;
 }
 
 .page_tools_text_0,
@@ -893,7 +923,7 @@ button[name="clear_data"] {
     padding: 7.5px 15px;
     border: 2px dashed #828282;
     border-radius: 8px;
-    margin-top: 18px;
+    margin-top: 10px;
     margin-left: 5px;
     color: #aeaeae;
     transition: background-color 0.1s;
@@ -920,7 +950,6 @@ button[name="clear_data"] {
     padding: 10px;
     background-color: #686b80;
     font-size: 12px;
-    z-index: 1000;
     transition: background-color 0.1s ease-in-out, border 0.1s ease-in-out;
 }
 
@@ -929,28 +958,6 @@ button[name="clear_data"] {
 .page_tools_mods_name, .page_tools_plugs_name { font-size: 14px; }
 .page_tools_mods_name:hover, .page_tools_plugs_name:hover { cursor: pointer; }
 
-.page_0_text_1_flex.active {
-    animation: page_0_text_1_flex_active_anime 0.66s cubic-bezier(0,1,.6,1), fadeIn 0.5s cubic-bezier(0,1,.6,1);
-}
-
-@keyframes page_0_text_1_flex_active_anime {
-    0% {
-        top: -7px;
-    }
-    100% {
-        top: 10px;
-    }
-}
-
-@keyframes page_0_text_conn_test_active_anime {
-    0% {
-        top: 103px;
-    }
-    100% {
-        top: 120px;
-    }
-}
-
 .page_tools_text_3,
 .page_tools_plugs_drag_area {
     display: inline-block;
@@ -958,7 +965,7 @@ button[name="clear_data"] {
 }
 
 .page_tools_text_3 {
-    margin-top: 20px;
+    margin-top: 10px;
     margin-right: 10px;
 }
 
@@ -967,7 +974,7 @@ button[name="clear_data"] {
     position: relative;
     top: 7px;
     border-radius: 10px;
-    width: 100%;
+    width: 400px;
     padding: 12.5px;
     background-color: #353740;
     margin-right: 5px;

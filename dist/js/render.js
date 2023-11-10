@@ -1,4 +1,5 @@
 $(document).ready(function () {
+    toggleMenuState(menuItems[0].selector);
     const $DocsIframe = $('#doc_iframe');
     $DocsIframe.on('load', setIframeListeners);
     iziToast.settings({
@@ -22,6 +23,15 @@ $(document).ready(function () {
             }
         });
     });
+    const contextMenu = $('.context');
+    $(document).on('contextmenu', function(event) {
+        event.preventDefault();
+        contextMenu.removeClass('active');
+        contextMenu.css({ left: event.clientX + 'px', top: event.clientY + 'px' });
+        contextMenu.get(0).offsetHeight;
+        contextMenu.addClass('active');
+    });
+    $(document).on('click', () => contextMenu.removeClass('active'));
     function setIframeListeners() {
         const iframe = $DocsIframe[0].contentWindow.document;
         $(iframe).on('click', function(event) {

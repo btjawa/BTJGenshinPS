@@ -48,6 +48,8 @@ const elems = {
     gcDispatchPort: $('input[name=gc_dispatch_port]'),
     proxyIP: $('input[name=proxy_ip]'),
     proxyPort: $('input[name=proxy_port]'),
+    jvmHead: $('textarea[name="gc_jvm_head"]'),
+    jvmTail: $('textarea[name="gc_jvm_tail"]'),
     proxyUsingSSLCheckbox: $(".proxy_using_ssl input[type='checkbox']"),
     remoteMitmGuide: $('button[name="remote_mitm_guide"]')
 };
@@ -60,6 +62,7 @@ let gcSSLStatus;
 let gc_latestCommitSha;
 let gc_latestReleaseTagName;
 let res_latestCommitSha;
+let jvm;
 
 function izi_notify() {
     izi_notify_mp3.pause();
@@ -72,6 +75,9 @@ function izi_notify() {
 function save_settings() {
     gcInputRender = [elems.gcIp.val(), elems.gcGamePort.val(), elems.gcDispatchPort.val(), elems.gcIp.val()];
     proxyInputRender = [elems.proxyIP.val(), elems.proxyPort.val()];
+    jvm = [elems.jvmHead.val(), elems.jvmTail.val()];
+    if ($(elems.selfSignedKeystoreBox).prop('checked')) gcSSLStatus = true;
+    if ($(elems.noKeystoreBox).prop('checked')) gcSSLStatus = false;
 }
 
 $(window).on('devtoolschange', event => {
@@ -138,7 +144,7 @@ function getLatestCommitID() {
             console.error(error);
         });
 
-    $.getJSON('https://api-glab-proxy.btl-cdn.top/api/v4/projects/YuukiPS%2FGC-Resources/repository/commits')
+    $.getJSON('https://glab-proxy.btl-cdn.top/api/v4/projects/YuukiPS%2FGC-Resources/repository/commits')
         .then(commits => {
             res_latestCommitSha = commits[0].id;
             elems.resVersionLink.on('click', () => {
@@ -155,7 +161,7 @@ elems.patchState.css('display', 'none');
 
 elems.dragbar_close.on('click', () => {
     save_settings();
-    ipcRenderer.send('handelClose', gcInputRender, proxyInputRender);
+    ipcRenderer.send('handelClose', gcInputRender, proxyInputRender, jvm);
 });
 
 elems.dragbar_minimize.on('click', () => {
@@ -269,7 +275,6 @@ function selfSignedKeystoreBox_ClickHandler() {
         return;
     }
     ipcRenderer.send('selfSignedKeystoreBox-set');
-    gcSSLStatus = true;
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -291,7 +296,6 @@ function noKeystoreBox_ClickHandler() {
         return;
     }
     ipcRenderer.send('noKeystoreBoxBox-set');
-    gcSSLStatus = false;
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -335,7 +339,7 @@ elems.proxyUsingSSLCheckbox.on('click', proxyUsingSSLCheckbox_ClickHandler);
 
 function operationBoxBtn_0_ClickHandler() {
     save_settings();
-    ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender, gcSSLStatus);
+    ipcRenderer.send('operationBoxBtn_0-run-main-service', gcInputRender, proxyInputRender, gcSSLStatus, jvm);
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -351,7 +355,7 @@ function operationBoxBtn_0_ClickHandler() {
 
 function operationBoxBtn_proxy_ClickHandler() {
     save_settings();
-    ipcRenderer.send('operationBoxBtn_proxy-run-proxy-service', gcInputRender, proxyInputRender, gcSSLStatus);
+    ipcRenderer.send('operationBoxBtn_proxy-run-proxy-service', gcInputRender, proxyInputRender, gcSSLStatus, jvm);
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
@@ -393,7 +397,11 @@ elems.updateBtn.on('click', () => {
             izi_notify()
         }
     });
-    fetch('https://api.github.com/repos/Grasscutters/Grasscutter/releases/latest')
+    elems.operationBoxBtn_0.addClass("disabled");
+    elems.operationBoxBtn_proxy.addClass("disabled");
+    elems.operationBoxBtn_0.off('click', operationBoxBtn_0_ClickHandler);
+    elems.operationBoxBtn_proxy.off('click', operationBoxBtn_proxy_ClickHandler);
+    fetch('https://api-gh-proxy.btl-cdn.top/repos/Grasscutters/Grasscutter/releases/latest')
         .then(response => response.json())
         .then(data => {
             const latestReleaseUrl = data.assets[0].browser_download_url;
@@ -403,7 +411,7 @@ elems.updateBtn.on('click', () => {
             iziToast.error({
                 icon: 'fa-solid fa-circle-exclamation',
                 layout: '2',
-                title: 'Github API 已超限！请等待一分钟！',
+                title: `错误：${error}`,
                 onOpening: function() {
                     izi_notify()
                 }
@@ -413,12 +421,12 @@ elems.updateBtn.on('click', () => {
 
 elems.connTestBtn.on('click', () => {
     save_settings();
-    ipcRenderer.send('connTestBtn_test-conn', gcInputRender, proxyInputRender);
+    ipcRenderer.send('connTestBtn_test-conn', gcInputRender, proxyInputRender, jvm);
     iziToast.info({
         icon: 'fa-solid fa-circle-info',
         layout: '2',
         title: '测试连接',
-        message: `HOST:&nbsp;${gcInputRender[0]}&emsp;PORT:&nbsp;${gcInputRender[2]}`,
+        message: `HOST:&nbsp;${proxyInputRender[0]}:${proxyInputRender[1]}`,
         onOpening: function() {
             izi_notify()
         }
@@ -479,7 +487,7 @@ elems.editAppConfigBtn.on('click', () => {
 
 elems.exportAppConfigBtn.on('click', () => {
     save_settings();
-    ipcRenderer.send('exportAppConfigBtn-export', gcInputRender, proxyInputRender);
+    ipcRenderer.send('exportAppConfigBtn-export', gcInputRender, proxyInputRender, jvm);
 });
 
 elems.importAppConfigBtn.on('click', () => {
@@ -556,6 +564,10 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
             izi_notify()
         }
     });
+    elems.operationBoxBtn_0.removeClass("disabled");
+    elems.operationBoxBtn_proxy.removeClass("disabled");
+    elems.operationBoxBtn_0.on('click', operationBoxBtn_0_ClickHandler);
+    elems.operationBoxBtn_proxy.on('click', operationBoxBtn_proxy_ClickHandler);
 })
 
 .on('res_getway', (event, way) => {
@@ -592,6 +604,11 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
     elems.gcIp.val(input[0]);
     elems.gcGamePort.val(input[1]);
     elems.gcDispatchPort.val(input[2]);
+})
+
+.on('jvm_text', (event, input) => {
+    elems.jvmHead.val(input[0]);
+    elems.jvmTail.val(input[1]);
 })
 
 .on('proxy_text', (event, input) => {
@@ -1068,18 +1085,6 @@ ipcRenderer.on('openHandbookTXTBtn_not-found', (event) => {
         title: '添加模组',
         timeout: 3500,
         message: `已添加模组：${fileName}`,
-        onOpening: function() {
-            izi_notify()
-        }
-    });
-})
-
-.on('modsDragArea-not-folder', (event, fileName) => {
-    iziToast.error({
-        icon: 'fa-solid fa-circle-exclamation',
-        title: '错误',
-        layout: '2',
-        message: `${fileName}&nbsp;不是文件夹!请拖入文件夹!`,
         onOpening: function() {
             izi_notify()
         }

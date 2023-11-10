@@ -44,11 +44,6 @@ async function package() {
       console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
       console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
 
-    ({error, stdout, stderr} = await exec(`xcopy .\\node_modules\\form-data .\\BTJGenshinPS-win32-ia32\\resources\\app\\node_modules\\form-data /E /I /Y`));
-    if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-      console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK'));
-
     ({error, stdout, stderr} = await exec(`asar pack BTJGenshinPS-win32-ia32\\resources\\app BTJGenshinPS-win32-ia32\\resources\\app.asar && rmdir BTJGenshinPS-win32-ia32\\resources\\app /s /q`));
     if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
       console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));

@@ -7,7 +7,6 @@ const util = require('util');
 const net = require('net');
 const os = require('os');
 const StreamZip = require('node-stream-zip');
-const axios = require('axios');
 const https = require('https');
 const http = require('http');
 const exec = util.promisify(require('child_process').exec);
@@ -35,7 +34,8 @@ const defaultAppConfig = {
   version: config_version,
   getRes: "proxy",
   game: { path: "", "_3dmigoto": path.join(global.packagedPaths.gateServerPath, "3DMigoto", "3DMigoto Loader.exe") },
-  grasscutter: { port: "22102", host: "127.0.0.1", dispatch: { port: "443", host: "127.0.0.1", ssl: "selfsigned" } },
+  grasscutter: { port: "22102", host: "127.0.0.1", dispatch: { port: "443", host: "127.0.0.1", ssl: "selfsigned" }, 
+  jvm: { head: "-XX:+UseG1GC -XX:+UnlockExperimentalVMOptions", tail: "" } },
   proxy: { port: "443", host: "127.0.0.1", ssl: "true" },
   mongodb: { port: "27017" },
   java: { exec: "java" }
@@ -57,6 +57,8 @@ let SSLStatus = true;
 let modsList = [];
 let proxyPort = 54321;
 let gateServerStatus = true;
+let jvmHead;
+let jvmTail;
 
 
 
@@ -102,19 +104,7 @@ app.on('window-all-closed', (event) => {
 app.on('before-quit', async (event) => {
   console.log('App is quitting...\nSaving config...');
   try {
-    const stdout = await exec('tasklist');
-    if (!stdout.includes('java.exe')) {
-      await fs.promises.unlink(path.join(global.packagedPaths.dataPath, 'run_gc.bat'));
-    }
-    if (!stdout.includes('mongod.exe')) {
-      await fs.promises.unlink(path.join(global.packagedPaths.dataPath, 'run_mongo.bat'));
-    }
-    if (!stdout.includes('mitmdump.exe')) {
-      await fs.promises.unlink(path.join(global.packagedPaths.dataPath, 'run_mitm_proxy.bat'));
-    }
-    exec(`taskkill /f /im curl.exe`);
-    await fs.promises.unlink(path.join(global.packagedPaths.dataPath, 'add_root_crt.bat'));
-    await fs.promises.unlink(path.join(global.packagedPaths.dataPath, 'run_3dmigoto.bat'));
+    packageNec("clear");
   } catch (error) {
     console.error(error);
   }
@@ -141,19 +131,6 @@ ipcMain.on('render-ready', async (event) => {
         if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
       })
     }
-    exec('tasklist', (error, stdout, stderr) => {
-      if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-      if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) }
-      if (stdout.includes('java.exe')) {
-        packageNec("gc");
-      }
-      if (stdout.includes('mongod.exe')) {
-        packageNec("mongo");
-      }
-      if (stdout.includes('mitmdump.exe')) {
-        packageNec("mitm");
-      }
-    });
     await rwMods();
     await rwPlugs();
   }
@@ -168,9 +145,9 @@ ipcMain.on('devtools-opened', () => {
   console.log(`fetched from github api: ${gc_org_url}`);
   update(gc_org_url);
 })
-.on('handelClose', async (event, gcInputRender, proxyInputRender) => {
+.on('handelClose', async (event, gcInputRender, proxyInputRender, jvm) => {
   if (gateServerStatus) {
-    await rwAppConfig("simple-save", gcInputRender, proxyInputRender);
+    await rwAppConfig("simple-save", gcInputRender, proxyInputRender, jvm);
   }
   app.quit();
 })
@@ -208,7 +185,7 @@ ipcMain.on('devtools-opened', () => {
 });
 
 ipcMain.on('restoreOfficialButton_delete-path', async (event) => {
-  if (gamePath) { 
+  if (gamePath != "") { 
     console.log(path.join(gamePathDir, "version.dll"))
     try {
       await fs.promises.access(path.join(gamePathDir, "version.dll"))
@@ -360,11 +337,6 @@ ipcMain.on('modsDragArea-add-file', async (event, filePaths) => {
   try {
     for (const filePath of filePaths) {
       const fileName = path.basename(filePath);
-      if (!fs.statSync(filePath).isDirectory()) {
-        console.error(`${filePath} is not a dir`);
-        win.webContents.send('modsDragArea-not-folder', fileName);
-        continue;
-      }
       await fs.promises.access(filePath);
       const destinationPath = path.join(_3DMigotoPathDir, _3DMigotoModsPath, fileName);
       exec(`xcopy "${filePath}" "${destinationPath}" /E /Y /I`, {encoding: "binary"}, async (error, stdout, stderr) => {
@@ -405,70 +377,64 @@ ipcMain.on('plugsDragArea-add-file', async (event, filePaths) => {
   }
 });
 
-ipcMain.on('connTestBtn_test-conn', async (event, gcInputRender, proxyInputRender) => {
-  console.log("test conn", gcInputRender, proxyInputRender);
-  await rwAppConfig("simple-save", gcInputRender, proxyInputRender);
-  let token;
-  const host = (SSLStatus ? "https://" : "http://") + gcInputRender[0] + ":" + gcInputRender[2] + "/opencommand/api";
+ipcMain.on('connTestBtn_test-conn', async (event, gcInputRender, proxyInputRender, jvm) => {
   try {
-    await fs.promises.access(path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins", "opencommand-plugin", "config.json"));
-    const OCConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
-    const OCConfig = JSON.parse(OCConfigData);
-    token = OCConfig.consoleToken ? OCConfig.consoleToken : "52837291";
-  } catch(err) {
-    console.error(err);
-    token = "52837291";
-  }
-  console.log(host)
-  let data = {
-    token: token,
-    action: "",
-    server: "",
-    data: {}
-  }
-  let reqConfig = {
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    timeout: 5000
-  };
-  if (SSLStatus) {
-    reqConfig.httpsAgent = new https.Agent({ rejectUnauthorized: false });
-  }
-  try {
+    console.log("test conn", gcInputRender, proxyInputRender);
+    await rwAppConfig("simple-save", gcInputRender, proxyInputRender, jvm);
+    const host = `${SSLStatus?"https":"http"}://${proxyInputRender[0]}:${proxyInputRender[1]}`;
+    console.log(host);
+    const proto = SSLStatus ? https : http;
+    let data = {
+      action: "",
+    };
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      timeout: 5000,
+      path: '/opencommand/api',
+    };
+    if (["localhost", "127.0.0.1", "192.168.3."].includes(proxyInputRender[0])) {
+      options.ca = fs.readFileSync(path.join(global.packagedPaths.dataPath, "root.crt"));
+    }
     data.action = "ping";
-    const response0 = await axios.post(host, data, reqConfig);
-    console.log(response0.data, "\nfinished ping");
-    data.action = "online";
-    const response1 = await axios.post(host, data, reqConfig);
-    console.log(response1.data, "\nfinished get online players");
-    if (response1.data.message == "Success") {
-      win.webContents.send('showMessageBox', "info", `<i class="fa-solid fa-link"></i>&nbsp;连接成功！`,
-      `retcode: ${response1.data.retcode},
-      message: '${response1.data.message}'<br>当前在线人数：${response1.data.data.count}<br>
-      当前服务端版本：${response0.data.data}`);
+    const resp0Data = await sendRequest(proto, host, data, options);
+    if (resp0Data === "timeout") {
+      win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接失败！`,
+      `Code: timeout <br> 连接超时，请检查IP/域名/端口是否合法<br> 或是服务还未启动`);
+      fs.appendFileSync(path.join(logDirPath, `${currentMoment}.log`), `${resp0Data}\n\n`);
+      return;
     } else {
-      win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接成功，但获取失败！`,
-      `retcode: ${response1.data.retcode},
-      message: '${response1.data.message}'<br>请检查是否更改了opencommand配置！<br><a style="font-size: 16px;">
-      ${path.join(global.packagedPaths.gateServerPath, "Grasscutter", "workdir", "plugins", "opencommand-plugin")}</a>`);
+      if (resp0Data.code) {
+        if (resp0Data.code === "ERR_BAD_REQUEST" || resp0Data.code.includes("CERT") || resp0Data.code.includes("VERIFY")) {
+          win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接失败！`,
+          `Code: ${resp0Data.code} <br> 请尝试取消勾选代理的使用SSL，或检查该服务器是否拥有本地可信的SSL证书`);
+        } else if (resp0Data.code === "ECONNREFUSED") {
+          win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接失败！`,
+          `Code: ${resp0Data.code} <br> 看起来服务还未启动，或是ip等配置有误！<br> 请检查服务是否已启动、端口是否已开放、IP是否可连接`);
+        } else if (resp0Data.code === "ECONNABORTED") {
+          win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接失败！`,
+          `Code: ${resp0Data.code} <br> 连接中断，请检查IP/域名/端口是否合法<br> 或是服务还未启动`);
+        } else {
+          win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接失败！`,
+          `Code: ${resp0Data.code} <br> 未知错误码`);
+        }
+        fs.appendFileSync(path.join(logDirPath, `${currentMoment}.log`), `${resp0Data}\n\n`);
+        return;
+      }
+    }
+    const resp0 = JSON.parse(resp0Data.body);
+    console.log(resp0Data.body, "\nfinished ping");
+    data.action = "online";
+    const resp1Data = await sendRequest(proto, host, data, options);
+    const resp1 = JSON.parse(resp1Data.body);
+    console.log(resp1Data.body, "\nfinished get online players");
+    if (resp0.retcode == "200") {
+      win.webContents.send('showMessageBox', "info", '<i class="fa-solid fa-link"></i>&nbsp;连接成功！', `retcode: ${resp1.retcode}<br>message: '${resp1.message}'<br>当前在线人数：${resp1.data.count}<br>当前服务端版本：${resp0.data}`);
     }
   } catch (err) {
-    if (err.code === "ERR_BAD_REQUEST") {
-      win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接失败！`,
-      `err.code: ${err.code} <br> 请尝试在SSL证书中，选择不使用SSL，并取消勾选代理的使用SSL`);
-    } else if (err.code === "ECONNREFUSED") {
-      win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接失败！`,
-      `err.code: ${err.code} <br> 看起来服务还未启动，或是ip等配置有误！<br> 请检查服务是否已启动、端口是否已开放、IP是否可连接`);
-    } else if (err.code === "ECONNABORTED") {
-      win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接失败！`,
-      `err.code: ${err.code} <br> 连接中断，请检查IP/域名/端口是否合法<br> 或是服务还未启动`);
-    } else {
-      win.webContents.send('showMessageBox', "error", `<i class="fa-solid fa-link"></i>&nbsp;连接失败！`,
-      `err.code: ${err.code} <br> 未知错误码`);
-    }
-    console.error(err.code, "\nerr details has been written to log file");
-    fs.appendFileSync(path.join(logDirPath, `${currentMoment}.log`), `${err.message}\n${err.stack}\n\n`);
+    console.error(err);
   }
 });
 
@@ -482,9 +448,9 @@ ipcMain.on('editAppConfigBtn-edit', async (event) => {
   }
 })
 
-ipcMain.on('exportAppConfigBtn-export', async (event, gcInputRender, proxyInputRender) => {
+ipcMain.on('exportAppConfigBtn-export', async (event, gcInputRender, proxyInputRender, jvm) => {
   try {
-    await rwAppConfig("simple-save", gcInputRender, proxyInputRender);
+    await rwAppConfig("simple-save", gcInputRender, proxyInputRender, jvm);
     await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
     const result = await dialog.showOpenDialog({
       title: '请选择配置文件将要导出至的文件夹',
@@ -661,37 +627,38 @@ ipcMain.on('choose3DMigotoPathButton_open-file-dialog', async (event) => {
     _3DMigotoPath = result.filePaths[0];
     _3DMigotoPathDir = path.dirname(_3DMigotoPath);
     try {
+      await fs.promises.access(path.join(_3DMigotoPathDir, "d3dx.ini"));
       const _3DMigotoConfigData = await fs.promises.readFile(path.join(_3DMigotoPathDir, "d3dx.ini"), 'utf-8');
       const _3DMigotoConfig = ini.parse(_3DMigotoConfigData);
+      if (_3DMigotoConfig.Include.include_recursive) {
+        _3DMigotoModsPath = _3DMigotoConfig.Include.include_recursive;
+        console.log(path.join(_3DMigotoPathDir, _3DMigotoModsPath));
+      }
+      console.log(_3DMigotoPath);
+      const gamePathFileName = path.basename(_3DMigotoPath);
+      if (gamePathFileName === '3DMigoto Loader.exe') {
+        try {
+          win.webContents.send('choose3DMigotoPathButton_was', _3DMigotoPath, "init");
+          fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
+          const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
+          const appConfig = JSON.parse(appConfigData);
+          if (appConfig.game._3dmigoto) {
+            appConfig.game._3dmigoto = _3DMigotoPath
+          }
+          await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
+          console.log('app.config.json Updated successfully');
+        } catch(err) {
+          console.error(err);
+        }
+      } else {
+        win.webContents.send('choose3DMigotoPathButton_file-not-valid');
+      }
     } catch (err) {
-      if (err.code === "ENOENT") {
+      if (err.code == "ENOENT") {
         win.webContents.send('showMessageBox', "info", `3DMigoto`, `3DMigoto路径不存在或d3dx.ini不存在！<br>
         请检查是否为 "3DMigoto Loader.exe"！请检查d3dx.ini是否正确配置及存在！`);
-        console.error(err);
       }
-    }
-    if (_3DMigotoConfig.Include.include_recursive) {
-      _3DMigotoModsPath = _3DMigotoConfig.Include.include_recursive;
-      console.log(path.join(_3DMigotoPathDir, _3DMigotoModsPath));
-    }
-    console.log(_3DMigotoPath);
-    const gamePathFileName = path.basename(_3DMigotoPath);
-    if (gamePathFileName === '3DMigoto Loader.exe') {
-      try {
-        win.webContents.send('choose3DMigotoPathButton_was', _3DMigotoPath, "init");
-        fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
-        const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
-        const appConfig = JSON.parse(appConfigData);
-        if (appConfig.game._3dmigoto) {
-          appConfig.game._3dmigoto = _3DMigotoPath
-        }
-        await fs.promises.writeFile(path.join(global.packagedPaths.entryPath, "app.config.json"), JSON.stringify(appConfig, null, 2), 'utf8');
-        console.log('app.config.json Updated successfully');
-      } catch(err) {
-        console.error(err);
-      }
-    } else {
-      win.webContents.send('choose3DMigotoPathButton_file-not-valid');
+      console.error(err);
     }
   }
 });
@@ -723,15 +690,15 @@ ipcMain.on('chooseGamePathButton_open-file-dialog', async (event) => {
   }
 });
 
-ipcMain.on('operationBoxBtn_0-run-main-service', async (event, gcInputRender, proxyInputRender, gcSSLStatus) => {
+ipcMain.on('operationBoxBtn_0-run-main-service', async (event, gcInputRender, proxyInputRender, gcSSLStatus, jvm) => {
   await checkJava();
   await packageNec();
-  run_main_service(gcInputRender, proxyInputRender, gcSSLStatus);
+  run_main_service(gcInputRender, proxyInputRender, gcSSLStatus, jvm);
 });
 
-ipcMain.on('operationBoxBtn_proxy-run-proxy-service', async (event, gcInputRender, proxyInputRender, gcSSLStatus) => {
+ipcMain.on('operationBoxBtn_proxy-run-proxy-service', async (event, gcInputRender, proxyInputRender, gcSSLStatus, jvm) => {
   await packageNec("mitm");
-  run_proxy_service(gcInputRender, proxyInputRender, gcSSLStatus);
+  run_proxy_service(gcInputRender, proxyInputRender, gcSSLStatus, jvm);
 });
 
 ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
@@ -741,8 +708,9 @@ ipcMain.on('operationBoxBtn_1-stop-service', async (event) => {
     'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /d "" /f',
     'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "" /f'
   ];
+  await packageNec();
   await killProcesses(processes, addition);
-  await packageNec("clear");
+  await packageNec("stop-service");
   win.webContents.send('operationBoxBtn_1-success');
 });
 
@@ -754,8 +722,10 @@ ipcMain.on('operationBoxBtn_3-run-3dmigoto', (event) => {
   run_3dmigoto();
 });
 
-ipcMain.on('clear_data', (event) => {
+ipcMain.on('clear_data', async (event) => {
   win.webContents.send('showMessageBox', "warning", `恢复出厂`, `确定要恢复出厂吗？这将会删除所有的使用痕迹，包括你的游戏数据！！！被删除的数据将无法找回！！！`, ["confirm", "cancel"]);
+  const processes = ['java.exe', 'mongod.exe', 'mitmdump.exe', '3DMigoto Loader.exe'];
+  await killProcesses(processes);
   ipcMain.once('showMessageBox-callback', async (event, callback) => {
     if (callback === "confirm") {
       win.webContents.send('clearing_data');
@@ -763,7 +733,7 @@ ipcMain.on('clear_data', (event) => {
         `${global.packagedPaths.gateServerPath}\\MongoDB\\data\\*`,
         `${global.packagedPaths.entryPath}\\app.config.json`,
         `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\keystore.p12`,
-        `${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\plugins\\opencommand-plugin\\data.json`,
+        `*${global.packagedPaths.gateServerPath}\\Grasscutter\\workdir\\plugins\\opencommand-1.7.0.jar`,
         `${global.packagedPaths.gateServerPath}\\Grasscutter\\GcTools-v1.12.2.exe`
       ];
       const dirs = [
@@ -773,12 +743,28 @@ ipcMain.on('clear_data', (event) => {
         `${global.packagedPaths.gateServerPath}\\Grasscutter\\logs`,
         `${global.packagedPaths.dataPath}\\MongoDB Compass`
       ]
-      for (const path of paths) {
-        exec(`del /s /q "${path}"`, { encoding: 'binary' }, (error, stdout, stderr) => {
-          if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
-          if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')); }
-          if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')); }
-        });
+      for (const p of paths) {
+        if (p.startsWith('*')) {
+          const fullPath = p.slice(1);
+          const dirPath = path.dirname(fullPath);
+          const fileNameToKeep = path.basename(fullPath);
+          const files = await fs.promises.readdir(dirPath);
+          for (const file of files) {
+            if (file !== fileNameToKeep) {
+              const filePath = path.join(dirPath, file);
+              const stats = await fs.promises.stat(filePath);
+              stats.isDirectory() ? 
+              await fs.promises.rm(filePath, { recursive: true }) 
+              : await fs.promises.unlink(filePath);
+            }
+          }
+        } else {
+          exec(`del /s /q "${p}"`, { encoding: 'binary' }, (error, stdout, stderr) => {
+            if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+            if (stdout) { console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK')); }
+            if (stderr) { console.error(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')); }
+          });
+        }
       }
       for (const dir of dirs) {
         exec(`rmdir /s /q "${dir}"`, { encoding: 'binary' }, (error, stdout, stderr) => {
@@ -813,7 +799,7 @@ async function init(port) {
       const tester = net.createServer()
         .once('error', async (err) => {
           if (err.code === 'EADDRINUSE') {
-            const response0 = await dialog.showMessageBox(win, {
+            await dialog.showMessageBox(win, {
               type: "warning",
               title: "端口已被占用",
               message: `${port}端口已被占用！请检查是否启动了多个APP！`
@@ -828,25 +814,19 @@ async function init(port) {
           tester.once('close', async () => {
             await expressServer(port);
             createWindow(port);
-            await packageNec("clear");
-            exec(`certutil -store Root`, async (error, stdout, stderr) => {
-              if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')); }
+            exec(`certutil -store Root`, {encoding: "binary"}, async (error, stdout, stderr) => {
+              if (error) { console.error(iconv.decode(Buffer.from(error.message, 'binary'), 'GBK')) }
               if (stdout.includes('6fc55dd6c7a9f76ed1d980dd657fcfe6941228ec')) {
                 console.log("Found self-signed root crt");
+                await packageNec("clear");
               } else {
                 console.log("Self-signed root crt not found, add root crt");
                 await packageNec("init-crt");
-                exec(`start ${global.packagedPaths.dataPath}\\add_root_crt.bat`, async (error, stdout, stderr) => {
-                  if (error) {
-                    console.log(error);
-                    return;
-                  }
-                  if (stdout) {
-                    console.log(iconv.decode(Buffer.from(stdout, 'binary'), 'GBK'));
-                    win.webContents.send("add_crt");
-                  };
-                  if (stderr) { console.log(iconv.decode(Buffer.from(stderr, 'binary'), 'GBK')) };
-                });
+                const {crtStdout} = await exec(`start ${global.packagedPaths.dataPath}\\add_root_crt.bat`, {encoding: "binary"});
+                if (crtStdout) {
+                  win.webContents.send("add_crt");
+                  await packageNec("clear");
+                }
               }
             });
           }).close();
@@ -909,6 +889,7 @@ async function createWindow(port) {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true,
+      spellcheck: false,
       devTools: !app.isPackaged
     },
   });
@@ -945,7 +926,14 @@ echo 不要关闭这个窗口！！！\r
 echo.\r
 echo 将使用此命令来调用Java： "${javaPath}"\r
 echo.\r
-\r
+IF NOT "${jvmHead}" == "" (\r
+  echo 当前使用的jvm参数头："${jvmHead}"\r
+  echo.\r
+)\r
+IF NOT "${jvmTail}" == "" (\r
+  echo 当前使用的jvm参数尾："${jvmTail}"\r
+  echo.\r
+)\r
 cd ${global.packagedPaths.gateServerPath}\\Grasscutter\r
 echo 由 github/btjawa 改包\r
 echo.\r
@@ -958,7 +946,7 @@ ping>nul\r
 echo 遇到卡草问题时，等半到一分钟/重启游戏大概率可以解决。由于Res仍在Dev，角色死亡无法复活时请重新进入游戏。\r
 echo.\r
 echo 正在启动Grasscutter服务端...\r
-"${javaPath}" -jar grasscutter.jar\r
+"${javaPath}" ${jvmHead} -jar grasscutter.jar ${jvmTail}\r
 exit`;
 
   const mongo_batch = `@echo off\r
@@ -1026,34 +1014,37 @@ exit`;
       case "gc":
         files.push({name: 'run_gc.bat', content: gc_batch});
         break;
-      case "init-crt":
-        files.push({name: 'add_root_crt.bat', content: add_root_crt_batch});
-        break;
       case "3dmigoto":
         files.push({name: 'run_3dmigoto.bat', content: run_3dmigoto_batch});
         break;
+      case "init-crt":
+        files.push({name: 'add_root_crt.bat', content: add_root_crt_batch});
+        break;
       case "clear":
-      default:
         files.push(
-          {name: 'add_root_crt.bat', content: add_root_crt_batch},
           {name: 'run_gc.bat', content: gc_batch},
           {name: 'run_mongo.bat', content: mongo_batch},
           {name: 'run_mitm_proxy.bat', content: mitm_proxy_batch},
           {name: 'run_3dmigoto.bat', content: run_3dmigoto_batch},
+          {name: 'add_root_crt.bat', content: add_root_crt_batch},
+        );
+        break;
+      case "stop-service":
+      default:
+        files.push(
+          {name: 'run_gc.bat', content: gc_batch},
+          {name: 'run_mongo.bat', content: mongo_batch},
+          {name: 'run_mitm_proxy.bat', content: mitm_proxy_batch},
         );
         break;
     }
     for (let file of files) {
       const filePath = path.join(global.packagedPaths.dataPath, file.name);
-      if (action === "clear") {
+      if (action === "clear" || action === "stop-service") {
         try {
           await fs.promises.unlink(filePath);
           console.log(`Deleted ${file.name}`);
-        } catch (err) {
-          err.code === 'ENOENT' ? 
-          console.log(`File ${file.name} does not exist, skipping delete`) 
-          : console.log(err);
-        }
+        } catch (err) {}
       } else {
         await fs.promises.writeFile(filePath, file.content);
         console.log(`Created ${file.name}`);
@@ -1190,13 +1181,45 @@ async function checkGateServer() {
   }
 }
 
+async function sendRequest(proto, host, data, options) {
+  return new Promise((resolve, reject) => {
+      const req = proto.request(host, options, (res) => {
+        let response = '';
+        res.on('data', (chunk) => {
+          response += chunk;
+        });
+        res.on('end', () => {
+          const obj = {
+            headers: res.headers,
+            statusCode: res.statusCode,
+            statusMessage: res.statusMessage,
+            body: response,
+          }
+          return resolve(obj)
+        });
+      });
+      if (options.timeout) {
+        req.setTimeout(options.timeout, () => {
+          req.abort();
+          console.error("timeout");
+          return("timeout");
+        });
+      }
+      req.on('error', (error) => {
+        console.error(error.code)
+        return resolve(error);
+      });
+      if (data) req.write(JSON.stringify(data));
+      req.end();
+  });
+}
 
 async function sendPatchGamePath(gamePath) {
   console.log(gamePath);
   const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf8');
   let appConfig = JSON.parse(appConfigData);
   try {
-    if (gamePath) {
+    if (gamePath != "") {
       fs.copyFileSync(path.join(global.packagedPaths.dataPath, "RSAPatch.dll"), path.join(gamePathDir, "version.dll"));
       console.log("RSA Patched");
       patchExists = true;
@@ -1277,7 +1300,7 @@ async function noKeystore(action) {
 };
 
 async function resSetProxy () {
-  resURL = ["https://gh-proxy.btl-cdn.top", "https://glab-proxy.btl-cdn.top", "https://api-gh-proxy.btl-cdn.top"];
+  resURL = ["https://gh.con.sh/https://github.com", "https://glab-proxy.btl-cdn.top", "https://api-gh-proxy.btl-cdn.top"];
   try {
     await fs.promises.access(path.join(global.packagedPaths.entryPath, "app.config.json"));
     const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
@@ -1338,8 +1361,8 @@ async function killProcesses(processes, addition = []) {
   });
 }
 
-async function rwAppConfig(action, gcInputRender, proxyInputRender) {
-  const actionHandlers = {
+async function rwAppConfig(action, gcInputRender, proxyInputRender, jvm) {
+  const actionHandlers = { //read config
     "default": {
       "getRes": async (res) => {
         if (res === "proxy") {
@@ -1385,20 +1408,25 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
           noKeystore();
           win.webContents.send('ssl_ver', "noKeystore");
         }
-        gc.dispatch.host = "dispatchcnglobal.yuanshen.com";
+        jvmHead = gc.jvm.head;
+        jvmTail = gc.jvm.tail;
         gcInput = [gc.host, gc.port, gc.dispatch.port, gc.dispatch.host];
+        jvmInput = [gc.jvm.head, gc.jvm.tail];
         win.webContents.send('gc_text', gcInput);
+        win.webContents.send('jvm_text', jvmInput);
       },
       "proxy": async (proxy) => {
         proxyInput = [proxy.host, proxy.port];
         SSLStatus = proxy.ssl;
         win.webContents.send('proxy_text', proxyInput);
         win.webContents.send('ssl_status', SSLStatus);
-      }
+      },
     },
     "ENOENT": async () => {
       gcInput = ["127.0.0.1", "22102", "443", "127.0.0.1"]
       proxyInput = ["127.0.0.1", "443"];
+      jvmHead = "-XX:+UseG1GC -XX:+UnlockExperimentalVMOptions";
+      jvmTail = "";
       SSLStatus = true;
       gamePath = "";
       gamePathDir = "";
@@ -1418,13 +1446,17 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
     const appConfigData = await fs.promises.readFile(path.join(global.packagedPaths.entryPath, "app.config.json"), 'utf-8');
     const appConfig = JSON.parse(appConfigData);
     if (await checkGateServer()) {
-      if (["main-service-save", "simple-save", "proxy-service-save"].includes(action)) { //from user
+      if (["main-service-save", "simple-save", "proxy-service-save"].includes(action)) { //save config
         appConfig.grasscutter.host = gcInputRender[0];
         appConfig.grasscutter.port = gcInputRender[1];
         appConfig.grasscutter.dispatch.port = gcInputRender[2];
         appConfig.grasscutter.dispatch.host = gcInputRender[3];
+        appConfig.grasscutter.jvm.head = jvm[0];
+        appConfig.grasscutter.jvm.tail = jvm[1];
         appConfig.proxy.host = proxyInputRender[0];
         appConfig.proxy.port = proxyInputRender[1];
+        jvmHead = jvm[0];
+        jvmTail = jvm[1];
         await writeAcConfig("main-service-save", gcInputRender, proxyInputRender);
       }
       else if (action === "ssl-set") { //set keystore
@@ -1462,6 +1494,7 @@ async function rwAppConfig(action, gcInputRender, proxyInputRender) {
   console.log(javaPath);
   console.log(path.join(_3DMigotoPathDir, _3DMigotoModsPath));
   console.log(_3DMigotoPath);
+  console.log(jvmHead, jvmTail);
 }
 
 
@@ -1469,10 +1502,10 @@ async function writeAcConfig(action, gcInputRender, proxyInputRender) {
   const proxyText = ["main-service-save", "simple-save", "proxy-service-save"].includes(action) ? proxyInputRender : proxyInput;
   const gcText = ["main-service-save", "simple-save", "proxy-service-save"].includes(action) ? gcInputRender : gcInput;
   try {
-    await fs.promises.access(`${global.packagedPaths.gateServerPath}\\Grasscutter\\config.json`);
     const gcConfigData = await fs.promises.readFile(`${global.packagedPaths.gateServerPath}\\Grasscutter\\config.json`, 'utf-8');
     const gcConfig = JSON.parse(gcConfigData);
-    await fs.promises.access(`${global.packagedPaths.gateServerPath}\\Proxy\\proxy_config.py`);
+    const _3DMigotoConfigData = await fs.promises.readFile(path.join(_3DMigotoPathDir, "d3dx.ini"), 'utf-8');
+    const _3DMigotoConfig = ini.parse(_3DMigotoConfigData);
     const mitmConfigData = await fs.promises.readFile(`${global.packagedPaths.gateServerPath}\\Proxy\\proxy_config.py`);
     let mitmConfig = mitmConfigData.toString('utf-8');
     if (action === "ssl-set") {
@@ -1483,24 +1516,29 @@ async function writeAcConfig(action, gcInputRender, proxyInputRender) {
     } else {
       if (gcConfig.server.http) {
         gcConfig.server.http.accessAddress = gcText[3];
-        console.log("\nhttp.accessAddress " + gcConfig.server.http.accessAddress);
+        console.log("\nhttp.accessAddress", gcConfig.server.http.accessAddress);
         gcConfig.server.http.bindPort = gcText[2];
-        console.log("http.bindPort " + gcConfig.server.http.bindPort);
+        console.log("http.bindPort", gcConfig.server.http.bindPort);
       }
       if (gcConfig.server.game) {
         gcConfig.server.game.accessAddress = gcText[0];
-        console.log("\ngame.accessAddress " + gcConfig.server.game.accessAddress);
+        console.log("game.accessAddress", gcConfig.server.game.accessAddress);
         gcConfig.server.game.bindPort = gcText[1];
-        console.log("game.bindPort " + gcConfig.server.game.bindPort);
+        console.log("game.bindPort", gcConfig.server.game.bindPort);
       }
+      _3DMigotoConfig.Loader.target = gamePath;
       mitmConfig = mitmConfig.replace(/(REMOTE_HOST\s*=\s*)"([^"]+)"/g, (_, p2) => {
-        console.log(`\n${p2}"${proxyText[0]}"`);
+        console.log(`${p2}"${proxyText[0]}"`);
         return `${p2}"${proxyText[0]}"`;
       });
       mitmConfig = mitmConfig.replace(/(REMOTE_PORT\s*=\s*)([^"]+)/g, (_, p2) => {
         console.log(`${p2}${proxyText[1]}\n`);
         return `${p2}${proxyText[1]}`;
       });
+    }
+    if (_3DMigotoConfig !== _3DMigotoConfigData) {
+      await fs.promises.writeFile(path.join(_3DMigotoPathDir, "d3dx.ini"), ini.stringify(_3DMigotoConfig), 'utf-8');
+      console.log('moded 3dmigoto config');
     }
     if (JSON.stringify(gcConfig, null, 2) !== gcConfigData) {
       await fs.promises.writeFile(`${global.packagedPaths.gateServerPath}\\Grasscutter\\config.json`, JSON.stringify(gcConfig, null, 2), 'utf8');
@@ -1679,7 +1717,7 @@ async function proxySettingWizard(targetServer, targetPort, SSLStatus, gcSSLStat
   return new Promise(async (resolve, reject) => {
     try {
       if (["localhost", "127.0.0.1"].includes(targetServer)) {
-        return (gcSSLStatus === SSLStatus) ? resolve(targetServer)
+        return (gcSSLStatus && SSLStatus || gcSSLStatus == "false" && SSLStatus == "false") ? resolve(targetServer)
         : (win.webContents.send('showMessageBox', "info", "代理设置向导", `本地服务器${gcSSLStatus?"已":"未"}使用SSL，请将代理SSL${SSLStatus?"关闭":"开启"}后再试<br>Code: EPROTO`), undefined);
       }
       const interfaces = os.networkInterfaces();
@@ -1697,34 +1735,16 @@ async function proxySettingWizard(targetServer, targetPort, SSLStatus, gcSSLStat
         }
       }
       const options = {
-        host: targetServer,
-        port: targetPort,
         path: '/',
         method: 'GET',
         rejectUnauthorized: true,
         timeout: 5000
       };
       const proto = SSLStatus ? https : http;
-      const req = proto.request(options, (res) => {
-        let data = '';
-        res.on('data', (chunk) => {
-          data += chunk;
-        });
-        res.on('end', () => {
-          console.log(`Received status code ${res.statusCode}`);
-          return resolve("127.0.0.1");
-        });
-      });
-      req.setTimeout(options.timeout, () => {
-        req.abort();
-        console.error('Request timed out 5000ms');
-        win.webContents.send('operationBoxBtn_proxy-msg', '', 'Request timed out 5000ms');
-      });
-      req.on('error', (err) => {
-        console.error(err);
-        req.abort();
-        if (err.code.includes('CERT') && SSLStatus) {
-          win.webContents.send('showMessageBox', "info", "代理设置向导", `检测到目标服务器SSL无法被本地验证<br>“确定” 使用远程服务器内部代理(推荐) “拒绝” 使用本地代理(不推荐)<br>${err}<br>Code: ${err.code}`, ["confirm", "deny"]);
+      const respData = await sendRequest(proto, `${SSLStatus?"https":"http"}://${targetServer}:${targetPort}`, "", options);
+      if (respData.code) {
+        if (respData.code.includes('CERT') && SSLStatus) {
+          win.webContents.send('showMessageBox', "info", "代理设置向导", `检测到目标服务器SSL无法被本地验证<br>“确定” 使用远程服务器内部代理(推荐) “拒绝” 使用本地代理(不推荐)<br>${respData}<br>Code:${respData.code}`, ["confirm", "deny"]);
           ipcMain.once('showMessageBox-callback', (event, callback) => {
             if (callback === "confirm") {
               win.webContents.send('operationBoxBtn_proxy-msg', `请在目标服务器内部署mitm代理！<button name="remote_mitm_guide">部署教程&nbsp;<i class="fa-solid fa-link"></i></button>`);
@@ -1733,15 +1753,18 @@ async function proxySettingWizard(targetServer, targetPort, SSLStatus, gcSSLStat
             }
             return resolve(callback === "confirm" ? targetServer : "127.0.0.1");
           });
-        } else if (err.code === "EPROTO") {
-          win.webContents.send('showMessageBox', "info", "代理设置向导", `目标服务器返回协议错误，当前SSL状态：${SSLStatus}，请尝试${SSLStatus?"关闭":"开启"}SSL后再试<br>${err}<br>Code: ${err.code}`);
+        } else if (respData.code === "EPROTO") {
+          win.webContents.send('showMessageBox', "info", "代理设置向导", `目标服务器返回协议错误，当前SSL状态：${SSLStatus}，请尝试${SSLStatus?"关闭":"开启"}SSL后再试<br>${respData}<br>Code:${respData.code}`);
         } else {
-          win.webContents.send('operationBoxBtn_proxy-msg', '', `${err}, Code: ${err.code}`);
+          win.webContents.send('operationBoxBtn_proxy-msg', '', `${respData}, Code: ${respData.code}`);
         }
-      });
-      req.end();
-    } catch(err) {
-      console.error(err);
+      } else {
+        if (respData.statusCode == "200" && respData.statusMessage == "OK") {
+          console.log(`Received`, respData.statusCode, respData.statusMessage);
+          resolve("127.0.0.1")
+        }
+      }
+    } catch (err) {
       reject(err);
     }
   });
@@ -1750,7 +1773,7 @@ async function proxySettingWizard(targetServer, targetPort, SSLStatus, gcSSLStat
 async function downloadFile(url, outputPath, action) {
   const proxyServer = await getSystemProxy();
   const curlArgs = ['-Lo', outputPath, url];
-  if (proxyServer && !proxyServer.includes(':', proxyPort)) { //ignore mitm proxy
+  if (proxyServer && !proxyServer.includes(`:${proxyPort}`)) { //ignore mitm proxy
     curlArgs.unshift('--proxy', `http://${proxyServer}`);
     win.webContents.send('using_proxy', proxyServer);
   };
@@ -1771,8 +1794,8 @@ async function downloadFile(url, outputPath, action) {
 }
 
 
-async function run_main_service (gcInputRender, proxyInputRender, gcSSLStatus) {
-  await rwAppConfig("main-service-save", gcInputRender, proxyInputRender)
+async function run_main_service (gcInputRender, proxyInputRender, gcSSLStatus, jvm) {
+  await rwAppConfig("main-service-save", gcInputRender, proxyInputRender, jvm)
   const processes = ['java.exe', 'mongod.exe', 'mitmdump.exe'];
   await killProcesses(processes);
   if (!await checkGateServer()) {
@@ -1781,21 +1804,15 @@ async function run_main_service (gcInputRender, proxyInputRender, gcSSLStatus) {
     return;
   }
   const proxyIP = await proxySettingWizard(proxyInputRender[0], proxyInputRender[1], SSLStatus, gcSSLStatus);
-  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat ${proxyIP} ${proxyInputRender[0]} ${proxyInputRender[1]}`], {
-    stdio: 'ignore'
-  });
-  const mongo_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mongo.bat`], {
-    stdio: 'ignore'
-  });
+  exec(`cmd.exe /c start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat ${proxyIP} ${proxyInputRender[0]} ${proxyInputRender[1]}`, {encoding: "binary"})
+  exec(`cmd.exe /c start ${global.packagedPaths.dataPath}\\run_mongo.bat`, {encoding: "binary"});
   console.log(javaPath)
-  const gc_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_gc.bat`], {
-    stdio: 'ignore'
-  });
+  exec(`cmd.exe /c start ${global.packagedPaths.dataPath}\\run_gc.bat`, {encoding: "binary"});
   win.webContents.send('operationBoxBtn_0-success');
 }
 
-async function run_proxy_service (gcInputRender, proxyInputRender, gcSSLStatus) {
-  await rwAppConfig("proxy-service-save", gcInputRender, proxyInputRender)
+async function run_proxy_service (gcInputRender, proxyInputRender, gcSSLStatus, jvm) {
+  await rwAppConfig("proxy-service-save", gcInputRender, proxyInputRender,jvm )
   const processes = ['mitmdump.exe'];
   await killProcesses(processes);
   if (!await checkGateServer()) {
@@ -1804,9 +1821,7 @@ async function run_proxy_service (gcInputRender, proxyInputRender, gcSSLStatus) 
     return;
   }
   const proxyIP = await proxySettingWizard(proxyInputRender[0], proxyInputRender[1], SSLStatus, gcSSLStatus);
-  const proxy_terminal = spawn('cmd.exe', ['/c', `start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat ${proxyIP} ${proxyInputRender[0]} ${proxyInputRender[1]}`], {
-    stdio: 'ignore'
-  });
+  exec(`cmd.exe /c start ${global.packagedPaths.dataPath}\\run_mitm_proxy.bat ${proxyIP} ${proxyInputRender[0]} ${proxyInputRender[1]}`, {encoding: "binary"})
   win.webContents.send('operationBoxBtn_proxy-success');
 }
 
@@ -1832,7 +1847,7 @@ async function run_3dmigoto() {
       await fs.promises.access(_3DMigotoPath);
       await fs.promises.access(path.join(_3DMigotoPathDir, "d3dx.ini"));
       await packageNec("3dmigoto");
-      const run_3dmigoto_process = spawn('cmd.exe', ['/c', `${global.packagedPaths.dataPath}\\run_3dmigoto.bat`]);
+      exec(`cmd.exe /c ${global.packagedPaths.dataPath}\\run_3dmigoto.bat`, {encoding: "binary"});
       run_game();
     } catch(err) {
       if (err.code === "ENOENT") {
