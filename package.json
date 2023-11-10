@@ -1,6 +1,6 @@
 {
   "name": "btjgenshinps",
-  "version": "1.0.2-release",
+  "version": "1.0.3-release",
   "description": "A Click-To-Run Application To Help You Access Grasscutter GenshinPS.",
   "main": "main.js",
   "scripts": {
