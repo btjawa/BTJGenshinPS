@@ -1,0 +1,3 @@
+[submodule "BGP-docs"]
+	path = BGP-docs
+	url = https://github.com/btjawa/BGP-docs

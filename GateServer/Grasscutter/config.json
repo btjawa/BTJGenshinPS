@@ -1,0 +1,215 @@
+{
+  "folderStructure": {
+    "resources": "./workdir/resources.zip",
+    "data": "./workdir/data/",
+    "packets": "./workdir/packets/",
+    "scripts": "resources:Scripts/",
+    "plugins": "./workdir/plugins/",
+    "cache": "./workdir/cache/"
+  },
+  "databaseInfo": {
+    "server": {
+      "connectionUri": "mongodb://localhost:27017",
+      "collection": "grasscutter"
+    },
+    "game": {
+      "connectionUri": "mongodb://localhost:27017",
+      "collection": "grasscutter"
+    }
+  },
+  "language": {
+    "language": "zh_CN",
+    "fallback": "en_US",
+    "document": "EN"
+  },
+  "account": {
+    "autoCreate": false,
+    "EXPERIMENTAL_RealPassword": false,
+    "defaultPermissions": [],
+    "maxPlayer": -1
+  },
+  "server": {
+    "debugWhitelist": [],
+    "debugBlacklist": [],
+    "runMode": "HYBRID",
+    "logCommands": false,
+    "fastRequire": true,
+    "http": {
+      "startImmediately": false,
+      "bindAddress": "0.0.0.0",
+      "bindPort": "443",
+      "accessPort": 0,
+      "encryption": {
+        "useEncryption": true,
+        "useInRouting": true,
+        "keystore": "./workdir/keystore.p12",
+        "keystorePassword": "123456"
+      },
+      "policies": {
+        "cors": {
+          "enabled": true,
+          "allowedOrigins": [
+            "*"
+          ]
+        }
+      },
+      "files": {
+        "indexFile": "./workdir/html/index.html",
+        "errorFile": "./workdir/html/404.html"
+      },
+      "accessAddress": "192.168.3.32"
+    },
+    "game": {
+      "bindAddress": "0.0.0.0",
+      "accessPort": 0,
+      "accessAddress": "192.168.3.32",
+      "bindPort": "22102",
+      "useUniquePacketKey": true,
+      "loadEntitiesForPlayerRange": 300,
+      "enableScriptInBigWorld": true,
+      "enableConsole": true,
+      "kcpInterval": 20,
+      "logPackets": "NONE",
+      "isShowPacketPayload": false,
+      "isShowLoopPackets": false,
+      "cacheSceneEntitiesEveryRun": false,
+      "gameOptions": {
+        "inventoryLimits": {
+          "weapons": 2000,
+          "relics": 2000,
+          "materials": 2000,
+          "furniture": 2000,
+          "all": 30000
+        },
+        "avatarLimits": {
+          "singlePlayerTeam": 4,
+          "multiplayerTeam": 4
+        },
+        "sceneEntityLimit": 1000,
+        "watchGachaConfig": false,
+        "enableShopItems": true,
+        "staminaUsage": true,
+        "energyUsage": true,
+        "fishhookTeleport": true,
+        "trialCostumes": false,
+        "questing": {
+          "enabled": true
+        },
+        "resinOptions": {
+          "resinUsage": false,
+          "cap": 160,
+          "rechargeTime": 480
+        },
+        "rates": {
+          "adventureExp": 1,
+          "mora": 1,
+          "leyLines": 1
+        },
+        "handbook": {
+          "enable": false,
+          "allowCommands": true,
+          "limits": {
+            "enabled": false,
+            "interval": 3,
+            "maxRequests": 10,
+            "maxEntities": 25
+          },
+          "server": {
+            "enforced": false,
+            "address": "127.0.0.1",
+            "port": 443,
+            "canChange": true
+          }
+        }
+      },
+      "joinOptions": {
+        "welcomeEmotes": [
+          2007,
+          1002,
+          4010
+        ],
+        "welcomeMessage": "欢迎来到Grasscutter!\n添加控制台好友即可使用命令！",
+        "welcomeMail": {
+          "title": "欢迎来到Grasscutter!",
+          "content": "欸嘿!\r\n欢迎来到Grasscutter! 如果你遇到了任何问题, 请在 btjawa/BTJGenshinPS 描述你的问题，最好带上图片! \r\n\r\nCheck out our:\r\n<type=\"browser\" text=\"官方Discord\" href=\"https://discord.gg/T5vZU6UyeG\"/>\r\n<type=\"browser\" text=\"GitHub仓库\" href=\"https://github.com/btjawa/BTJGenshinPS\"/>",
+          "sender": "Lawnmower",
+          "items": [
+            {
+              "itemId": 13509,
+              "itemCount": 1,
+              "itemLevel": 1
+            },
+            {
+              "itemId": 201,
+              "itemCount": 99999,
+              "itemLevel": 1
+            }
+          ]
+        }
+      },
+      "serverAccount": {
+        "avatarId": 10000007,
+        "nameCardId": 210001,
+        "adventureRank": 1,
+        "worldLevel": 0,
+        "nickName": "控制台",
+        "signature": "欢迎来到Grasscutter!"
+      },
+      "visionOptions": [
+        {
+          "name": "VISION_LEVEL_NORMAL",
+          "visionRange": 80,
+          "gridWidth": 20
+        },
+        {
+          "name": "VISION_LEVEL_LITTLE_REMOTE",
+          "visionRange": 16,
+          "gridWidth": 40
+        },
+        {
+          "name": "VISION_LEVEL_REMOTE",
+          "visionRange": 1000,
+          "gridWidth": 250
+        },
+        {
+          "name": "VISION_LEVEL_SUPER",
+          "visionRange": 4000,
+          "gridWidth": 1000
+        },
+        {
+          "name": "VISION_LEVEL_NEARBY",
+          "visionRange": 40,
+          "gridWidth": 20
+        },
+        {
+          "name": "VISION_LEVEL_SUPER_NEARBY",
+          "visionRange": 20,
+          "gridWidth": 20
+        }
+      ]
+    },
+    "dispatch": {
+      "regions": [],
+      "dispatchUrl": "ws://127.0.0.1:1111",
+      "encryptionKey": "b4/eVuqqmpQJx9zNfbPzaLfEdDePV8edWT8n02nXl/o=",
+      "dispatchKey": "OjyO0CMxSVrWsXhFn2Zbysx8MlVWItULr7Aoc7WubhQ=",
+      "defaultName": "Grasscutter",
+      "logRequests": "NONE"
+    },
+    "debugMode": {
+      "serverLoggerLevel": {
+        "levelInt": 10000,
+        "levelStr": "DEBUG"
+      },
+      "servicesLoggersLevel": {
+        "levelInt": 20000,
+        "levelStr": "INFO"
+      },
+      "logPackets": "ALL",
+      "isShowPacketPayload": false,
+      "isShowLoopPackets": false,
+      "logRequests": "ALL"
+    }
+  },
+  "version": 13
+}

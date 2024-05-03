@@ -1,0 +1,2984 @@
+[
+	// {"retcode":0,"shop_type_list":[900,1052,902,1001,903]}
+	{
+		"shopId": 1001, // Tukar Paimon
+		"items": [
+			{
+				"begin_time": 1575129600,
+				"bought_num": 44,
+				"buy_limit": 0,
+				"cost_item_list": [],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102001,
+				"goods_item": {
+					"count": 1,
+					"item_id": 223
+				},
+				"hcoin": 160,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 4,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 0,
+				"cost_item_list": [],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102002,
+				"goods_item": {
+					"count": 1,
+					"item_id": 224
+				},
+				"hcoin": 160,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 4,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 15,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102528,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112002
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 15,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102529,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112005
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 15,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102530,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112008
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 15,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102531,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112011
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 15,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102532,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112032
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 15,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102533,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112035
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 15,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102534,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112038
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 15,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102537,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112044
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 15,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102543,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112053
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 15,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102547,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112059
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 15,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102551,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112065
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 16,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102522,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112017
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 16,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102549,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112062
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 16,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102553,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112068
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 25,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102020,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112004
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 25,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102021,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112007
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 25,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102022,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112010
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 25,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102023,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112013
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 25,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102024,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112034
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 25,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102025,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112037
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 25,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102026,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112040
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 25,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102034,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112046
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 25,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102037,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112055
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 25,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102039,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112061
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 25,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102041,
+				"goods_item": {
+					"count": 3,
+					"item_id": 112067
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 16,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102521,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112014
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 16,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102523,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112020
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 16,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102524,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112023
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 16,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102525,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112026
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 16,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102526,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112029
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 16,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102527,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112041
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 16,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102539,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112047
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 16,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102541,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112050
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 16,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102545,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112056
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 35,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102514,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112003
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 35,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102515,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112006
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 35,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102516,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112009
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 35,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102517,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112012
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 35,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102518,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112033
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 35,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102519,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112036
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 35,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102520,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112039
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 35,
+				"buy_limit": 35,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102538,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112045
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 35,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102544,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112054
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 35,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102548,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112060
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 35,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102552,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112066
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 8,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102014,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112019
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 8,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102040,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112064
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 8,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102042,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112070
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 100,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102535,
+				"goods_item": {
+					"count": 10,
+					"item_id": 104201
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 8,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102013,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112016
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 8,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102015,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112022
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 8,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102016,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112025
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 8,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102017,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112028
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 8,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102018,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112031
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 8,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102019,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112043
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 8,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102035,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112049
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 8,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102036,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112052
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 8,
+				"cost_item_list": [
+					{
+						"count": 2,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102038,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112058
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 35,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 12,
+				"cost_item_list": [
+					{
+						"count": 15,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102508,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112018
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 25,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 12,
+				"cost_item_list": [
+					{
+						"count": 15,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102550,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112063
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 12,
+				"cost_item_list": [
+					{
+						"count": 15,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102554,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112069
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1601496001,
+				"bought_num": 0,
+				"buy_limit": 3,
+				"cost_item_list": [
+					{
+						"count": 24,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102007,
+				"goods_item": {
+					"count": 1,
+					"item_id": 11404
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 4,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1601496001,
+				"bought_num": 0,
+				"buy_limit": 3,
+				"cost_item_list": [
+					{
+						"count": 24,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102008,
+				"goods_item": {
+					"count": 1,
+					"item_id": 12404
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 4,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1601496001,
+				"bought_num": 0,
+				"buy_limit": 3,
+				"cost_item_list": [
+					{
+						"count": 24,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102009,
+				"goods_item": {
+					"count": 1,
+					"item_id": 13408
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 4,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1601496001,
+				"bought_num": 0,
+				"buy_limit": 3,
+				"cost_item_list": [
+					{
+						"count": 24,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102010,
+				"goods_item": {
+					"count": 1,
+					"item_id": 14404
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 4,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1601496001,
+				"bought_num": 0,
+				"buy_limit": 3,
+				"cost_item_list": [
+					{
+						"count": 24,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102011,
+				"goods_item": {
+					"count": 1,
+					"item_id": 15404
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 4,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 12,
+				"cost_item_list": [
+					{
+						"count": 15,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102507,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112015
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 25,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 12,
+				"cost_item_list": [
+					{
+						"count": 15,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102509,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112021
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 25,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 12,
+				"cost_item_list": [
+					{
+						"count": 15,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102510,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112024
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 25,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 12,
+				"cost_item_list": [
+					{
+						"count": 15,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102511,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112027
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 25,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 12,
+				"cost_item_list": [
+					{
+						"count": 15,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102512,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112030
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 25,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 12,
+				"cost_item_list": [
+					{
+						"count": 15,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102513,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112042
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 25,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 12,
+				"cost_item_list": [
+					{
+						"count": 15,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102540,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112048
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 12,
+				"cost_item_list": [
+					{
+						"count": 15,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102542,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112051
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 12,
+				"cost_item_list": [
+					{
+						"count": 15,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102546,
+				"goods_item": {
+					"count": 1,
+					"item_id": 112057
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1601496001,
+				"bought_num": 0,
+				"buy_limit": 1,
+				"cost_item_list": [
+					{
+						"count": 34,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102005,
+				"goods_item": {
+					"count": 1,
+					"item_id": 1024
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 4,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1601496001,
+				"bought_num": 0,
+				"buy_limit": 1,
+				"cost_item_list": [
+					{
+						"count": 34,
+						"item_id": 221
+					}
+				],
+				"disable_type": 1,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102006,
+				"goods_item": {
+					"count": 1,
+					"item_id": 1034
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 4,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 100,
+				"cost_item_list": [
+					{
+						"count": 8,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102503,
+				"goods_item": {
+					"count": 3,
+					"item_id": 104002
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 60,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102504,
+				"goods_item": {
+					"count": 1,
+					"item_id": 104013
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 30,
+				"cost_item_list": [
+					{
+						"count": 10,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102505,
+				"goods_item": {
+					"count": 10000,
+					"item_id": 202
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 0,
+				"cost_item_list": [
+					{
+						"count": 20,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102506,
+				"goods_item": {
+					"count": 10000,
+					"item_id": 202
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 10,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [102505],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 100
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 4,
+				"buy_limit": 0,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102003,
+				"goods_item": {
+					"count": 1,
+					"item_id": 223
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 4,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 0,
+				"cost_item_list": [
+					{
+						"count": 5,
+						"item_id": 221
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102004,
+				"goods_item": {
+					"count": 1,
+					"item_id": 224
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 4,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 5,
+				"buy_limit": 5,
+				"cost_item_list": [
+					{
+						"count": 75,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102501,
+				"goods_item": {
+					"count": 1,
+					"item_id": 223
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 4,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 5,
+				"cost_item_list": [
+					{
+						"count": 75,
+						"item_id": 222
+					}
+				],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 102502,
+				"goods_item": {
+					"count": 1,
+					"item_id": 224
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 0,
+				"min_level": 4,
+				"next_refresh_time": 1661976000,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			}
+		]
+	},
+	{
+		"shopId": 902, // Toko Hadiah
+		"items": [
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 1,
+				"cost_item_list": [],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 103011,
+				"goods_item": {
+					"count": 1,
+					"item_id": 115011
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 980,
+				"min_level": 25,
+				"next_refresh_time": 1661716800,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 1,
+				"cost_item_list": [],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 103010,
+				"goods_item": {
+					"count": 1,
+					"item_id": 115010
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 300,
+				"min_level": 25,
+				"next_refresh_time": 1661716800,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 1,
+				"cost_item_list": [],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 103009,
+				"goods_item": {
+					"count": 1,
+					"item_id": 115032
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 60,
+				"min_level": 1,
+				"next_refresh_time": 1661716800,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1661184000,
+				"bought_num": 0,
+				"buy_limit": 3,
+				"cost_item_list": [],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 1662566399,
+				"goods_id": 103056,
+				"goods_item": {
+					"count": 1,
+					"item_id": 115022
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 680,
+				"min_level": 25,
+				"next_refresh_time": 0,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1661184000,
+				"bought_num": 0,
+				"buy_limit": 5,
+				"cost_item_list": [],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 1662566399,
+				"goods_id": 103057,
+				"goods_item": {
+					"count": 1,
+					"item_id": 115029
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 680,
+				"min_level": 25,
+				"next_refresh_time": 0,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			}
+		]
+	},
+	{
+		"shopId": 1052, // Baju
+		"items": [
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 1,
+				"cost_item_list": [],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 106002,
+				"goods_item": {
+					"count": 1,
+					"item_id": 340000
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 1680,
+				"min_level": 1,
+				"next_refresh_time": 0,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 1,
+				"cost_item_list": [],
+				"disable_type": 3,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 106004,
+				"goods_item": {
+					"count": 1,
+					"item_id": 340002
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 1680,
+				"min_level": 1,
+				"next_refresh_time": 0,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 1,
+				"cost_item_list": [],
+				"disable_type": 3,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 106006,
+				"goods_item": {
+					"count": 1,
+					"item_id": 340005
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 1680,
+				"min_level": 1,
+				"next_refresh_time": 0,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 1,
+				"cost_item_list": [],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 106001,
+				"goods_item": {
+					"count": 1,
+					"item_id": 340001
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 1680,
+				"min_level": 1,
+				"next_refresh_time": 0,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 1,
+				"cost_item_list": [],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 106003,
+				"goods_item": {
+					"count": 1,
+					"item_id": 340003
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 1680,
+				"min_level": 1,
+				"next_refresh_time": 0,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			},
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 1,
+				"cost_item_list": [],
+				"disable_type": 0,
+				"discount_begin_time": 0,
+				"discount_end_time": 0,
+				"discount_id": 0,
+				"end_time": 2051193600,
+				"goods_id": 106005,
+				"goods_item": {
+					"count": 1,
+					"item_id": 340004
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 2480,
+				"min_level": 1,
+				"next_refresh_time": 0,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			}
+		]
+	},
+	{
+		"shopId": 900, // top barang
+		"items": [
+			{
+				"begin_time": 1575129600,
+				"bought_num": 0,
+				"buy_limit": 1,
+				"cost_item_list": [],
+				"disable_type": 0,
+				"discount_begin_time": 1657555200,
+				"discount_end_time": 1661111999,
+				"discount_id": 1003,
+				"end_time": 2051193600,
+				"goods_id": 106005,
+				"goods_item": {
+					"count": 1,
+					"item_id": 340004
+				},
+				"hcoin": 0,
+				"max_level": 99,
+				"mcoin": 1980,
+				"min_level": 1,
+				"next_refresh_time": 0,
+				"pre_goods_id_list": [],
+				"scoin": 0,
+				"secondary_sheet_id": 0,
+				"single_limit": 0
+			}
+		]
+	},
+	{
+		"shopId": 903, // cryitsal
+		"items": [
+			/*
+      {
+        "bought_num": 0,
+        "is_audit": false,
+        "mcoin_base": 60,
+        "mcoin_first": 60,
+        "mcoin_non_first": 0,
+        "price_tier": "Tier_1",
+        "product_id": "ys_glb_primogem1ststall_tier1"
+      },
+      {
+        "bought_num": 0,
+        "is_audit": false,
+        "mcoin_base": 300,
+        "mcoin_first": 300,
+        "mcoin_non_first": 30,
+        "price_tier": "Tier_5",
+        "product_id": "ys_glb_primogem2ndstall_tier5"
+      },
+      {
+        "bought_num": 0,
+        "is_audit": false,
+        "mcoin_base": 980,
+        "mcoin_first": 980,
+        "mcoin_non_first": 110,
+        "price_tier": "Tier_15",
+        "product_id": "ys_glb_primogem3rdstall_tier15"
+      },
+      {
+        "bought_num": 0,
+        "is_audit": false,
+        "mcoin_base": 1980,
+        "mcoin_first": 1980,
+        "mcoin_non_first": 260,
+        "price_tier": "Tier_30",
+        "product_id": "ys_glb_primogem4thstall_tier30"
+      },
+      {
+        "bought_num": 0,
+        "is_audit": false,
+        "mcoin_base": 3280,
+        "mcoin_first": 3280,
+        "mcoin_non_first": 600,
+        "price_tier": "Tier_50",
+        "product_id": "ys_glb_primogem5thstall_tier50"
+      },
+      {
+        "bought_num": 0,
+        "is_audit": false,
+        "mcoin_base": 6480,
+        "mcoin_first": 6480,
+        "mcoin_non_first": 1600,
+        "price_tier": "Tier_60",
+        "product_id": "ys_glb_primogem6thstall_tier60"
+      }
+      */
+		]
+	}
+]
